@@ -6,12 +6,16 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Modules\Campaigns\Actions\CloseVotingCampaignAction;
+use App\Modules\Campaigns\Actions\CreateVotingCampaignAction;
 use App\Modules\Campaigns\Actions\PublishVotingCampaignAction;
 use App\Modules\Campaigns\Enums\CampaignStatus;
 use App\Modules\Campaigns\Enums\CampaignType;
 use App\Modules\Campaigns\Models\Campaign;
+use App\Modules\Clubs\Models\Club;
+use App\Modules\Players\Models\Player;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
 
 final class AdminCampaignController extends Controller
 {
@@ -20,6 +24,60 @@ final class AdminCampaignController extends Controller
         $this->authorize('viewAny', Campaign::class);
         $campaigns = Campaign::withCount('votes')->orderByDesc('id')->paginate(15);
         return view('admin.campaigns.index', compact('campaigns'));
+    }
+
+    public function create(): View
+    {
+        $this->authorize('create', Campaign::class);
+        return view('admin.campaigns.form', [
+            'types'   => CampaignType::cases(),
+            'players' => Player::with('club')->orderBy('name_en')->get(),
+            'clubs'   => Club::orderBy('name_en')->get(),
+        ]);
+    }
+
+    public function store(Request $request, CreateVotingCampaignAction $action): RedirectResponse
+    {
+        $this->authorize('create', Campaign::class);
+
+        $data = $request->validate([
+            'title_ar'       => ['required', 'string', 'max:180'],
+            'title_en'       => ['required', 'string', 'max:180'],
+            'description_ar' => ['nullable', 'string'],
+            'description_en' => ['nullable', 'string'],
+            'type'           => ['required', 'in:individual_award,team_award,team_of_the_season'],
+            'start_at'       => ['required', 'date'],
+            'end_at'         => ['required', 'date', 'after:start_at'],
+            'max_voters'     => ['nullable', 'integer', 'min:1'],
+
+            'categories'                        => ['required', 'array', 'min:1'],
+            'categories.*.title_ar'             => ['required', 'string', 'max:180'],
+            'categories.*.title_en'             => ['required', 'string', 'max:180'],
+            'categories.*.position_slot'        => ['required', 'in:attack,midfield,defense,goalkeeper,any'],
+            'categories.*.required_picks'       => ['required', 'integer', 'min:1', 'max:11'],
+            'categories.*.player_ids'           => ['array'],
+            'categories.*.player_ids.*'         => ['integer', 'exists:players,id'],
+            'categories.*.club_ids'             => ['array'],
+            'categories.*.club_ids.*'           => ['integer', 'exists:clubs,id'],
+        ]);
+
+        // Reshape candidates for the Action
+        foreach ($data['categories'] as &$cat) {
+            $cand = [];
+            foreach ($cat['player_ids'] ?? [] as $pid) $cand[] = ['player_id' => $pid];
+            foreach ($cat['club_ids']   ?? [] as $cid) $cand[] = ['club_id'   => $cid];
+            $cat['candidates'] = $cand;
+            unset($cat['player_ids'], $cat['club_ids']);
+        }
+        unset($cat);
+
+        try {
+            $campaign = $action->execute($data);
+        } catch (\DomainException $e) {
+            return back()->withInput()->withErrors(['categories' => $e->getMessage()]);
+        }
+
+        return redirect('/admin/campaigns/'.$campaign->id)->with('success', __('Campaign created.'));
     }
 
     public function show(Campaign $campaign): View

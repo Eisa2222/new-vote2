@@ -35,6 +35,8 @@ Route::middleware(['web', 'auth'])->prefix('admin')->group(function () {
     Route::delete('players/{player}',        [AdminPlayerController::class, 'destroy']);
 
     Route::get('campaigns',                       [AdminCampaignController::class, 'index']);
+    Route::get('campaigns/create',                [AdminCampaignController::class, 'create']);
+    Route::post('campaigns',                      [AdminCampaignController::class, 'store']);
     Route::get('campaigns/{campaign}',            [AdminCampaignController::class, 'show']);
     Route::post('campaigns/{campaign}/publish',   [AdminCampaignController::class, 'publish']);
     Route::post('campaigns/{campaign}/close',     [AdminCampaignController::class, 'close']);
