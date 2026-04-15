@@ -3,6 +3,7 @@
 use App\Http\Controllers\Admin\AdminCampaignController;
 use App\Http\Controllers\Admin\AdminClubController;
 use App\Http\Controllers\Admin\AdminPlayerController;
+use App\Http\Controllers\Admin\AdminResultController;
 use App\Http\Controllers\Admin\AdminUserController;
 use App\Http\Controllers\Auth\LoginController;
 use Illuminate\Support\Facades\Route;
@@ -37,6 +38,13 @@ Route::middleware(['web', 'auth'])->prefix('admin')->group(function () {
     Route::get('campaigns/{campaign}',            [AdminCampaignController::class, 'show']);
     Route::post('campaigns/{campaign}/publish',   [AdminCampaignController::class, 'publish']);
     Route::post('campaigns/{campaign}/close',     [AdminCampaignController::class, 'close']);
+
+    Route::get('results',                        [AdminResultController::class, 'index'])->name('results.index');
+    Route::get('results/{campaign}',             [AdminResultController::class, 'show'])->name('results.show');
+    Route::post('results/{campaign}/calculate',  [AdminResultController::class, 'calculate'])->name('results.calculate');
+    Route::post('results/approve/{result}',      [AdminResultController::class, 'approve'])->name('results.approve');
+    Route::post('results/hide/{result}',         [AdminResultController::class, 'hide'])->name('results.hide');
+    Route::post('results/announce/{result}',     [AdminResultController::class, 'announce'])->name('results.announce');
 
     Route::get('users',                  [AdminUserController::class, 'index']);
     Route::get('users/create',           [AdminUserController::class, 'create']);

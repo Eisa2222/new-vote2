@@ -1,6 +1,6 @@
 @php($locale = app()->getLocale())
 @php($dir = $locale === 'ar' ? 'rtl' : 'ltr')
-<!doctype html>
+<!DOCTYPE html>
 <html lang="{{ $locale }}" dir="{{ $dir }}">
 <head>
     <meta charset="utf-8">
@@ -9,69 +9,104 @@
     <title>{{ $campaign->localized('title') }}</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css">
     <style>
-        body { font-family: {{ $locale === 'ar' ? "'Tajawal', 'Cairo', sans-serif" : "'Inter', system-ui, sans-serif" }}; }
-        .card { @apply bg-white rounded-2xl shadow-md p-6 mb-4; }
-        .candidate { @apply border rounded-xl p-4 cursor-pointer transition; }
-        .candidate:hover { @apply border-emerald-500 bg-emerald-50; }
-        .candidate.selected { @apply border-emerald-600 bg-emerald-100 ring-2 ring-emerald-500; }
+        body { font-family: {{ $locale === 'ar' ? "'Tajawal','Cairo',sans-serif" : "'Inter',system-ui,sans-serif" }}; }
+        .candidate { cursor: pointer; }
+        .candidate.selected { border-color: #059669 !important; background: #ecfdf5; box-shadow: 0 0 0 2px #10b981; }
+        .candidate.selected .dot { border-color: #059669; background: #059669; }
     </style>
 </head>
-<body class="bg-slate-50 min-h-screen">
-<div class="max-w-5xl mx-auto py-10 px-4">
-    <header class="mb-8 text-center">
-        <h1 class="text-3xl font-bold text-slate-800">{{ $campaign->localized('title') }}</h1>
-        @if($campaign->localized('description'))
-            <p class="mt-2 text-slate-600">{{ $campaign->localized('description') }}</p>
-        @endif
-        <p class="mt-2 text-sm text-slate-500">
-            {{ __('Voting closes at') }}: {{ $campaign->end_at->format('Y-m-d H:i') }}
-        </p>
-    </header>
+<body class="bg-slate-50 text-slate-900">
+<div class="max-w-7xl mx-auto px-4 py-8 space-y-8">
+
+    <section class="rounded-3xl bg-gradient-to-{{ $dir === 'rtl' ? 'l' : 'r' }} from-slate-950 via-slate-900 to-emerald-800 text-white p-8 md:p-10 shadow-2xl">
+        <div class="grid md:grid-cols-2 gap-8 items-center">
+            <div>
+                <div class="text-emerald-300 text-sm font-semibold">{{ __('Public voting campaign') }}</div>
+                <h1 class="text-3xl md:text-5xl font-bold mt-3 leading-tight">{{ $campaign->localized('title') }}</h1>
+                @if($campaign->localized('description'))
+                    <p class="text-slate-200 mt-4 leading-8">{{ $campaign->localized('description') }}</p>
+                @endif
+            </div>
+            <div class="grid grid-cols-2 gap-4">
+                <div class="rounded-2xl bg-white/10 p-5">
+                    <div class="text-sm text-slate-300">{{ __('Time remaining') }}</div>
+                    <div class="text-2xl font-bold mt-2">{{ $campaign->end_at->diffForHumans(null, true) }}</div>
+                </div>
+                <div class="rounded-2xl bg-white/10 p-5">
+                    <div class="text-sm text-slate-300">{{ __('Voters') }}</div>
+                    <div class="text-2xl font-bold mt-2">
+                        {{ number_format($campaign->votes()->count()) }}
+                        @if($campaign->max_voters)<span class="text-sm text-slate-300">/ {{ number_format($campaign->max_voters) }}</span>@endif
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
 
     @if($errors->any())
-        <div class="card border-l-4 border-red-500 bg-red-50">
-            @foreach($errors->all() as $e)
-                <p class="text-red-700">{{ $e }}</p>
-            @endforeach
+        <div class="rounded-2xl bg-rose-50 border border-rose-200 text-rose-800 p-4">
+            @foreach($errors->all() as $e) <div>{{ $e }}</div> @endforeach
         </div>
     @endif
 
-    <form method="post" action="{{ route('voting.submit', $campaign->public_token) }}" id="voteForm">
+    <form method="post" action="{{ route('voting.submit', $campaign->public_token) }}" id="voteForm" class="space-y-6">
         @csrf
 
-        @foreach($campaign->categories as $category)
-            <section class="card" data-category-id="{{ $category->id }}" data-required="{{ $category->required_picks }}">
-                <h2 class="text-xl font-semibold text-slate-800">{{ $category->localized('title') }}</h2>
-                <p class="text-sm text-slate-500 mb-4">
-                    {{ __('Pick exactly :n', ['n' => $category->required_picks]) }}
-                    @if($category->position_slot !== 'any')
-                        — {{ __(ucfirst($category->position_slot)) }}
-                    @endif
-                </p>
+        @foreach($campaign->categories as $ci => $category)
+            <section class="rounded-3xl border border-gray-200 bg-white p-6 shadow-sm"
+                     data-category-id="{{ $category->id }}"
+                     data-required="{{ $category->required_picks }}">
+                <div class="flex items-center justify-between gap-4 flex-wrap mb-5">
+                    <div>
+                        <h2 class="text-2xl font-bold">{{ $category->localized('title') }}</h2>
+                        <p class="text-gray-500 mt-1">
+                            {{ __('Pick exactly :n', ['n' => $category->required_picks]) }}
+                            @if($category->position_slot !== 'any')
+                                · <span class="font-semibold">{{ __(ucfirst($category->position_slot)) }}</span>
+                            @endif
+                        </p>
+                    </div>
+                    <div class="text-sm text-gray-500">
+                        <span class="category-progress">0</span> / {{ $category->required_picks }}
+                    </div>
+                </div>
 
-                <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-                    @foreach($category->candidates as $c)
-                        @php($label = $c->player?->localized('name') ?? $c->club?->localized('name'))
-                        @php($photo = $c->player?->photo_path ?? $c->club?->logo_path)
-                        <label class="candidate" data-candidate-id="{{ $c->id }}">
+                <input type="hidden" name="selections[{{ $ci }}][category_id]" value="{{ $category->id }}">
+
+                <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
+                    @foreach($category->candidates as $candidate)
+                        <?php
+                            $name  = $candidate->player?->localized('name') ?? $candidate->club?->localized('name');
+                            $sub   = $candidate->player?->club?->localized('name');
+                            $photo = $candidate->player?->photo_path ?? $candidate->club?->logo_path;
+                            $pos   = $candidate->player?->position?->label();
+                        ?>
+                        <label class="candidate rounded-3xl border border-gray-200 p-5 bg-white hover:border-emerald-400 hover:shadow-md transition block">
                             <input type="checkbox"
-                                   name="selections[{{ $loop->parent->index }}][candidate_ids][]"
-                                   value="{{ $c->id }}"
-                                   class="sr-only candidate-input">
-                            <input type="hidden"
-                                   name="selections[{{ $loop->parent->index }}][category_id]"
-                                   value="{{ $category->id }}">
-                            <div class="flex items-center gap-3">
+                                   name="selections[{{ $ci }}][candidate_ids][]"
+                                   value="{{ $candidate->id }}"
+                                   class="hidden candidate-input">
+                            <div class="flex items-start gap-4">
                                 @if($photo)
                                     <img src="{{ \Illuminate\Support\Facades\Storage::url($photo) }}"
-                                         class="w-12 h-12 rounded-full object-cover" alt="">
+                                         class="w-20 h-20 rounded-2xl object-cover" alt="">
                                 @else
-                                    <div class="w-12 h-12 rounded-full bg-slate-200"></div>
+                                    <div class="w-20 h-20 rounded-2xl bg-slate-100 flex items-center justify-center text-3xl">
+                                        {{ $candidate->player ? '🧍' : '🏟️' }}
+                                    </div>
                                 @endif
-                                <div>
-                                    <div class="font-medium text-slate-800">{{ $label }}</div>
-                                    @if($c->player)
-                                        <div class="text-xs text-slate-500">{{ $c->player->club?->localized('name') }}</div>
+                                <div class="flex-1 min-w-0">
+                                    <div class="flex items-start justify-between gap-3">
+                                        <div class="min-w-0">
+                                            <h3 class="text-lg font-bold truncate">{{ $name }}</h3>
+                                            @if($sub)<p class="text-sm text-gray-500 mt-1">{{ $sub }}</p>@endif
+                                        </div>
+                                        <div class="dot w-6 h-6 rounded-full border-2 border-gray-300 flex-shrink-0"></div>
+                                    </div>
+                                    @if($pos)
+                                        <div class="mt-3">
+                                            <span class="px-3 py-1 rounded-full bg-blue-100 text-blue-700 text-xs font-semibold">{{ $pos }}</span>
+                                        </div>
                                     @endif
                                 </div>
                             </div>
@@ -81,18 +116,29 @@
             </section>
         @endforeach
 
-        <div class="sticky bottom-0 bg-white border-t p-4 -mx-4 mt-8">
-            <button type="submit"
-                    class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-semibold py-3 rounded-xl">
-                {{ __('Submit My Vote') }}
-            </button>
+        <div class="sticky bottom-0 bg-white border-t border-gray-200 p-4 -mx-4 rounded-t-3xl shadow-lg">
+            <div class="max-w-7xl mx-auto flex items-center justify-between gap-4">
+                <div class="text-sm text-gray-500">
+                    <span id="globalProgress">0</span> / {{ $campaign->categories->sum('required_picks') }} {{ __('picks complete') }}
+                </div>
+                <button type="submit" id="submitBtn" disabled
+                        class="rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white px-8 py-3 font-semibold disabled:bg-slate-300 disabled:cursor-not-allowed disabled:hover:bg-slate-300">
+                    {{ __('Submit My Vote') }}
+                </button>
+            </div>
         </div>
     </form>
 </div>
 
 <script>
-    document.querySelectorAll('section[data-category-id]').forEach(section => {
+    const sections = document.querySelectorAll('section[data-category-id]');
+    const submitBtn = document.getElementById('submitBtn');
+    const globalProgress = document.getElementById('globalProgress');
+
+    sections.forEach(section => {
         const required = parseInt(section.dataset.required, 10);
+        const progressEl = section.querySelector('.category-progress');
+
         section.querySelectorAll('.candidate').forEach(label => {
             const input = label.querySelector('.candidate-input');
             label.addEventListener('click', e => {
@@ -102,19 +148,25 @@
                 if (!input.checked && chosen >= required) return;
                 input.checked = !input.checked;
                 label.classList.toggle('selected', input.checked);
+                updateState();
             });
         });
     });
 
-    document.getElementById('voteForm').addEventListener('submit', e => {
-        const bad = [...document.querySelectorAll('section[data-category-id]')].filter(s => {
-            return s.querySelectorAll('.candidate-input:checked').length !== parseInt(s.dataset.required, 10);
+    function updateState() {
+        let total = 0, complete = true;
+        sections.forEach(s => {
+            const required = parseInt(s.dataset.required, 10);
+            const n = s.querySelectorAll('.candidate-input:checked').length;
+            total += n;
+            if (n !== required) complete = false;
+            const pe = s.querySelector('.category-progress');
+            if (pe) pe.textContent = n;
         });
-        if (bad.length) {
-            e.preventDefault();
-            alert('{{ __('Please complete all categories with the required number of picks.') }}');
-        }
-    });
+        globalProgress.textContent = total;
+        submitBtn.disabled = !complete;
+    }
+    updateState();
 </script>
 </body>
 </html>

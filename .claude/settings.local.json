@@ -7,7 +7,11 @@
       "Bash(\"C:/laragon/bin/php/php-8.3.30-Win32-vs16-x64/php.exe\" \"C:/laragon/bin/composer/composer.phar\" install --no-interaction)",
       "Bash(curl -s -o /dev/null -w \"HTTP %{http_code}\\\\n\" http://127.0.0.1:8080/up)",
       "Bash(curl -s -o /dev/null -w \"Admin dashboard \\(no auth\\): HTTP %{http_code}\\\\n\" http://127.0.0.1:8080/admin)",
-      "Bash(curl -s -o /tmp/vote.html -w \"Vote page: %{http_code}\\\\n\" \"http://127.0.0.1:8080/vote/6O8D38dYqT32kpGFwPzkR6qF6DyGw64D\")"
+      "Bash(curl -s -o /tmp/vote.html -w \"Vote page: %{http_code}\\\\n\" \"http://127.0.0.1:8080/vote/6O8D38dYqT32kpGFwPzkR6qF6DyGw64D\")",
+      "Bash(winget install:*)",
+      "Bash(export PATH=\"/c/Program Files/GitHub CLI:$PATH\")",
+      "Bash(gh --version)",
+      "Bash(gh repo:*)"
     ]
   }
 }

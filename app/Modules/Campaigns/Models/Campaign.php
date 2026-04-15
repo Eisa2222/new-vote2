@@ -48,6 +48,11 @@ final class Campaign extends Model
         return $this->hasMany(\App\Modules\Voting\Models\Vote::class);
     }
 
+    public function result(): \Illuminate\Database\Eloquent\Relations\HasOne
+    {
+        return $this->hasOne(\App\Modules\Results\Models\CampaignResult::class);
+    }
+
     public function isAcceptingVotes(): bool
     {
         $now = now();

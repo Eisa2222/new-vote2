@@ -1,58 +1,68 @@
 @extends('layouts.admin')
-@section('content')
-    <div class="flex items-center justify-between mb-6">
-        <h1 class="text-2xl font-bold text-slate-800">{{ __('Clubs') }}</h1>
-        <a href="/admin/clubs/create" class="btn-primary">+ {{ __('New Club') }}</a>
-    </div>
 
-    <form method="get" class="mb-4 flex gap-2">
-        <input name="q" value="{{ request('q') }}" placeholder="{{ __('Search') }}..."
-               class="border rounded-lg px-3 py-2 flex-1">
-        <select name="status" class="border rounded-lg px-3 py-2">
-            <option value="">{{ __('All statuses') }}</option>
-            <option value="active"   @selected(request('status') === 'active')>{{ __('Active') }}</option>
-            <option value="inactive" @selected(request('status') === 'inactive')>{{ __('Inactive') }}</option>
-        </select>
-        <button class="btn-primary">{{ __('Filter') }}</button>
+@section('title', __('Clubs'))
+@section('page_title', __('Clubs'))
+@section('page_description', __('View and manage all participating clubs'))
+
+@section('content')
+<div class="rounded-3xl border border-gray-200 bg-white p-5 shadow-sm space-y-5">
+    <form method="get" class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+        <div class="flex flex-col md:flex-row gap-3 w-full lg:max-w-3xl">
+            <input type="text" name="q" value="{{ request('q') }}" placeholder="{{ __('Search by club name') }}..."
+                   class="w-full rounded-2xl border border-gray-300 px-4 py-3 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none">
+            <select name="status" class="rounded-2xl border border-gray-300 px-4 py-3 min-w-[180px]">
+                <option value="">{{ __('All statuses') }}</option>
+                <option value="active"   @selected(request('status') === 'active')>{{ __('Active') }}</option>
+                <option value="inactive" @selected(request('status') === 'inactive')>{{ __('Inactive') }}</option>
+            </select>
+            <button class="rounded-2xl border border-gray-300 px-5 py-3 font-medium">{{ __('Filter') }}</button>
+        </div>
+        <a href="/admin/clubs/create"
+           class="inline-flex items-center justify-center rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white px-5 py-3 font-semibold">
+            + {{ __('New Club') }}
+        </a>
     </form>
 
-    <div class="bg-white rounded-2xl shadow overflow-hidden">
-        <table class="w-full">
-            <thead class="bg-slate-100 text-slate-600 text-sm">
-                <tr>
-                    <th class="p-3 text-start">{{ __('Logo') }}</th>
-                    <th class="p-3 text-start">{{ __('Name') }}</th>
-                    <th class="p-3 text-start">{{ __('Short') }}</th>
-                    <th class="p-3 text-start">{{ __('Sports') }}</th>
-                    <th class="p-3 text-start">{{ __('Status') }}</th>
-                    <th class="p-3"></th>
+    <div class="overflow-x-auto">
+        <table class="w-full text-sm">
+            <thead>
+                <tr class="border-b text-gray-500">
+                    <th class="text-start py-3">{{ __('Logo') }}</th>
+                    <th class="text-start py-3">{{ __('Name') }}</th>
+                    <th class="text-start py-3">{{ __('Short') }}</th>
+                    <th class="text-start py-3">{{ __('Sports') }}</th>
+                    <th class="text-start py-3">{{ __('Status') }}</th>
+                    <th class="text-start py-3">{{ __('Actions') }}</th>
                 </tr>
             </thead>
-            <tbody class="divide-y">
+            <tbody>
                 @forelse($clubs as $club)
-                    <tr class="hover:bg-slate-50">
-                        <td class="p-3">
+                    <tr class="border-b last:border-0 hover:bg-slate-50">
+                        <td class="py-4">
                             @if($club->logo_path)
                                 <img src="{{ \Illuminate\Support\Facades\Storage::url($club->logo_path) }}"
-                                     class="w-10 h-10 rounded-full object-cover">
+                                     class="w-12 h-12 rounded-2xl object-cover" alt="">
                             @else
-                                <div class="w-10 h-10 rounded-full bg-slate-200"></div>
+                                <div class="w-12 h-12 rounded-2xl bg-gray-100 flex items-center justify-center text-xl">🏟️</div>
                             @endif
                         </td>
-                        <td class="p-3 font-medium">{{ $club->localized('name') }}</td>
-                        <td class="p-3 text-slate-500">{{ $club->short_name }}</td>
-                        <td class="p-3 text-slate-500">
-                            {{ $club->sports->pluck('name_'.app()->getLocale())->join(' · ') }}
+                        <td class="py-4 font-medium">{{ $club->localized('name') }}</td>
+                        <td class="py-4 text-gray-500">{{ $club->short_name }}</td>
+                        <td class="py-4 text-gray-600">{{ $club->sports->map(fn($s) => $s->localized('name'))->join('، ') }}</td>
+                        <td class="py-4">
+                            <span class="px-3 py-1 rounded-full text-xs font-semibold
+                                {{ $club->status->value === 'active' ? 'bg-emerald-100 text-emerald-700' : 'bg-gray-100 text-gray-700' }}">
+                                {{ $club->status->label() }}
+                            </span>
                         </td>
-                        <td class="p-3">
-                            <span class="badge-{{ $club->status->value }}">{{ $club->status->label() }}</span>
-                        </td>
-                        <td class="p-3 text-end">
-                            <a href="/admin/clubs/{{ $club->id }}/edit" class="btn-ghost">{{ __('Edit') }}</a>
+                        <td class="py-4">
+                            <a href="/admin/clubs/{{ $club->id }}/edit" class="rounded-xl border px-3 py-2 hover:bg-slate-50 inline-block">
+                                {{ __('Edit') }}
+                            </a>
                         </td>
                     </tr>
                 @empty
-                    <tr><td colspan="6" class="p-12 text-center text-slate-400">
+                    <tr><td colspan="6" class="py-16 text-center text-gray-400">
                         {{ __('No clubs yet. Create your first club.') }}
                     </td></tr>
                 @endforelse
@@ -60,5 +70,6 @@
         </table>
     </div>
 
-    <div class="mt-4">{{ $clubs->links() }}</div>
+    <div>{{ $clubs->links() }}</div>
+</div>
 @endsection
