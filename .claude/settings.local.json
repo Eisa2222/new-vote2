@@ -17,7 +17,10 @@
       "Bash(\"C:/laragon/bin/php/php-8.3.30-Win32-vs16-x64/php.exe\" vendor/bin/pest)",
       "Bash(\"C:/laragon/bin/php/php-8.3.30-Win32-vs16-x64/php.exe\" vendor/bin/pest tests/Feature/Authorization/PermissionBoundariesTest.php)",
       "Bash(grep -rohE \"__\\\\\\('[^']+'\\\\\\)\" resources/views/ app/Modules/*/resources/views/ app/Http/ app/Modules/)",
-      "Bash(sort -u wc -l used_keys_temp.txt head -3 used_keys_temp.txt)"
+      "Bash(sort -u wc -l used_keys_temp.txt head -3 used_keys_temp.txt)",
+      "Bash(curl -s -b /tmp/c.txt http://127.0.0.1:8080/set-locale/ar -o /dev/null)",
+      "Bash(curl -s -b /tmp/c.txt http://127.0.0.1:8080/admin/campaigns/create)",
+      "Bash(curl -s -b /tmp/c.txt \"http://127.0.0.1:8080/admin/campaigns/create?locale=ar\" grep -oE \"\\(السؤال|إجابة|لاعب|إضافة|حذف|الأسئلة|أي مركز|إعداد\\)\" /tmp/create_ar.html)"
     ]
   }
 }
