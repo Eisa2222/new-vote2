@@ -8,18 +8,20 @@ use App\Modules\Campaigns\Enums\ResultsVisibility;
 use App\Modules\Results\Enums\ResultStatus;
 use App\Modules\Results\Models\CampaignResult;
 use App\Modules\Results\Events\ResultsApproved;
+use App\Modules\Results\Domain\ResultStatusTransitionRule;
 use App\Modules\Users\Actions\LogActivityAction;
 use Illuminate\Support\Facades\Auth;
 
 final class ApproveResultsAction
 {
-    public function __construct(private readonly LogActivityAction $log) {}
+    public function __construct(
+        private readonly LogActivityAction $log,
+        private readonly ResultStatusTransitionRule $rule = new ResultStatusTransitionRule(),
+    ) {}
 
     public function execute(CampaignResult $result): CampaignResult
     {
-        if ($result->status !== ResultStatus::Calculated) {
-            throw new \DomainException('Only calculated results can be approved.');
-        }
+        $this->rule->assert($result->status, ResultStatus::Approved);
 
         $result->update([
             'status'       => ResultStatus::Approved->value,

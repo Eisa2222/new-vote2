@@ -13,8 +13,9 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 final class CampaignResult extends Model
 {
     protected $fillable = [
-        'campaign_id', 'status', 'calculated_at', 'approved_at',
-        'announced_at', 'approved_by',
+        'campaign_id', 'status', 'total_votes', 'notes',
+        'calculated_at', 'approved_at', 'announced_at',
+        'calculated_by', 'approved_by', 'announced_by',
     ];
 
     protected $casts = [

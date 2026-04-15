@@ -23,7 +23,11 @@
       "Bash(curl -s -b /tmp/c.txt \"http://127.0.0.1:8080/admin/campaigns/create?locale=ar\" grep -oE \"\\(السؤال|إجابة|لاعب|إضافة|حذف|الأسئلة|أي مركز|إعداد\\)\" /tmp/create_ar.html)",
       "Bash(\"C:/laragon/bin/php/php-8.3.30-Win32-vs16-x64/php.exe\" vendor/bin/pest tests/Feature/TOS/)",
       "Bash(\"C:/laragon/bin/php/php-8.3.30-Win32-vs16-x64/php.exe\" vendor/bin/pest tests/Feature/TOS/TeamOfSeasonFlowTest.php --filter=\"creates\")",
-      "Bash(\"C:/laragon/bin/php/php-8.3.30-Win32-vs16-x64/php.exe\" vendor/bin/pest tests/Feature/TOS/ --filter=\"validates exact\")"
+      "Bash(\"C:/laragon/bin/php/php-8.3.30-Win32-vs16-x64/php.exe\" vendor/bin/pest tests/Feature/TOS/ --filter=\"validates exact\")",
+      "Bash(curl -s -o /tmp/err.html -w \"HTTP %{http_code}\\\\n\" http://127.0.0.1:8080/login)",
+      "Bash(netstat -ano)",
+      "Bash(tasklist)",
+      "Bash(taskkill //PID 13524 //F)"
     ]
   }
 }
