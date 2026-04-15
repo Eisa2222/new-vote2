@@ -5,23 +5,26 @@ declare(strict_types=1);
 namespace App\Modules\Voting\Http\Controllers;
 
 use App\Http\Controllers\Controller;
+use App\Modules\Campaigns\Enums\CampaignType;
 use App\Modules\Campaigns\Models\Campaign;
 use App\Modules\Campaigns\Services\CampaignAvailabilityService;
 use App\Modules\Voting\Actions\CheckVoterSessionAction;
 use App\Modules\Voting\Actions\CreateVoterSessionAction;
 use App\Modules\Voting\Actions\GetPublicCampaignAction;
 use App\Modules\Voting\Actions\PreventDuplicateVoteByPlayerAction;
+use App\Modules\Voting\Actions\SubmitTeamOfSeasonVoteAction;
 use App\Modules\Voting\Actions\SubmitVoteAction;
 use App\Modules\Voting\Actions\VerifyVoterIdentityAction;
+use App\Modules\Voting\Http\Requests\SubmitTeamOfSeasonVoteRequest;
 use App\Modules\Voting\Http\Requests\SubmitVoteRequest;
 use App\Modules\Voting\Http\Requests\VerifyVoterRequest;
 use App\Modules\Voting\Support\IdentityNormalizer;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
 
 final class PublicVoteController extends Controller
 {
-    /** Step 1: Show verification screen (or redirect to vote form if already verified). */
     public function show(string $token, CheckVoterSessionAction $check): View|RedirectResponse
     {
         $campaign = Campaign::where('public_token', $token)->firstOrFail();
@@ -37,7 +40,6 @@ final class PublicVoteController extends Controller
         return view('voting::verify', compact('campaign'));
     }
 
-    /** Step 2: Verify identity and create session. */
     public function verify(
         string $token,
         VerifyVoterRequest $request,
@@ -69,12 +71,10 @@ final class PublicVoteController extends Controller
         return redirect()->route('voting.form', $token);
     }
 
-    /** Step 3: Show the voting form (verified only). */
     public function form(string $token, CheckVoterSessionAction $check, GetPublicCampaignAction $loader): View|RedirectResponse
     {
         $campaign = Campaign::where('public_token', $token)->firstOrFail();
         $session  = $check->execute($campaign);
-
         if (! $session) {
             return redirect()->route('voting.show', $token);
         }
@@ -85,18 +85,39 @@ final class PublicVoteController extends Controller
             'method' => $session['method'],
         ];
 
-        return view('voting::public', compact('campaign', 'voter'));
+        $view = $campaign->type === CampaignType::TeamOfTheSeason ? 'voting::tos' : 'voting::public';
+        return view($view, compact('campaign', 'voter'));
     }
 
-    /** Step 4: Submit the vote. */
     public function submit(
         string $token,
-        SubmitVoteRequest $request,
+        Request $request,
         SubmitVoteAction $action,
+        SubmitTeamOfSeasonVoteAction $tosAction,
         CreateVoterSessionAction $session,
     ): RedirectResponse {
         $campaign = Campaign::where('public_token', $token)->firstOrFail();
-        $action->execute($campaign, $request, $request->validated('selections'));
+
+        try {
+            if ($campaign->type === CampaignType::TeamOfTheSeason) {
+                /** @var SubmitTeamOfSeasonVoteRequest $tosReq */
+                $tosReq = app(SubmitTeamOfSeasonVoteRequest::class);
+                $payload = $tosReq->validated();
+                $tosAction->execute($campaign, $request, [
+                    'attack'     => $payload['attack'],
+                    'midfield'   => $payload['midfield'],
+                    'defense'    => $payload['defense'],
+                    'goalkeeper' => $payload['goalkeeper'],
+                ]);
+            } else {
+                /** @var SubmitVoteRequest $regReq */
+                $regReq = app(SubmitVoteRequest::class);
+                $action->execute($campaign, $request, $regReq->validated('selections'));
+            }
+        } catch (\App\Modules\Voting\Exceptions\VotingException $e) {
+            return back()->withErrors(['voting' => $e->getMessage()]);
+        }
+
         $session->clear($campaign);
         return redirect()->route('voting.thanks', $token);
     }

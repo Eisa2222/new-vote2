@@ -52,6 +52,12 @@ Route::middleware(['web', 'auth'])->prefix('admin')->group(function () {
     Route::post('categories/{category}/candidates', [AdminCategoryController::class, 'storeCandidate']);
     Route::delete('candidates/{candidate}',         [AdminCategoryController::class, 'destroyCandidate']);
 
+    // Team of the Season dedicated flow
+    Route::get('tos/create',                  [\App\Http\Controllers\Admin\AdminTeamOfSeasonController::class, 'create']);
+    Route::post('tos',                        [\App\Http\Controllers\Admin\AdminTeamOfSeasonController::class, 'store']);
+    Route::get('tos/{campaign}/candidates',   [\App\Http\Controllers\Admin\AdminTeamOfSeasonController::class, 'candidates']);
+    Route::post('tos/{campaign}/candidates',  [\App\Http\Controllers\Admin\AdminTeamOfSeasonController::class, 'attachCandidates']);
+
     Route::get('results',                        [AdminResultController::class, 'index'])->name('results.index');
     Route::get('results/{campaign}',             [AdminResultController::class, 'show'])->name('results.show');
     Route::post('results/{campaign}/calculate',  [AdminResultController::class, 'calculate'])->name('results.calculate');

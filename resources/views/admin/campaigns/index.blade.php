@@ -30,10 +30,16 @@
             </div>
         @endforeach
     </div>
-    <a href="/admin/campaigns/create"
-       class="inline-flex items-center justify-center rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white px-5 py-3 font-semibold whitespace-nowrap">
-        + {{ __('New Campaign') }}
-    </a>
+    <div class="flex gap-2 flex-wrap">
+        <a href="/admin/tos/create"
+           class="inline-flex items-center justify-center rounded-2xl border-2 border-emerald-600 text-emerald-700 hover:bg-emerald-50 px-5 py-3 font-semibold whitespace-nowrap">
+            ⚽ {{ __('New Team of the Season') }}
+        </a>
+        <a href="/admin/campaigns/create"
+           class="inline-flex items-center justify-center rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white px-5 py-3 font-semibold whitespace-nowrap">
+            + {{ __('New Campaign') }}
+        </a>
+    </div>
 </div>
 
 <div class="grid grid-cols-1 xl:grid-cols-2 gap-5">
