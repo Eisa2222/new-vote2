@@ -14,9 +14,28 @@ it('accepts a valid 3-3-4-1 distribution', function () {
     expect(true)->toBeTrue();
 });
 
-it('rejects wrong distribution', function () {
+it('accepts a 4-3-3-1 (attack-heavy) distribution', function () {
     (new TeamOfTheSeasonDistributionRule())->validate([
         ['position_slot' => 'attack',     'required_picks' => 4],
+        ['position_slot' => 'midfield',   'required_picks' => 3],
+        ['position_slot' => 'defense',    'required_picks' => 3],
+        ['position_slot' => 'goalkeeper', 'required_picks' => 1],
+    ]);
+    expect(true)->toBeTrue();
+});
+
+it('rejects distribution with goalkeeper != 1', function () {
+    (new TeamOfTheSeasonDistributionRule())->validate([
+        ['position_slot' => 'attack',     'required_picks' => 3],
+        ['position_slot' => 'midfield',   'required_picks' => 3],
+        ['position_slot' => 'defense',    'required_picks' => 4],
+        ['position_slot' => 'goalkeeper', 'required_picks' => 2],
+    ]);
+})->throws(DomainException::class);
+
+it('rejects distribution with outfield sum != 10', function () {
+    (new TeamOfTheSeasonDistributionRule())->validate([
+        ['position_slot' => 'attack',     'required_picks' => 3],
         ['position_slot' => 'midfield',   'required_picks' => 3],
         ['position_slot' => 'defense',    'required_picks' => 3],
         ['position_slot' => 'goalkeeper', 'required_picks' => 1],

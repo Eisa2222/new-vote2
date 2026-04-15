@@ -1,5 +1,6 @@
 @php($locale = app()->getLocale())
 @php($dir = $locale === 'ar' ? 'rtl' : 'ltr')
+<?php $formation = \App\Modules\Campaigns\Domain\TeamOfSeasonFormation::fromCampaign($campaign); ?>
 <!DOCTYPE html>
 <html lang="{{ $locale }}" dir="{{ $dir }}">
 <head>
@@ -44,19 +45,19 @@
             <div class="grid grid-cols-4 gap-2 text-center text-xs">
                 <div class="rounded-xl bg-white/10 p-3">
                     <div class="text-2xl font-bold" id="count-attack">0</div>
-                    <div class="mt-1 text-slate-300">{{ __('Attack') }} / 3</div>
+                    <div class="mt-1 text-slate-300">{{ __('Attack') }} / {{ $formation['attack'] }}</div>
                 </div>
                 <div class="rounded-xl bg-white/10 p-3">
                     <div class="text-2xl font-bold" id="count-midfield">0</div>
-                    <div class="mt-1 text-slate-300">{{ __('Midfield') }} / 3</div>
+                    <div class="mt-1 text-slate-300">{{ __('Midfield') }} / {{ $formation['midfield'] }}</div>
                 </div>
                 <div class="rounded-xl bg-white/10 p-3">
                     <div class="text-2xl font-bold" id="count-defense">0</div>
-                    <div class="mt-1 text-slate-300">{{ __('Defense') }} / 4</div>
+                    <div class="mt-1 text-slate-300">{{ __('Defense') }} / {{ $formation['defense'] }}</div>
                 </div>
                 <div class="rounded-xl bg-white/10 p-3">
                     <div class="text-2xl font-bold" id="count-goalkeeper">0</div>
-                    <div class="mt-1 text-slate-300">{{ __('Goalkeeper') }} / 1</div>
+                    <div class="mt-1 text-slate-300">{{ __('Goalkeeper') }} / {{ $formation['goalkeeper'] }}</div>
                 </div>
             </div>
         </div>
@@ -75,17 +76,16 @@
         </div>
     @endif
 
-    {{-- Football pitch visualization --}}
     <section class="pitch rounded-3xl overflow-hidden shadow-2xl p-6 md:p-10">
         <div class="relative z-10 space-y-10">
-            @foreach(['attack' => 3, 'midfield' => 3, 'defense' => 4, 'goalkeeper' => 1] as $slot => $n)
+            @foreach($formation as $slot => $n)
                 <?php $cat = $campaign->categories->firstWhere('position_slot', $slot); ?>
                 @if($cat)
                     <div>
                         <div class="text-center text-white mb-4 font-semibold">
                             {{ __(ucfirst($slot)) }} — {{ $n }}
                         </div>
-                        <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-{{ max($n, 2) }} gap-3 md:gap-4" data-slot="{{ $slot }}" data-required="{{ $n }}">
+                        <div class="flex flex-wrap justify-center gap-3 md:gap-4" data-slot="{{ $slot }}" data-required="{{ $n }}">
                             @foreach($cat->candidates as $cand)
                                 <?php
                                     $p = $cand->player;
@@ -93,7 +93,7 @@
                                     $club = $p?->club?->localized('name');
                                     $photo = $p?->photo_path;
                                 ?>
-                                <label class="candidate block rounded-2xl bg-white p-3 text-center border-2 border-transparent">
+                                <label class="candidate block w-36 rounded-2xl bg-white p-3 text-center border-2 border-transparent">
                                     <input type="checkbox" class="hidden cand-input"
                                            data-slot="{{ $slot }}"
                                            name="{{ $slot }}[]"
@@ -121,7 +121,11 @@
     </form>
 
     <div class="sticky bottom-0 bg-white border-t border-gray-200 p-4 rounded-t-3xl shadow-lg flex items-center justify-between gap-4">
-        <div id="summary" class="text-sm text-gray-600">{{ __('Pick 3 attack, 3 midfield, 4 defense, 1 goalkeeper.') }}</div>
+        <div id="summary" class="text-sm text-gray-600">
+            {{ __('Pick :a attack, :m midfield, :d defense, 1 goalkeeper.', [
+                'a' => $formation['attack'], 'm' => $formation['midfield'], 'd' => $formation['defense'],
+            ]) }}
+        </div>
         <button type="button" id="submitBtn" disabled
                 class="rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white px-8 py-3 font-semibold disabled:bg-slate-300 disabled:cursor-not-allowed disabled:hover:bg-slate-300">
             {{ __('Submit my Team of the Season') }}
@@ -130,7 +134,7 @@
 </div>
 
 <script>
-    const REQUIRED = { attack: 3, midfield: 3, defense: 4, goalkeeper: 1 };
+    const REQUIRED = {!! json_encode($formation) !!};
     const selected = { attack: new Set(), midfield: new Set(), defense: new Set(), goalkeeper: new Set() };
 
     document.querySelectorAll('.candidate').forEach(label => {
@@ -142,7 +146,7 @@
             if (label.classList.contains('disabled') && !input.checked) return;
             if (input.checked) { selected[slot].delete(input.value); input.checked = false; }
             else if (selected[slot].size < REQUIRED[slot]) { selected[slot].add(input.value); input.checked = true; }
-            else return; // line full
+            else return;
             label.classList.toggle('selected', input.checked);
             update();
         });
@@ -164,7 +168,6 @@
 
     document.getElementById('submitBtn').addEventListener('click', () => {
         const form = document.getElementById('tosForm');
-        // Clear any previous hidden inputs
         [...form.querySelectorAll('input[type="hidden"]:not([name="_token"])')].forEach(e => e.remove());
         Object.entries(selected).forEach(([slot, ids]) => {
             ids.forEach(id => {

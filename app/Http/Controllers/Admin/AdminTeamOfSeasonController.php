@@ -20,7 +20,12 @@ final class AdminTeamOfSeasonController extends Controller
     public function create(): View
     {
         $this->authorize('create', Campaign::class);
-        return view('admin.tos.create');
+        return view('admin.tos.create', [
+            'default' => TeamOfSeasonFormation::default(),
+            'minLine' => TeamOfSeasonFormation::MIN_LINE,
+            'maxLine' => TeamOfSeasonFormation::MAX_LINE,
+            'outfield' => TeamOfSeasonFormation::OUTFIELD_TOTAL,
+        ]);
     }
 
     public function store(Request $request, CreateTeamOfSeasonCampaignAction $action): RedirectResponse
@@ -34,9 +39,16 @@ final class AdminTeamOfSeasonController extends Controller
             'start_at'       => ['required', 'date'],
             'end_at'         => ['required', 'date', 'after:start_at'],
             'max_voters'     => ['nullable', 'integer', 'min:1'],
+            'attack'         => ['required', 'integer', 'min:'.TeamOfSeasonFormation::MIN_LINE, 'max:'.TeamOfSeasonFormation::MAX_LINE],
+            'midfield'       => ['required', 'integer', 'min:'.TeamOfSeasonFormation::MIN_LINE, 'max:'.TeamOfSeasonFormation::MAX_LINE],
+            'defense'        => ['required', 'integer', 'min:'.TeamOfSeasonFormation::MIN_LINE, 'max:'.TeamOfSeasonFormation::MAX_LINE],
         ]);
 
-        $campaign = $action->execute($data);
+        try {
+            $campaign = $action->execute($data);
+        } catch (\DomainException $e) {
+            return back()->withInput()->withErrors(['formation' => $e->getMessage()]);
+        }
         return redirect("/admin/tos/{$campaign->id}/candidates")
             ->with('success', __('Campaign created. Now attach the candidates for each line.'));
     }
@@ -56,7 +68,7 @@ final class AdminTeamOfSeasonController extends Controller
         return view('admin.tos.candidates', [
             'campaign'   => $campaign,
             'byPosition' => $byPosition,
-            'formation'  => TeamOfSeasonFormation::MAP,
+            'formation'  => TeamOfSeasonFormation::fromCampaign($campaign),
         ]);
     }
 

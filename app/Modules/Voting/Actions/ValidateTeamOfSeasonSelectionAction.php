@@ -25,7 +25,10 @@ final class ValidateTeamOfSeasonSelectionAction
      */
     public function execute(Campaign $campaign, array $payload): array
     {
-        $formation = TeamOfSeasonFormation::slots();
+        $formation = TeamOfSeasonFormation::fromCampaign($campaign);
+        if (! $formation) {
+            throw new \App\Modules\Voting\Exceptions\VotingException(__('Campaign is not configured for Team of the Season.'));
+        }
 
         // 1. Reject unknown keys
         $unknown = array_diff(array_keys($payload), array_keys($formation));

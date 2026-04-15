@@ -12,13 +12,15 @@ use App\Modules\Users\Actions\LogActivityAction;
 use App\Modules\Voting\Actions\ValidateTeamOfSeasonSelectionAction;
 use App\Modules\Voting\Exceptions\VotingException;
 
-function makeTOSCampaignWithPlayers(): Campaign
+function makeTOSCampaignWithPlayers(?array $formation = null): Campaign
 {
     seedRolesAndPermissions();
+    $formation ??= ['attack' => 3, 'midfield' => 3, 'defense' => 4];
     $action = new CreateTeamOfSeasonCampaignAction(new LogActivityAction());
     $c = $action->execute([
         'title_ar' => 'تشكيلة الموسم', 'title_en' => 'TOTS',
         'start_at' => now()->subHour(), 'end_at' => now()->addDay(),
+        ...$formation,
     ]);
     $c->update(['status' => 'active']);
 
@@ -43,18 +45,37 @@ function makeTOSCampaignWithPlayers(): Campaign
     return $c->load('categories.candidates.player');
 }
 
-it('formation rule returns correct distribution', function () {
-    expect(TeamOfSeasonFormation::MAP)->toBe([
+it('formation rule accepts default 3-3-4-1', function () {
+    TeamOfSeasonFormation::validate(TeamOfSeasonFormation::default());
+    expect(TeamOfSeasonFormation::total())->toBe(11);
+    expect(TeamOfSeasonFormation::default())->toBe([
         'attack' => 3, 'midfield' => 3, 'defense' => 4, 'goalkeeper' => 1,
     ]);
-    expect(TeamOfSeasonFormation::total())->toBe(11);
 });
+
+it('formation rule accepts 3-4-3 and 5-3-2', function () {
+    TeamOfSeasonFormation::validate(['attack' => 3, 'midfield' => 4, 'defense' => 3, 'goalkeeper' => 1]);
+    TeamOfSeasonFormation::validate(['attack' => 2, 'midfield' => 3, 'defense' => 5, 'goalkeeper' => 1]);
+});
+
+it('formation rule rejects goalkeeper != 1', function () {
+    TeamOfSeasonFormation::validate([
+        'attack' => 3, 'midfield' => 3, 'defense' => 4, 'goalkeeper' => 2,
+    ]);
+})->throws(DomainException::class);
+
+it('formation rule rejects outfield sum != 10', function () {
+    TeamOfSeasonFormation::validate([
+        'attack' => 3, 'midfield' => 3, 'defense' => 3, 'goalkeeper' => 1,
+    ]);
+})->throws(DomainException::class);
 
 it('creates a TOTS campaign and seeds 4 categories', function () {
     $action = new CreateTeamOfSeasonCampaignAction(new LogActivityAction());
     $c = $action->execute([
         'title_ar' => 'تشكيلة', 'title_en' => 'TOTS',
         'start_at' => now(), 'end_at' => now()->addDay(),
+        'attack' => 3, 'midfield' => 3, 'defense' => 4,
     ]);
     expect($c->type)->toBe(CampaignType::TeamOfTheSeason);
     expect($c->categories()->count())->toBe(4);
@@ -138,6 +159,7 @@ it('admin can create a TOTS campaign via controller', function () {
             'title_ar' => 'تشكيلة الموسم', 'title_en' => 'TOTS 2026',
             'start_at' => now()->addHour()->toDateTimeString(),
             'end_at'   => now()->addDays(7)->toDateTimeString(),
+            'attack' => 3, 'midfield' => 3, 'defense' => 4,
         ])
         ->assertRedirect();
 

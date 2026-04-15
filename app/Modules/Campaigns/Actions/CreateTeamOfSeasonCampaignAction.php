@@ -14,9 +14,10 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 
 /**
- * Creates a Team of the Season campaign + seeds the 4 line categories with
- * the correct selection_min = selection_max = 3|3|4|1 enforced in the schema.
- * No manual category setup is needed after this.
+ * Creates a Team of the Season campaign + seeds the 4 line categories.
+ * Goalkeeper is always 1; attack/midfield/defense are taken from the
+ * admin input (defaults to 3-3-4) and validated against
+ * TeamOfSeasonFormation rules.
  */
 final class CreateTeamOfSeasonCampaignAction
 {
@@ -24,7 +25,15 @@ final class CreateTeamOfSeasonCampaignAction
 
     public function execute(array $data): Campaign
     {
-        return DB::transaction(function () use ($data) {
+        $formation = [
+            'attack'     => (int) ($data['attack']   ?? TeamOfSeasonFormation::DEFAULT_ATTACK),
+            'midfield'   => (int) ($data['midfield'] ?? TeamOfSeasonFormation::DEFAULT_MIDFIELD),
+            'defense'    => (int) ($data['defense']  ?? TeamOfSeasonFormation::DEFAULT_DEFENSE),
+            'goalkeeper' => TeamOfSeasonFormation::GOALKEEPER_COUNT,
+        ];
+        TeamOfSeasonFormation::validate($formation);
+
+        return DB::transaction(function () use ($data, $formation) {
             $campaign = Campaign::create([
                 'title_ar'       => $data['title_ar'],
                 'title_en'       => $data['title_en'],
@@ -40,7 +49,7 @@ final class CreateTeamOfSeasonCampaignAction
 
             $order = 0;
             foreach (TeamOfSeasonFormation::LINE_ORDER as $slot) {
-                $count = TeamOfSeasonFormation::MAP[$slot];
+                $count = $formation[$slot];
                 $campaign->categories()->create([
                     'title_ar'       => TeamOfSeasonFormation::lineTitles('ar')[$slot],
                     'title_en'       => TeamOfSeasonFormation::lineTitles('en')[$slot],
@@ -54,7 +63,7 @@ final class CreateTeamOfSeasonCampaignAction
                 ]);
             }
 
-            $this->log->execute('tos.campaigns.created', $campaign);
+            $this->log->execute('tos.campaigns.created', $campaign, ['formation' => $formation]);
             return $campaign->load('categories');
         });
     }

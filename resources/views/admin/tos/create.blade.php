@@ -53,29 +53,84 @@
     </div>
 
     <div class="rounded-3xl bg-emerald-50 border border-emerald-200 p-6">
-        <h3 class="font-bold text-emerald-900 mb-3">{{ __('Formation (locked)') }}</h3>
-        <div class="grid grid-cols-4 gap-3">
-            <div class="rounded-2xl bg-white p-4 text-center shadow-sm">
-                <div class="text-3xl font-bold text-emerald-600">3</div>
-                <div class="text-sm text-gray-600 mt-1">{{ __('Attack') }}</div>
-            </div>
-            <div class="rounded-2xl bg-white p-4 text-center shadow-sm">
-                <div class="text-3xl font-bold text-emerald-600">3</div>
-                <div class="text-sm text-gray-600 mt-1">{{ __('Midfield') }}</div>
-            </div>
-            <div class="rounded-2xl bg-white p-4 text-center shadow-sm">
-                <div class="text-3xl font-bold text-emerald-600">4</div>
-                <div class="text-sm text-gray-600 mt-1">{{ __('Defense') }}</div>
-            </div>
-            <div class="rounded-2xl bg-white p-4 text-center shadow-sm">
-                <div class="text-3xl font-bold text-emerald-600">1</div>
-                <div class="text-sm text-gray-600 mt-1">{{ __('Goalkeeper') }}</div>
+        <div class="flex items-center justify-between mb-4">
+            <h3 class="font-bold text-emerald-900">{{ __('Formation') }}</h3>
+            <div class="text-sm text-emerald-700">
+                {{ __('Outfield total must equal') }} <strong>{{ $outfield }}</strong>
             </div>
         </div>
+
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+            <div class="rounded-2xl bg-white p-4 text-center shadow-sm">
+                <label class="text-sm text-gray-600 block mb-2">{{ __('Attack') }}</label>
+                <input type="number" name="attack" id="fAttack"
+                       value="{{ old('attack', $default['attack']) }}"
+                       min="{{ $minLine }}" max="{{ $maxLine }}" required
+                       class="w-full text-center text-3xl font-bold text-emerald-600 rounded-xl border border-emerald-200 px-2 py-2">
+            </div>
+            <div class="rounded-2xl bg-white p-4 text-center shadow-sm">
+                <label class="text-sm text-gray-600 block mb-2">{{ __('Midfield') }}</label>
+                <input type="number" name="midfield" id="fMidfield"
+                       value="{{ old('midfield', $default['midfield']) }}"
+                       min="{{ $minLine }}" max="{{ $maxLine }}" required
+                       class="w-full text-center text-3xl font-bold text-emerald-600 rounded-xl border border-emerald-200 px-2 py-2">
+            </div>
+            <div class="rounded-2xl bg-white p-4 text-center shadow-sm">
+                <label class="text-sm text-gray-600 block mb-2">{{ __('Defense') }}</label>
+                <input type="number" name="defense" id="fDefense"
+                       value="{{ old('defense', $default['defense']) }}"
+                       min="{{ $minLine }}" max="{{ $maxLine }}" required
+                       class="w-full text-center text-3xl font-bold text-emerald-600 rounded-xl border border-emerald-200 px-2 py-2">
+            </div>
+            <div class="rounded-2xl bg-white p-4 text-center shadow-sm opacity-60">
+                <label class="text-sm text-gray-600 block mb-2">{{ __('Goalkeeper') }}</label>
+                <div class="text-3xl font-bold text-emerald-600 py-2">1</div>
+                <div class="text-xs text-gray-400">{{ __('Fixed') }}</div>
+            </div>
+        </div>
+
+        <div id="formationSum" class="mt-4 text-sm text-emerald-800 text-center">
+            {{ __('Sum') }}: <span id="sumValue">—</span> / {{ $outfield }}
+        </div>
+
+        <div class="flex flex-wrap gap-2 mt-4 text-xs">
+            <span class="text-gray-600">{{ __('Presets') }}:</span>
+            <button type="button" data-f="4,3,3" class="preset rounded-full border px-3 py-1 hover:bg-white">4-3-3</button>
+            <button type="button" data-f="3,4,3" class="preset rounded-full border px-3 py-1 hover:bg-white">3-4-3</button>
+            <button type="button" data-f="4,4,2" class="preset rounded-full border px-3 py-1 hover:bg-white">4-4-2</button>
+            <button type="button" data-f="3,5,2" class="preset rounded-full border px-3 py-1 hover:bg-white">3-5-2</button>
+            <button type="button" data-f="5,3,2" class="preset rounded-full border px-3 py-1 hover:bg-white">5-3-2</button>
+            <button type="button" data-f="4,5,1" class="preset rounded-full border px-3 py-1 hover:bg-white">4-5-1</button>
+        </div>
+
         <p class="text-sm text-emerald-800 mt-4">
             {{ __('The 4 line categories will be created automatically. Next step: attach eligible players to each line.') }}
         </p>
     </div>
+
+    <script>
+        const inAtt = document.getElementById('fAttack');
+        const inMid = document.getElementById('fMidfield');
+        const inDef = document.getElementById('fDefense');
+        const sumEl = document.getElementById('sumValue');
+        const target = {{ $outfield }};
+
+        function update() {
+            const s = (+inAtt.value || 0) + (+inMid.value || 0) + (+inDef.value || 0);
+            sumEl.textContent = s;
+            sumEl.className = s === target ? 'text-emerald-600 font-bold' : 'text-rose-600 font-bold';
+        }
+        [inAtt, inMid, inDef].forEach(e => e.addEventListener('input', update));
+        // presets (defense-midfield-attack as commonly written)
+        document.querySelectorAll('.preset').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const [d, m, a] = btn.dataset.f.split(',').map(Number);
+                inDef.value = d; inMid.value = m; inAtt.value = a;
+                update();
+            });
+        });
+        update();
+    </script>
 
     <div class="flex items-center justify-between">
         <a href="/admin/campaigns" class="rounded-2xl border px-5 py-3 hover:bg-gray-50">{{ __('Cancel') }}</a>
