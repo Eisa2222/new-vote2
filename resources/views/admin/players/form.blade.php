@@ -77,6 +77,23 @@
             </label>
         </div>
 
+        <div class="grid grid-cols-2 gap-4">
+            <div>
+                <label class="block text-sm font-medium text-slate-700 mb-1">{{ __('National ID') }}</label>
+                <input name="national_id" value="{{ old('national_id', $player->national_id) }}"
+                       placeholder="1xxxxxxxxx"
+                       class="w-full border rounded-lg px-3 py-2">
+                @error('national_id') <p class="text-red-600 text-sm mt-1">{{ $message }}</p> @enderror
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-slate-700 mb-1">{{ __('Mobile number') }}</label>
+                <input name="mobile_number" value="{{ old('mobile_number', $player->mobile_number) }}"
+                       placeholder="05xxxxxxxx"
+                       class="w-full border rounded-lg px-3 py-2">
+                @error('mobile_number') <p class="text-red-600 text-sm mt-1">{{ $message }}</p> @enderror
+            </div>
+        </div>
+
         <div>
             <label class="block text-sm font-medium text-slate-700 mb-1">{{ __('Photo') }}</label>
             <input type="file" name="photo" accept="image/*">

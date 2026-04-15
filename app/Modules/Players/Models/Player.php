@@ -21,6 +21,7 @@ final class Player extends Model
     protected $fillable = [
         'club_id', 'sport_id', 'name_ar', 'name_en',
         'photo_path', 'position', 'is_captain', 'jersey_number', 'status',
+        'national_id', 'mobile_number',
     ];
 
     protected $casts = [

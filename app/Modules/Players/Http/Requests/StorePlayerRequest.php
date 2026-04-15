@@ -36,6 +36,20 @@ final class StorePlayerRequest extends FormRequest
                     ->whereNull('deleted_at'),
             ],
             'status'        => ['nullable', new Enum(ActiveStatus::class)],
+            'national_id'   => ['nullable', 'string', 'max:20', Rule::unique('players', 'national_id')->whereNull('deleted_at')],
+            'mobile_number' => ['nullable', 'string', 'max:20', Rule::unique('players', 'mobile_number')->whereNull('deleted_at')],
         ];
+    }
+
+    public function prepareForValidation(): void
+    {
+        $merge = [];
+        if ($this->filled('national_id')) {
+            $merge['national_id'] = \App\Modules\Voting\Support\IdentityNormalizer::normalizeNationalId($this->input('national_id'));
+        }
+        if ($this->filled('mobile_number')) {
+            $merge['mobile_number'] = \App\Modules\Voting\Support\IdentityNormalizer::normalizeMobile($this->input('mobile_number'));
+        }
+        if ($merge) $this->merge($merge);
     }
 }

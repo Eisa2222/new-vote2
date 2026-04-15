@@ -11,8 +11,19 @@ use App\Modules\Voting\Models\Vote;
 function makeActiveIndividualCampaign(?int $maxVoters = null): Campaign
 {
     seedRolesAndPermissions();
-    $p1 = makePlayer(['position' => PlayerPosition::Attack, 'jersey_number' => 9]);
-    $p2 = makePlayer(['position' => PlayerPosition::Attack, 'club_id' => makeClub()->id, 'jersey_number' => 10]);
+    $voter = makePlayer([
+        'position'      => PlayerPosition::Attack,
+        'jersey_number' => 9,
+        'national_id'   => '1000000001',
+        'mobile_number' => '0501110001',
+    ]);
+    $other = makePlayer([
+        'position'      => PlayerPosition::Attack,
+        'club_id'       => makeClub()->id,
+        'jersey_number' => 10,
+        'national_id'   => '1000000002',
+        'mobile_number' => '0501110002',
+    ]);
 
     $c = Campaign::create([
         'title_ar'   => 'أفضل لاعب', 'title_en' => 'Player of the Year',
@@ -24,34 +35,48 @@ function makeActiveIndividualCampaign(?int $maxVoters = null): Campaign
     ]);
     $cat = $c->categories()->create([
         'title_ar' => 'الأفضل', 'title_en' => 'Best',
-        'position_slot' => 'any', 'required_picks' => 1, 'display_order' => 0,
+        'position_slot' => 'any', 'required_picks' => 1,
+        'selection_min' => 1, 'selection_max' => 1, 'is_active' => true,
     ]);
-    $cat->candidates()->create(['player_id' => $p1->id, 'display_order' => 0]);
-    $cat->candidates()->create(['player_id' => $p2->id, 'display_order' => 1]);
+    $cat->candidates()->create(['player_id' => $voter->id, 'is_active' => true, 'display_order' => 0]);
+    $cat->candidates()->create(['player_id' => $other->id, 'is_active' => true, 'display_order' => 1]);
 
     return $c->load('categories.candidates');
 }
 
-it('accepts a valid public vote', function () {
+/** Verifies as the first candidate's national_id (any active player works). */
+function verifyAs(Campaign $c, string $nationalId): void
+{
+    test()->post(route('voting.verify', $c->public_token), ['national_id' => $nationalId])
+        ->assertRedirect(route('voting.form', $c->public_token));
+}
+
+it('accepts a valid public vote (after verification)', function () {
     $c = makeActiveIndividualCampaign();
     $cat = $c->categories->first();
     $cand = $cat->candidates->first();
 
-    $this->post("/vote/{$c->public_token}", [
+    verifyAs($c, '1000000001');
+    $this->post(route('voting.submit', $c->public_token), [
         'selections' => [['category_id' => $cat->id, 'candidate_ids' => [$cand->id]]],
     ])->assertRedirect(route('voting.thanks', $c->public_token));
 
     expect(Vote::count())->toBe(1);
+    expect(Vote::first()->is_verified)->toBeTrue();
 });
 
-it('prevents duplicate voting from same ip/user-agent', function () {
+it('prevents the same verified player from voting twice', function () {
     $c = makeActiveIndividualCampaign();
     $cat = $c->categories->first();
     $cand = $cat->candidates->first();
     $payload = ['selections' => [['category_id' => $cat->id, 'candidate_ids' => [$cand->id]]]];
 
-    $this->post("/vote/{$c->public_token}", $payload)->assertRedirect();
-    $this->post("/vote/{$c->public_token}", $payload)->assertSessionHasErrors();
+    verifyAs($c, '1000000001');
+    $this->post(route('voting.submit', $c->public_token), $payload)->assertRedirect();
+
+    // Second verify attempt should fail (player already voted).
+    $this->post(route('voting.verify', $c->public_token), ['national_id' => '1000000001'])
+        ->assertSessionHasErrors(['identity']);
 
     expect(Vote::count())->toBe(1);
 });
@@ -61,7 +86,8 @@ it('auto-closes the campaign when max_voters reached', function () {
     $cat = $c->categories->first();
     $cand = $cat->candidates->first();
 
-    $this->post("/vote/{$c->public_token}", [
+    verifyAs($c, '1000000001');
+    $this->post(route('voting.submit', $c->public_token), [
         'selections' => [['category_id' => $cat->id, 'candidate_ids' => [$cand->id]]],
     ]);
 
@@ -71,23 +97,22 @@ it('auto-closes the campaign when max_voters reached', function () {
 it('blocks the vote page when campaign is not active', function () {
     $c = makeActiveIndividualCampaign();
     $c->update(['status' => CampaignStatus::Draft->value]);
-
     $this->get("/vote/{$c->public_token}")->assertStatus(410);
 });
 
 it('blocks the vote page after end date', function () {
     $c = makeActiveIndividualCampaign();
     $c->update(['end_at' => now()->subMinute()]);
-
     $this->get("/vote/{$c->public_token}")->assertStatus(410);
 });
 
-it('rejects wrong number of picks', function () {
+it('rejects wrong number of picks even when verified', function () {
     $c = makeActiveIndividualCampaign();
     $cat = $c->categories->first();
     $ids = $cat->candidates->pluck('id')->all();
 
-    $this->post("/vote/{$c->public_token}", [
+    verifyAs($c, '1000000001');
+    $this->post(route('voting.submit', $c->public_token), [
         'selections' => [['category_id' => $cat->id, 'candidate_ids' => $ids]],
     ])->assertSessionHasErrors();
 

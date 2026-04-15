@@ -52,6 +52,13 @@
         </div>
     @endif
 
+    @isset($voter)
+        <div class="rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-800 px-4 py-3 text-sm flex items-center gap-2">
+            <span>✓</span>
+            <span>{{ __('Verified as') }} {{ $voter['method'] === 'national_id' ? __('National ID') : __('Mobile') }}: <strong>{{ $voter['masked'] }}</strong></span>
+        </div>
+    @endisset
+
     <form method="post" action="{{ route('voting.submit', $campaign->public_token) }}" id="voteForm" class="space-y-6">
         @csrf
 

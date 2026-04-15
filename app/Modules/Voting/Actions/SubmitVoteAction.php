@@ -15,6 +15,7 @@ use App\Modules\Voting\Exceptions\VotingException;
 use App\Modules\Voting\Models\Vote;
 use App\Modules\Voting\Services\LiveVoterCountService;
 use App\Modules\Voting\Services\VoteEligibilityService;
+use App\Modules\Voting\Support\IdentityNormalizer;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -26,6 +27,8 @@ final class SubmitVoteAction
         private readonly CampaignAvailabilityService $availability,
         private readonly VoteEligibilityService $eligibility,
         private readonly LiveVoterCountService $counter,
+        private readonly CheckVoterSessionAction $voterSession,
+        private readonly PreventDuplicateVoteByPlayerAction $playerDup,
     ) {}
 
     /**
@@ -38,10 +41,18 @@ final class SubmitVoteAction
             throw new VotingException($this->availability->messageFor($reason));
         }
 
-        $voterId = $this->identity->identify($request, $campaign->id);
+        $voterMeta = $this->voterSession->execute($campaign);
+        if (! $voterMeta) {
+            throw new VotingException(__('Please verify your identity first.'));
+        }
 
-        return DB::transaction(function () use ($campaign, $request, $selections, $voterId) {
-            // Lock the campaign row: serialize max_voters + auto-close transition.
+        try {
+            $voterId = $this->identity->identify($request, $campaign->id);
+        } catch (\RuntimeException) {
+            throw new VotingException(__('Your verification session has expired. Please verify again.'));
+        }
+
+        return DB::transaction(function () use ($campaign, $request, $selections, $voterId, $voterMeta) {
             $locked = Campaign::whereKey($campaign->id)->lockForUpdate()->first();
 
             $reason = $this->availability->reasonFor($locked);
@@ -49,6 +60,11 @@ final class SubmitVoteAction
                 throw new VotingException($this->availability->messageFor($reason));
             }
 
+            // Defense-in-depth: both the voter_identifier (string) and the
+            // verified_player_id (FK) carry a UNIQUE index on (campaign_id, ...).
+            if ($this->playerDup->hasVoted($locked, (int) $voterMeta['player_id'])) {
+                throw new VotingException(__('You have already voted in this campaign.'));
+            }
             if ($this->eligibility->hasAlreadyVoted($locked, $voterId)) {
                 throw new VotingException(__('You have already voted in this campaign.'));
             }
@@ -56,11 +72,15 @@ final class SubmitVoteAction
             $this->validateSelections($locked, $selections);
 
             $vote = Vote::create([
-                'campaign_id'      => $locked->id,
-                'voter_identifier' => $voterId,
-                'ip_address'       => $request->ip(),
-                'user_agent'       => substr((string) $request->userAgent(), 0, 512),
-                'submitted_at'     => now(),
+                'campaign_id'         => $locked->id,
+                'voter_identifier'    => $voterId,
+                'verified_player_id'  => $voterMeta['player_id'],
+                'verification_method' => $voterMeta['method'],
+                'verification_value'  => IdentityNormalizer::mask((string) $voterMeta['value']),
+                'is_verified'         => true,
+                'ip_address'          => $request->ip(),
+                'user_agent'          => substr((string) $request->userAgent(), 0, 512),
+                'submitted_at'        => now(),
             ]);
 
             foreach ($selections as $s) {
@@ -72,7 +92,6 @@ final class SubmitVoteAction
                 }
             }
 
-            // Bust the live voter-count cache so admin polling sees the update immediately.
             $this->counter->forget($locked);
             event(new VoteSubmitted($vote));
 

@@ -23,7 +23,11 @@ function multiChoiceCampaign(int $min, int $max): Campaign
         'is_active' => true,
     ]);
     for ($i = 0; $i < 5; $i++) {
-        $p = makePlayer(['club_id' => makeClub()->id, 'jersey_number' => $i + 1]);
+        $p = makePlayer([
+            'club_id'       => makeClub()->id,
+            'jersey_number' => $i + 1,
+            'national_id'   => '300000000'.$i,
+        ]);
         $cat->candidates()->create([
             'candidate_type' => 'player', 'player_id' => $p->id,
             'display_order' => $i, 'is_active' => true,
@@ -32,12 +36,19 @@ function multiChoiceCampaign(int $min, int $max): Campaign
     return $c->load('categories.candidates');
 }
 
+function verifyMc(Campaign $c): void
+{
+    test()->post(route('voting.verify', $c->public_token), ['national_id' => '3000000000'])
+        ->assertRedirect(route('voting.form', $c->public_token));
+}
+
 it('accepts a submission within selection_min..selection_max range', function () {
     $c = multiChoiceCampaign(min: 2, max: 4);
     $cat = $c->categories->first();
-    $ids = $cat->candidates->pluck('id')->take(3)->all(); // 3 is inside [2, 4]
+    $ids = $cat->candidates->pluck('id')->take(3)->all();
 
-    $this->post("/vote/{$c->public_token}", [
+    verifyMc($c);
+    $this->post(route('voting.submit', $c->public_token), [
         'selections' => [['category_id' => $cat->id, 'candidate_ids' => $ids]],
     ])->assertRedirect(route('voting.thanks', $c->public_token));
 
@@ -50,7 +61,8 @@ it('rejects fewer picks than selection_min', function () {
     $cat = $c->categories->first();
     $ids = $cat->candidates->pluck('id')->take(1)->all();
 
-    $this->post("/vote/{$c->public_token}", [
+    verifyMc($c);
+    $this->post(route('voting.submit', $c->public_token), [
         'selections' => [['category_id' => $cat->id, 'candidate_ids' => $ids]],
     ])->assertSessionHasErrors();
 
@@ -62,7 +74,8 @@ it('rejects more picks than selection_max', function () {
     $cat = $c->categories->first();
     $ids = $cat->candidates->pluck('id')->take(5)->all();
 
-    $this->post("/vote/{$c->public_token}", [
+    verifyMc($c);
+    $this->post(route('voting.submit', $c->public_token), [
         'selections' => [['category_id' => $cat->id, 'candidate_ids' => $ids]],
     ])->assertSessionHasErrors();
 
@@ -71,8 +84,7 @@ it('rejects more picks than selection_max', function () {
 
 it('skips inactive categories in validation', function () {
     $c = multiChoiceCampaign(min: 1, max: 1);
-    // Add a second category marked inactive — submission must NOT require it
-    $inactive = $c->categories()->create([
+    $c->categories()->create([
         'title_ar' => 'off', 'title_en' => 'off',
         'position_slot' => 'any', 'required_picks' => 1,
         'selection_min' => 1, 'selection_max' => 1, 'is_active' => false,
@@ -80,7 +92,8 @@ it('skips inactive categories in validation', function () {
     $cat = $c->categories->first();
     $ids = $cat->candidates->pluck('id')->take(1)->all();
 
-    $this->post("/vote/{$c->public_token}", [
+    verifyMc($c);
+    $this->post(route('voting.submit', $c->public_token), [
         'selections' => [['category_id' => $cat->id, 'candidate_ids' => $ids]],
     ])->assertRedirect(route('voting.thanks', $c->public_token));
 });
