@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Admin\AdminCampaignController;
+use App\Http\Controllers\Admin\AdminCategoryController;
 use App\Http\Controllers\Admin\AdminClubController;
 use App\Http\Controllers\Admin\AdminPlayerController;
 use App\Http\Controllers\Admin\AdminResultController;
@@ -38,8 +39,18 @@ Route::middleware(['web', 'auth'])->prefix('admin')->group(function () {
     Route::get('campaigns/create',                [AdminCampaignController::class, 'create']);
     Route::post('campaigns',                      [AdminCampaignController::class, 'store']);
     Route::get('campaigns/{campaign}',            [AdminCampaignController::class, 'show']);
+    Route::get('campaigns/{campaign}/stats',      [AdminCampaignController::class, 'stats']);
     Route::post('campaigns/{campaign}/publish',   [AdminCampaignController::class, 'publish']);
+    Route::post('campaigns/{campaign}/activate',  [AdminCampaignController::class, 'activate']);
     Route::post('campaigns/{campaign}/close',     [AdminCampaignController::class, 'close']);
+    Route::post('campaigns/{campaign}/archive',   [AdminCampaignController::class, 'archive']);
+
+    Route::get('campaigns/{campaign}/categories',   [AdminCategoryController::class, 'index']);
+    Route::post('campaigns/{campaign}/categories',  [AdminCategoryController::class, 'store']);
+    Route::put('categories/{category}',             [AdminCategoryController::class, 'update']);
+    Route::delete('categories/{category}',          [AdminCategoryController::class, 'destroy']);
+    Route::post('categories/{category}/candidates', [AdminCategoryController::class, 'storeCandidate']);
+    Route::delete('candidates/{candidate}',         [AdminCategoryController::class, 'destroyCandidate']);
 
     Route::get('results',                        [AdminResultController::class, 'index'])->name('results.index');
     Route::get('results/{campaign}',             [AdminResultController::class, 'show'])->name('results.show');

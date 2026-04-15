@@ -8,10 +8,13 @@ use App\Modules\Campaigns\Actions\CloseVotingCampaignAction;
 use App\Modules\Campaigns\Enums\CampaignType;
 use App\Modules\Campaigns\Models\Campaign;
 use App\Modules\Campaigns\Models\VotingCategory;
+use App\Modules\Campaigns\Services\CampaignAvailabilityService;
 use App\Modules\Voting\Domain\VoterIdentityStrategy;
 use App\Modules\Voting\Events\VoteSubmitted;
 use App\Modules\Voting\Exceptions\VotingException;
 use App\Modules\Voting\Models\Vote;
+use App\Modules\Voting\Services\LiveVoterCountService;
+use App\Modules\Voting\Services\VoteEligibilityService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -20,6 +23,9 @@ final class SubmitVoteAction
     public function __construct(
         private readonly VoterIdentityStrategy $identity,
         private readonly CloseVotingCampaignAction $close,
+        private readonly CampaignAvailabilityService $availability,
+        private readonly VoteEligibilityService $eligibility,
+        private readonly LiveVoterCountService $counter,
     ) {}
 
     /**
@@ -27,35 +33,30 @@ final class SubmitVoteAction
      */
     public function execute(Campaign $campaign, Request $request, array $selections): Vote
     {
-        if (! $campaign->isAcceptingVotes()) {
-            throw new VotingException(__('This campaign is not currently accepting votes.'));
+        $reason = $this->availability->reasonFor($campaign);
+        if ($reason !== CampaignAvailabilityService::OK) {
+            throw new VotingException($this->availability->messageFor($reason));
         }
 
         $voterId = $this->identity->identify($request, $campaign->id);
 
         return DB::transaction(function () use ($campaign, $request, $selections, $voterId) {
-            // Lock the campaign row so concurrent submissions serialize on the
-            // max_voters check + close transition — prevents racing past the cap.
+            // Lock the campaign row: serialize max_voters + auto-close transition.
             $locked = Campaign::whereKey($campaign->id)->lockForUpdate()->first();
 
-            if (! $locked->isAcceptingVotes()) {
-                throw new VotingException(__('This campaign is not currently accepting votes.'));
-            }
-            if ($locked->reachedMaxVoters()) {
-                throw new VotingException(__('This campaign has reached the maximum number of voters.'));
+            $reason = $this->availability->reasonFor($locked);
+            if ($reason !== CampaignAvailabilityService::OK) {
+                throw new VotingException($this->availability->messageFor($reason));
             }
 
-            // Race-safe duplicate check is already backed by a UNIQUE index on
-            // (campaign_id, voter_identifier). The inner query guards the UX.
-            if (Vote::where('campaign_id', $campaign->id)
-                ->where('voter_identifier', $voterId)->exists()) {
+            if ($this->eligibility->hasAlreadyVoted($locked, $voterId)) {
                 throw new VotingException(__('You have already voted in this campaign.'));
             }
 
-            $this->validateSelections($campaign, $selections);
+            $this->validateSelections($locked, $selections);
 
             $vote = Vote::create([
-                'campaign_id'      => $campaign->id,
+                'campaign_id'      => $locked->id,
                 'voter_identifier' => $voterId,
                 'ip_address'       => $request->ip(),
                 'user_agent'       => substr((string) $request->userAgent(), 0, 512),
@@ -71,9 +72,10 @@ final class SubmitVoteAction
                 }
             }
 
+            // Bust the live voter-count cache so admin polling sees the update immediately.
+            $this->counter->forget($locked);
             event(new VoteSubmitted($vote));
 
-            // Auto-close if this submission hit the cap (still inside the tx/lock).
             if ($locked->fresh()->reachedMaxVoters()) {
                 $this->close->execute($locked->fresh(), 'max_voters_reached');
             }
@@ -84,7 +86,12 @@ final class SubmitVoteAction
 
     private function validateSelections(Campaign $campaign, array $selections): void
     {
-        $categories = $campaign->categories()->with('candidates:id,voting_category_id')->get()->keyBy('id');
+        $categories = $campaign->categories()
+            ->where('is_active', true)
+            ->with(['candidates' => fn ($q) => $q->where('is_active', true)])
+            ->get()
+            ->keyBy('id');
+
         $seen = [];
 
         foreach ($selections as $s) {
@@ -98,10 +105,13 @@ final class SubmitVoteAction
             }
             $seen[$cat->id] = true;
 
-            $picks = array_unique($s['candidate_ids']);
-            if (count($picks) !== (int) $cat->required_picks) {
-                throw new VotingException(__('Category :name requires :n picks.', [
-                    'name' => $cat->title_en, 'n' => $cat->required_picks,
+            $picks = array_values(array_unique($s['candidate_ids']));
+            $min = $cat->effectiveMin();
+            $max = $cat->effectiveMax();
+
+            if (count($picks) < $min || count($picks) > $max) {
+                throw new VotingException(__('Category :name requires between :min and :max picks.', [
+                    'name' => $cat->title_en, 'min' => $min, 'max' => $max,
                 ]));
             }
 
@@ -111,19 +121,15 @@ final class SubmitVoteAction
             }
         }
 
-        // All required categories must be answered
-        $missing = $categories->keys()->diff(array_keys($seen));
-        if ($missing->isNotEmpty()) {
+        if ($categories->keys()->diff(array_keys($seen))->isNotEmpty()) {
             throw new VotingException(__('All categories must be answered.'));
         }
 
-        // Team of the Season distribution safety-net (position_slot aggregates already enforce this,
-        // but we double-check in case admin created a custom TOTS campaign).
         if ($campaign->type === CampaignType::TeamOfTheSeason) {
             (new \App\Modules\Campaigns\Domain\TeamOfTheSeasonDistributionRule())->validate(
                 $categories->map(fn ($c) => [
                     'position_slot'  => $c->position_slot,
-                    'required_picks' => $c->required_picks,
+                    'required_picks' => $c->effectiveMax(),
                 ])->values()->all()
             );
         }

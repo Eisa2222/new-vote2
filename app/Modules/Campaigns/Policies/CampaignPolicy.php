@@ -16,4 +16,6 @@ final class CampaignPolicy
     public function publish(User $u, Campaign $c): bool { return $u->can('campaigns.publish'); }
     public function close(User $u, Campaign $c): bool { return $u->can('campaigns.close'); }
     public function archive(User $u, Campaign $c): bool { return $u->can('campaigns.archive'); }
+    public function viewStats(User $u, Campaign $c): bool { return $u->can('campaigns.viewAny'); }
+    public function manageCategories(User $u, Campaign $c): bool { return $u->can('campaigns.update'); }
 }

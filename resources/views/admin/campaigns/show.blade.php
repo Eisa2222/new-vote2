@@ -1,5 +1,22 @@
 @extends('layouts.admin')
 @section('content')
+@push('scripts')
+<script>
+    (function () {
+        const id = {{ $campaign->id }};
+        async function poll() {
+            try {
+                const r = await fetch(`/admin/campaigns/${id}/stats`, { headers: { 'Accept': 'application/json' }});
+                const { data } = await r.json();
+                document.getElementById('liveVotes').textContent = data.votes_count;
+                const bar = document.getElementById('liveBar');
+                if (bar && data.percentage != null) bar.style.width = data.percentage + '%';
+            } catch (e) {}
+        }
+        setInterval(poll, 7000);
+    })();
+</script>
+@endpush
     <div class="flex items-start justify-between mb-6">
         <div>
             <a href="/admin/campaigns" class="text-sm text-slate-500 hover:underline">← {{ __('Campaigns') }}</a>
@@ -26,7 +43,12 @@
     <div class="grid grid-cols-4 gap-4 mb-6">
         <div class="bg-white rounded-2xl shadow p-4">
             <div class="text-slate-500 text-sm">{{ __('Votes') }}</div>
-            <div class="text-2xl font-bold text-emerald-600">{{ $campaign->votes_count }}</div>
+            <div id="liveVotes" class="text-2xl font-bold text-emerald-600">{{ $campaign->votes_count }}</div>
+            @if($campaign->max_voters)
+                <div class="mt-2 h-1.5 rounded-full bg-gray-100 overflow-hidden">
+                    <div id="liveBar" class="h-full bg-emerald-500 rounded-full" style="width: {{ min(100, round(($campaign->votes_count / $campaign->max_voters) * 100)) }}%"></div>
+                </div>
+            @endif
         </div>
         <div class="bg-white rounded-2xl shadow p-4">
             <div class="text-slate-500 text-sm">{{ __('Max voters') }}</div>
@@ -41,6 +63,13 @@
                         class="btn-ghost text-sm">{{ __('Copy') }}</button>
             </div>
         </div>
+    </div>
+
+    <div class="flex items-center gap-2 mb-4">
+        <a href="/admin/campaigns/{{ $campaign->id }}/categories"
+           class="rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 font-medium">
+            + {{ __('Manage categories & candidates') }}
+        </a>
     </div>
 
     <div class="bg-white rounded-2xl shadow p-6">

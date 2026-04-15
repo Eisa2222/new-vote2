@@ -5,9 +5,13 @@ declare(strict_types=1);
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Modules\Campaigns\Actions\ActivateVotingCampaignAction;
+use App\Modules\Campaigns\Actions\ArchiveVotingCampaignAction;
 use App\Modules\Campaigns\Actions\CloseVotingCampaignAction;
 use App\Modules\Campaigns\Actions\CreateVotingCampaignAction;
 use App\Modules\Campaigns\Actions\PublishVotingCampaignAction;
+use App\Modules\Voting\Services\LiveVoterCountService;
+use Illuminate\Http\JsonResponse;
 use App\Modules\Campaigns\Enums\CampaignStatus;
 use App\Modules\Campaigns\Enums\CampaignType;
 use App\Modules\Campaigns\Models\Campaign;
@@ -107,5 +111,34 @@ final class AdminCampaignController extends Controller
         } catch (\DomainException $e) {
             return back()->withErrors(['status' => $e->getMessage()]);
         }
+    }
+
+    public function activate(Campaign $campaign, ActivateVotingCampaignAction $a): RedirectResponse
+    {
+        $this->authorize('publish', $campaign);
+        try {
+            $a->execute($campaign);
+            return back()->with('success', __('Campaign activated.'));
+        } catch (\DomainException $e) {
+            return back()->withErrors(['status' => $e->getMessage()]);
+        }
+    }
+
+    public function archive(Campaign $campaign, ArchiveVotingCampaignAction $a): RedirectResponse
+    {
+        $this->authorize('update', $campaign);
+        try {
+            $a->execute($campaign);
+            return back()->with('success', __('Campaign archived.'));
+        } catch (\DomainException $e) {
+            return back()->withErrors(['status' => $e->getMessage()]);
+        }
+    }
+
+    /** Live stats JSON for admin dashboard polling. */
+    public function stats(Campaign $campaign, LiveVoterCountService $counter): JsonResponse
+    {
+        $this->authorize('view', $campaign);
+        return response()->json(['data' => $counter->stats($campaign)]);
     }
 }
