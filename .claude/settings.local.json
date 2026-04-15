@@ -15,7 +15,9 @@
       "Bash(\"C:/laragon/bin/php/php-8.3.30-Win32-vs16-x64/php.exe\" \"C:/laragon/bin/composer/composer.phar\" require pestphp/pest pestphp/pest-plugin-laravel --dev --no-interaction --with-all-dependencies)",
       "Bash(\"C:/laragon/bin/php/php-8.3.30-Win32-vs16-x64/php.exe\" vendor/bin/pest --compact)",
       "Bash(\"C:/laragon/bin/php/php-8.3.30-Win32-vs16-x64/php.exe\" vendor/bin/pest)",
-      "Bash(\"C:/laragon/bin/php/php-8.3.30-Win32-vs16-x64/php.exe\" vendor/bin/pest tests/Feature/Authorization/PermissionBoundariesTest.php)"
+      "Bash(\"C:/laragon/bin/php/php-8.3.30-Win32-vs16-x64/php.exe\" vendor/bin/pest tests/Feature/Authorization/PermissionBoundariesTest.php)",
+      "Bash(grep -rohE \"__\\\\\\('[^']+'\\\\\\)\" resources/views/ app/Modules/*/resources/views/ app/Http/ app/Modules/)",
+      "Bash(sort -u wc -l used_keys_temp.txt head -3 used_keys_temp.txt)"
     ]
   }
 }
