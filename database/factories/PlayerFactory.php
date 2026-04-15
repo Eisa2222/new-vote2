@@ -19,12 +19,10 @@ final class PlayerFactory extends Factory
     {
         return [
             'club_id'       => Club::factory(),
-            'sport_id'      => Sport::factory()->state(fn () => [
-                'slug' => fake()->unique()->slug(2),
-                'name_ar' => 'رياضة '.fake()->word(),
-                'name_en' => ucfirst(fake()->word()),
-                'status' => 'active',
-            ]),
+            'sport_id'      => fn () => Sport::firstOrCreate(
+                ['slug' => 'football'],
+                ['name_ar' => 'كرة القدم', 'name_en' => 'Football', 'status' => 'active'],
+            )->id,
             'name_ar'       => 'لاعب '.fake()->firstNameMale(),
             'name_en'       => fake()->name('male'),
             'position'      => fake()->randomElement(PlayerPosition::cases()),

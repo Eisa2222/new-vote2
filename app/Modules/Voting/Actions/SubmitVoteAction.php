@@ -30,14 +30,23 @@ final class SubmitVoteAction
         if (! $campaign->isAcceptingVotes()) {
             throw new VotingException(__('This campaign is not currently accepting votes.'));
         }
-        if ($campaign->reachedMaxVoters()) {
-            throw new VotingException(__('This campaign has reached the maximum number of voters.'));
-        }
 
         $voterId = $this->identity->identify($request, $campaign->id);
 
         return DB::transaction(function () use ($campaign, $request, $selections, $voterId) {
-            // Race-safe duplicate check via unique index.
+            // Lock the campaign row so concurrent submissions serialize on the
+            // max_voters check + close transition — prevents racing past the cap.
+            $locked = Campaign::whereKey($campaign->id)->lockForUpdate()->first();
+
+            if (! $locked->isAcceptingVotes()) {
+                throw new VotingException(__('This campaign is not currently accepting votes.'));
+            }
+            if ($locked->reachedMaxVoters()) {
+                throw new VotingException(__('This campaign has reached the maximum number of voters.'));
+            }
+
+            // Race-safe duplicate check is already backed by a UNIQUE index on
+            // (campaign_id, voter_identifier). The inner query guards the UX.
             if (Vote::where('campaign_id', $campaign->id)
                 ->where('voter_identifier', $voterId)->exists()) {
                 throw new VotingException(__('You have already voted in this campaign.'));
@@ -64,9 +73,9 @@ final class SubmitVoteAction
 
             event(new VoteSubmitted($vote));
 
-            // Auto-close if this submission hit the cap.
-            if ($campaign->fresh()->reachedMaxVoters()) {
-                $this->close->execute($campaign->fresh(), 'max_voters_reached');
+            // Auto-close if this submission hit the cap (still inside the tx/lock).
+            if ($locked->fresh()->reachedMaxVoters()) {
+                $this->close->execute($locked->fresh(), 'max_voters_reached');
             }
 
             return $vote->load('items');
