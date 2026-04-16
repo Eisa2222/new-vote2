@@ -21,7 +21,18 @@ Route::post('logout', [LoginController::class, 'destroy'])
     ->middleware('auth')->name('logout');
 
 Route::middleware(['web', 'auth'])->prefix('admin')->group(function () {
-    Route::view('/', 'admin.dashboard');
+    Route::get('/', function () {
+        $u = auth()->user();
+        // Committee members only see campaigns/results workflow.
+        if ($u && $u->hasRole('committee') && ! $u->can('users.manage')) {
+            return redirect('/admin/results');
+        }
+        // Campaign managers land on their campaigns board.
+        if ($u && $u->hasRole('campaign_manager') && ! $u->can('users.manage')) {
+            return redirect('/admin/campaigns');
+        }
+        return view('admin.dashboard');
+    });
 
     Route::get('clubs',                [AdminClubController::class, 'index']);
     Route::get('clubs/create',         [AdminClubController::class, 'create']);

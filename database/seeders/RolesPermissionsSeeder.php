@@ -26,24 +26,43 @@ final class RolesPermissionsSeeder extends Seeder
             Permission::findOrCreate($p, 'web');
         }
 
+        // ──────────────────────────────────────────────
+        // super_admin — full access
+        // ──────────────────────────────────────────────
         Role::findOrCreate('super_admin', 'web')->syncPermissions(Permission::all());
 
+        // ──────────────────────────────────────────────
+        // auditor — read-only observer
+        // ──────────────────────────────────────────────
         Role::findOrCreate('auditor', 'web')->syncPermissions([
             'clubs.viewAny', 'players.viewAny', 'campaigns.viewAny', 'results.view',
         ]);
 
-        // The Voting Committee — the only role (besides super_admin) that can
-        // APPROVE, HIDE, or ANNOUNCE results. They can also recalculate, but
-        // cannot create campaigns, clubs, players or manage users.
+        // ──────────────────────────────────────────────
+        // committee — voting committee
+        // Sees ONLY campaigns + results. Can approve / hide / announce.
+        // Cannot manage clubs, players, users or settings.
+        // ──────────────────────────────────────────────
         Role::findOrCreate('committee', 'web')->syncPermissions([
             'campaigns.viewAny',
-            'clubs.viewAny',
-            'players.viewAny',
             'results.view',
             'results.calculate',
             'results.approve',
             'results.hide',
             'results.announce',
+        ]);
+
+        // ──────────────────────────────────────────────
+        // campaign_manager — content & campaign operator
+        // Can manage clubs, players and create/edit/publish campaigns.
+        // Cannot approve results, manage users, or touch system settings.
+        // ──────────────────────────────────────────────
+        Role::findOrCreate('campaign_manager', 'web')->syncPermissions([
+            'clubs.viewAny', 'clubs.create', 'clubs.update', 'clubs.delete',
+            'players.viewAny', 'players.create', 'players.update', 'players.delete',
+            'campaigns.viewAny', 'campaigns.create', 'campaigns.update',
+            'campaigns.publish', 'campaigns.close', 'campaigns.archive',
+            'results.view',
         ]);
     }
 }

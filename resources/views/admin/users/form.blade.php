@@ -29,13 +29,34 @@
 
         <div>
             <label class="block text-sm font-medium text-slate-700 mb-2">{{ __('Roles') }}</label>
-            @foreach($roles as $r)
-                <label class="flex items-center gap-2 mb-1">
-                    <input type="checkbox" name="roles[]" value="{{ $r->name }}"
-                           @checked(in_array($r->name, old('roles', $user->roles->pluck('name')->all())))>
-                    {{ $r->name }}
-                </label>
-            @endforeach
+            @php
+                $roleLabels = [
+                    'super_admin'      => __('Super Admin'),
+                    'committee'        => __('Voting Committee'),
+                    'campaign_manager' => __('Campaign Manager'),
+                    'auditor'          => __('Auditor'),
+                ];
+                $roleHints = [
+                    'super_admin'      => __('Full access to every section.'),
+                    'committee'        => __('Sees campaigns and approves results only.'),
+                    'campaign_manager' => __('Manages clubs, players and creates campaigns.'),
+                    'auditor'          => __('Read-only observer.'),
+                ];
+            @endphp
+            <div class="space-y-2">
+                @foreach($roles as $r)
+                    <label class="flex items-start gap-3 rounded-xl border border-ink-200 p-3 cursor-pointer hover:bg-ink-50">
+                        <input type="checkbox" name="roles[]" value="{{ $r->name }}" class="mt-1"
+                               @checked(in_array($r->name, old('roles', $user->roles->pluck('name')->all())))>
+                        <span>
+                            <span class="font-semibold">{{ $roleLabels[$r->name] ?? $r->name }}</span>
+                            @if(!empty($roleHints[$r->name]))
+                                <span class="block text-xs text-ink-500 mt-0.5">{{ $roleHints[$r->name] }}</span>
+                            @endif
+                        </span>
+                    </label>
+                @endforeach
+            </div>
         </div>
 
         <div class="sticky bottom-0 bg-white pt-4 border-t flex gap-2">

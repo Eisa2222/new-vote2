@@ -30,15 +30,16 @@
         </div>
 
         <?php
-            $nav = [
-                ['path' => '/admin',           'icon' => '🏠', 'label' => __('Dashboard')],
-                ['path' => '/admin/users',     'icon' => '👥', 'label' => __('Users')],
-                ['path' => '/admin/clubs',     'icon' => '🏟️', 'label' => __('Clubs')],
-                ['path' => '/admin/players',   'icon' => '🧍', 'label' => __('Players')],
-                ['path' => '/admin/campaigns', 'icon' => '🗳️', 'label' => __('Campaigns')],
-                ['path' => '/admin/results',   'icon' => '🏆', 'label' => __('Results')],
-                ['path' => '/admin/settings',  'icon' => '⚙️', 'label' => __('Settings')],
-            ];
+            $u = auth()->user();
+            $nav = array_values(array_filter([
+                ['path' => '/admin',           'icon' => '🏠', 'label' => __('Dashboard'), 'show' => true],
+                ['path' => '/admin/users',     'icon' => '👥', 'label' => __('Users'),     'show' => (bool) $u?->can('users.manage')],
+                ['path' => '/admin/clubs',     'icon' => '🏟️', 'label' => __('Clubs'),     'show' => (bool) $u?->can('clubs.viewAny')],
+                ['path' => '/admin/players',   'icon' => '🧍', 'label' => __('Players'),   'show' => (bool) $u?->can('players.viewAny')],
+                ['path' => '/admin/campaigns', 'icon' => '🗳️', 'label' => __('Campaigns'), 'show' => (bool) $u?->can('campaigns.viewAny')],
+                ['path' => '/admin/results',   'icon' => '🏆', 'label' => __('Results'),   'show' => (bool) $u?->can('results.view')],
+                ['path' => '/admin/settings',  'icon' => '⚙️', 'label' => __('Settings'),  'show' => (bool) $u?->can('users.manage')],
+            ], fn ($item) => $item['show']));
             $current = '/'.trim(request()->path(), '/');
         ?>
 

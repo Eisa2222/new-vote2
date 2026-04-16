@@ -26,8 +26,16 @@
                     <td class="p-4 font-medium">{{ $u->name }}</td>
                     <td class="p-4 text-ink-500">{{ $u->email }}</td>
                     <td class="p-4">
+                        @php
+                            $roleLabels = [
+                                'super_admin'      => __('Super Admin'),
+                                'committee'        => __('Voting Committee'),
+                                'campaign_manager' => __('Campaign Manager'),
+                                'auditor'          => __('Auditor'),
+                            ];
+                        @endphp
                         @foreach($u->roles as $r)
-                            <span class="badge badge-active">{{ $r->name }}</span>
+                            <span class="badge badge-active">{{ $roleLabels[$r->name] ?? $r->name }}</span>
                         @endforeach
                     </td>
                     <td class="p-4">
