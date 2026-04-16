@@ -23,7 +23,13 @@ class User extends Authenticatable
         'name',
         'email',
         'password',
+        'status',
     ];
+
+    public function isActive(): bool
+    {
+        return ($this->status ?? 'active') === 'active';
+    }
 
     /**
      * The attributes that should be hidden for serialization.

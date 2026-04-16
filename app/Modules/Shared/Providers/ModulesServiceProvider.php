@@ -11,7 +11,7 @@ final class ModulesServiceProvider extends ServiceProvider
 {
     /** Modules that expose routes / migrations / views / policies. */
     private const array MODULES = [
-        'Users', 'Clubs', 'Sports', 'Players',
+        'Shared', 'Users', 'Clubs', 'Sports', 'Players',
         'Campaigns', 'Voting', 'Results',
     ];
 

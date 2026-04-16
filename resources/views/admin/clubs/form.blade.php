@@ -57,9 +57,27 @@
             </select>
         </div>
 
-        <div class="sticky bottom-0 bg-white pt-4 border-t flex gap-2">
-            <button class="btn-primary">{{ __('Save') }}</button>
-            <a href="/admin/clubs" class="btn-ghost">{{ __('Cancel') }}</a>
+        <div class="sticky bottom-0 bg-white pt-5 pb-2 -mx-6 px-6 border-t border-ink-200 flex items-center justify-between gap-3 flex-wrap">
+            <a href="/admin/clubs"
+               class="rounded-2xl border-2 border-ink-200 hover:bg-ink-50 text-ink-700 px-6 py-3 font-semibold text-base">
+                {{ __('Cancel') }}
+            </a>
+            <div class="flex gap-3">
+                @if($club->exists)
+                    <form method="post" action="/admin/clubs/{{ $club->id }}"
+                          onsubmit="return confirm('{{ __('Delete this club?') }}')">
+                        @csrf @method('DELETE')
+                        <button type="submit"
+                                class="rounded-2xl border-2 border-danger-500/50 text-danger-600 hover:bg-danger-500/10 px-6 py-3 font-semibold text-base">
+                            🗑 {{ __('Delete') }}
+                        </button>
+                    </form>
+                @endif
+                <button type="submit"
+                        class="rounded-2xl bg-brand-600 hover:bg-brand-700 text-white px-8 py-3 font-semibold text-base shadow-brand">
+                    💾 {{ __('Save') }}
+                </button>
+            </div>
         </div>
     </form>
 @endsection

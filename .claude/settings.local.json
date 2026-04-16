@@ -34,7 +34,9 @@
       "WebFetch(domain:fpa.sa)",
       "Bash(curl -s -b /tmp/c.txt -v \"http://127.0.0.1:8080/admin/campaigns/6/edit\")",
       "Bash(curl -s -b /tmp/c.txt \"http://127.0.0.1:8080/admin/campaigns/6\")",
-      "Bash(curl -s -b /tmp/c.txt \"http://127.0.0.1:8080/admin/campaigns/6/categories\")"
+      "Bash(curl -s -b /tmp/c.txt \"http://127.0.0.1:8080/admin/campaigns/6/categories\")",
+      "Bash(\"C:/laragon/bin/php/php-8.3.30-Win32-vs16-x64/php.exe\" vendor/bin/pest tests/Feature/Settings/)",
+      "Bash(\"C:/laragon/bin/php/php-8.3.30-Win32-vs16-x64/php.exe\" vendor/bin/pest tests/Feature/Settings/ --filter=\"add a new\")"
     ]
   }
 }

@@ -58,4 +58,25 @@ final class AdminClubController extends Controller
                     $r->file('logo'), $data['sport_ids'] ?? null);
         return redirect('/admin/clubs')->with('success', __('Club updated.'));
     }
+
+    public function toggle(Club $club): RedirectResponse
+    {
+        $this->authorize('update', $club);
+        $next = $club->status->value === 'active' ? 'inactive' : 'active';
+        $club->update(['status' => $next]);
+        $msg = $next === 'active' ? __('Club activated.') : __('Club deactivated.');
+        return back()->with('success', $msg);
+    }
+
+    public function destroy(Club $club, \App\Modules\Clubs\Actions\DeleteClubAction $action): RedirectResponse
+    {
+        $this->authorize('delete', $club);
+        if ($club->players()->exists()) {
+            return back()->withErrors([
+                'club' => __('Cannot delete a club with linked players. Reassign or delete the players first.'),
+            ]);
+        }
+        $action->execute($club);
+        return redirect('/admin/clubs')->with('success', __('Club deleted.'));
+    }
 }

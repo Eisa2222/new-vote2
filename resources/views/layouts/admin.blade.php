@@ -31,6 +31,7 @@
                 ['path' => '/admin/players',   'icon' => '🧍', 'label' => __('Players')],
                 ['path' => '/admin/campaigns', 'icon' => '🗳️', 'label' => __('Campaigns')],
                 ['path' => '/admin/results',   'icon' => '🏆', 'label' => __('Results')],
+                ['path' => '/admin/settings',  'icon' => '⚙️', 'label' => __('Settings')],
             ];
             $current = '/'.trim(request()->path(), '/');
         ?>

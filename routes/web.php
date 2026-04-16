@@ -5,6 +5,7 @@ use App\Http\Controllers\Admin\AdminCategoryController;
 use App\Http\Controllers\Admin\AdminClubController;
 use App\Http\Controllers\Admin\AdminPlayerController;
 use App\Http\Controllers\Admin\AdminResultController;
+use App\Http\Controllers\Admin\AdminSettingsController;
 use App\Http\Controllers\Admin\AdminUserController;
 use App\Http\Controllers\Auth\LoginController;
 use Illuminate\Support\Facades\Route;
@@ -27,6 +28,8 @@ Route::middleware(['web', 'auth'])->prefix('admin')->group(function () {
     Route::post('clubs',               [AdminClubController::class, 'store']);
     Route::get('clubs/{club}/edit',    [AdminClubController::class, 'edit']);
     Route::put('clubs/{club}',         [AdminClubController::class, 'update']);
+    Route::post('clubs/{club}/toggle', [AdminClubController::class, 'toggle']);
+    Route::delete('clubs/{club}',      [AdminClubController::class, 'destroy']);
 
     Route::get('players',                    [AdminPlayerController::class, 'index']);
     Route::get('players/create',             [AdminPlayerController::class, 'create']);
@@ -67,11 +70,19 @@ Route::middleware(['web', 'auth'])->prefix('admin')->group(function () {
     Route::post('results/hide/{result}',         [AdminResultController::class, 'hide'])->name('results.hide');
     Route::post('results/announce/{result}',     [AdminResultController::class, 'announce'])->name('results.announce');
 
+    Route::get('settings',                        [AdminSettingsController::class, 'index'])->name('admin.settings');
+    Route::post('settings/general',               [AdminSettingsController::class, 'updateGeneral']);
+    Route::post('settings/sports',                [AdminSettingsController::class, 'storeSport']);
+    Route::put('settings/sports/{sport}',         [AdminSettingsController::class, 'updateSport']);
+    Route::delete('settings/sports/{sport}',      [AdminSettingsController::class, 'destroySport']);
+
     Route::get('users',                  [AdminUserController::class, 'index']);
     Route::get('users/create',           [AdminUserController::class, 'create']);
     Route::post('users',                 [AdminUserController::class, 'store']);
     Route::get('users/{user}/edit',      [AdminUserController::class, 'edit']);
     Route::put('users/{user}',           [AdminUserController::class, 'update']);
+    Route::post('users/{user}/toggle',   [AdminUserController::class, 'toggle']);
+    Route::delete('users/{user}',        [AdminUserController::class, 'destroy']);
 });
 
 // Set locale via ?locale=ar|en

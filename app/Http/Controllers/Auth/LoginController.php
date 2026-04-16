@@ -31,6 +31,13 @@ final class LoginController extends Controller
             ]);
         }
 
+        if ((Auth::user()->status ?? 'active') !== 'active') {
+            Auth::logout();
+            throw ValidationException::withMessages([
+                'email' => __('Your account is deactivated. Contact the administrator.'),
+            ]);
+        }
+
         $request->session()->regenerate();
 
         return redirect()->intended('/admin');
