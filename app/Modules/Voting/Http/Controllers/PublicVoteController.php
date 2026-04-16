@@ -97,6 +97,7 @@ final class PublicVoteController extends Controller
         CreateVoterSessionAction $session,
     ): RedirectResponse {
         $campaign = Campaign::where('public_token', $token)->firstOrFail();
+        $submittedLineup = null;
 
         try {
             if ($campaign->type === CampaignType::TeamOfTheSeason) {
@@ -109,6 +110,12 @@ final class PublicVoteController extends Controller
                     'defense'    => $payload['defense'],
                     'goalkeeper' => $payload['goalkeeper'],
                 ]);
+                $submittedLineup = [
+                    'attack'     => $payload['attack'],
+                    'midfield'   => $payload['midfield'],
+                    'defense'    => $payload['defense'],
+                    'goalkeeper' => $payload['goalkeeper'],
+                ];
             } else {
                 /** @var SubmitVoteRequest $regReq */
                 $regReq = app(SubmitVoteRequest::class);
@@ -119,12 +126,51 @@ final class PublicVoteController extends Controller
         }
 
         $session->clear($campaign);
-        return redirect()->route('voting.thanks', $token);
+        $redirect = redirect()->route('voting.thanks', $token);
+        if ($submittedLineup) {
+            $redirect->with('submittedLineup', $submittedLineup);
+        }
+        return $redirect;
     }
 
     public function thanks(string $token): View
     {
         $campaign = Campaign::where('public_token', $token)->firstOrFail();
-        return view('voting::thanks', compact('campaign'));
+
+        // If this was a TOS vote, hydrate the submitted lineup from flashed session data
+        // so the voter can see their picks on a pitch recap.
+        $picks = null;
+        if ($campaign->type === CampaignType::TeamOfTheSeason
+            && ($lineup = session('submittedLineup')) !== null) {
+            $picks = $this->resolveSubmittedPlayers($campaign, $lineup);
+        }
+
+        return view('voting::thanks', compact('campaign', 'picks'));
+    }
+
+    /**
+     * @param  array<string, int[]>  $lineup
+     * @return array<string, array<\App\Modules\Players\Models\Player>>
+     */
+    private function resolveSubmittedPlayers(Campaign $campaign, array $lineup): array
+    {
+        $campaign->loadMissing('categories.candidates.player.club');
+        $byCandidate = [];
+        foreach ($campaign->categories as $cat) {
+            foreach ($cat->candidates as $cand) {
+                $byCandidate[$cand->id] = $cand->player;
+            }
+        }
+
+        $picks = [];
+        foreach (['attack', 'midfield', 'defense', 'goalkeeper'] as $slot) {
+            $picks[$slot] = [];
+            foreach ($lineup[$slot] ?? [] as $id) {
+                if (isset($byCandidate[$id])) {
+                    $picks[$slot][] = $byCandidate[$id];
+                }
+            }
+        }
+        return $picks;
     }
 }
