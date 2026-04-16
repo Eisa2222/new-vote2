@@ -121,15 +121,21 @@
         @csrf
     </form>
 
-    <div class="sticky bottom-0 bg-white border-t border-gray-200 p-4 rounded-t-3xl shadow-lg flex items-center justify-between gap-4">
-        <div id="summary" class="text-sm text-gray-600">
+    {{-- spacer so content isn't hidden behind fixed footer --}}
+    <div class="h-24"></div>
+</div>
+
+<div class="fixed bottom-0 inset-x-0 bg-white border-t border-gray-200 shadow-2xl z-50">
+    <div class="max-w-7xl mx-auto p-4 flex items-center justify-between gap-4">
+        <div id="summary" class="text-sm text-ink-700">
+            <span class="font-semibold"><span id="progressCount">0</span> / 11</span> —
             {{ __('Pick :a attack, :m midfield, :d defense, 1 goalkeeper.', [
                 'a' => $formation['attack'], 'm' => $formation['midfield'], 'd' => $formation['defense'],
             ]) }}
         </div>
         <button type="button" id="submitBtn" disabled
-                class="rounded-2xl bg-brand-600 hover:bg-brand-700 text-white px-8 py-3 font-semibold disabled:bg-slate-300 disabled:cursor-not-allowed disabled:hover:bg-slate-300">
-            {{ __('Submit my Team of the Season') }}
+                class="rounded-2xl bg-brand-600 hover:bg-brand-700 text-white px-8 py-3 font-bold text-base shadow-brand disabled:bg-slate-300 disabled:cursor-not-allowed disabled:hover:bg-slate-300 whitespace-nowrap">
+            ✓ {{ __('Submit my Team of the Season') }}
         </button>
     </div>
 </div>
@@ -138,30 +144,54 @@
     const REQUIRED = {!! json_encode($formation) !!};
     const selected = { attack: new Set(), midfield: new Set(), defense: new Set(), goalkeeper: new Set() };
 
+    // Track insertion order per slot so we can kick out the oldest pick
+    // when the voter exceeds the line limit (swap semantics).
+    const order = { attack: [], midfield: [], defense: [], goalkeeper: [] };
+
     document.querySelectorAll('.candidate').forEach(label => {
         const input = label.querySelector('.cand-input');
         const slot = input.dataset.slot;
         label.addEventListener('click', (e) => {
             if (e.target === input) return;
             e.preventDefault();
-            if (label.classList.contains('disabled') && !input.checked) return;
-            if (input.checked) { selected[slot].delete(input.value); input.checked = false; }
-            else if (selected[slot].size < REQUIRED[slot]) { selected[slot].add(input.value); input.checked = true; }
-            else return;
-            label.classList.toggle('selected', input.checked);
+
+            if (input.checked) {
+                // Deselect
+                selected[slot].delete(input.value);
+                order[slot] = order[slot].filter(v => v !== input.value);
+                input.checked = false;
+                label.classList.remove('selected');
+            } else {
+                // Select; if line is full, swap out the oldest pick.
+                if (selected[slot].size >= REQUIRED[slot]) {
+                    const oldest = order[slot].shift();
+                    if (oldest) {
+                        selected[slot].delete(oldest);
+                        const oldInput = document.querySelector(`.cand-input[data-slot="${slot}"][value="${oldest}"]`);
+                        if (oldInput) {
+                            oldInput.checked = false;
+                            oldInput.closest('.candidate')?.classList.remove('selected');
+                        }
+                    }
+                }
+                selected[slot].add(input.value);
+                order[slot].push(input.value);
+                input.checked = true;
+                label.classList.add('selected');
+            }
             update();
         });
     });
 
     function update() {
+        let total = 0;
         ['attack','midfield','defense','goalkeeper'].forEach(slot => {
             document.getElementById('count-'+slot).textContent = selected[slot].size;
-            document.querySelectorAll(`[data-slot="${slot}"] .candidate`).forEach(l => {
-                const input = l.querySelector('.cand-input');
-                const isFull = selected[slot].size >= REQUIRED[slot];
-                l.classList.toggle('disabled', isFull && !input.checked);
-            });
+            total += selected[slot].size;
+            // No disabled state — clicking a new candidate swaps out the oldest pick.
         });
+        const pc = document.getElementById('progressCount');
+        if (pc) pc.textContent = total;
         const complete = ['attack','midfield','defense','goalkeeper']
             .every(s => selected[s].size === REQUIRED[s]);
         document.getElementById('submitBtn').disabled = !complete;
