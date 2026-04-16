@@ -99,10 +99,11 @@
 
 <?php
     $playersJson = $players->map(fn($p) => [
-        'id'      => $p->id,
-        'name'    => $p->localized('name'),
-        'club'    => $p->club?->localized('name'),
-        'club_id' => $p->club_id,
+        'id'       => $p->id,
+        'name'     => $p->localized('name'),
+        'club'     => $p->club?->localized('name'),
+        'club_id'  => $p->club_id,
+        'position' => $p->position?->value,
     ])->values()->toJson(JSON_UNESCAPED_UNICODE);
 
     $leagueClubsMap = isset($leagues)
@@ -164,12 +165,18 @@ const tpl = document.getElementById('questionTemplate');
 const container = document.getElementById('questionsContainer');
 let qIndex = 0;
 
-function filteredPlayers() {
+function filteredPlayers(position) {
     const sel = document.getElementById('leagueSelect');
     const leagueId = sel ? sel.value : '';
-    if (!leagueId || !leagueClubs[leagueId]) return allPlayers;
-    const allowed = new Set(leagueClubs[leagueId]);
-    return allPlayers.filter(p => allowed.has(p.club_id));
+    let list = allPlayers;
+    if (leagueId && leagueClubs[leagueId]) {
+        const allowed = new Set(leagueClubs[leagueId]);
+        list = list.filter(p => allowed.has(p.club_id));
+    }
+    if (position && position !== 'any') {
+        list = list.filter(p => p.position === position);
+    }
+    return list;
 }
 
 function addQuestion() {
@@ -187,7 +194,23 @@ function addQuestion() {
     const suggestions  = row.querySelector('.answer-suggestions');
     const chips        = row.querySelector('.answer-chips');
     const emptyHint    = row.querySelector('.answer-empty');
+    const positionSel  = row.querySelector(`[name="categories[${i}][position_slot]"]`);
     const selected     = new Set();
+
+    // When position changes, drop already-picked players that no longer match and re-render.
+    positionSel?.addEventListener('change', () => {
+        const pos = positionSel.value;
+        if (pos && pos !== 'any') {
+            [...selected].forEach(pid => {
+                const p = allPlayers.find(x => x.id === pid);
+                if (p && p.position !== pos) selected.delete(pid);
+            });
+        }
+        render();
+        search.placeholder = pos && pos !== 'any'
+            ? '{{ __("Search player by name...") }} (' + pos + ')'
+            : '{{ __("Search player by name...") }}';
+    });
 
     function render() {
         chips.innerHTML = '';
@@ -208,16 +231,20 @@ function addQuestion() {
     function showSuggestions(q) {
         const query = q.trim().toLowerCase();
         if (!query) { suggestions.classList.add('hidden'); return; }
-        const matches = filteredPlayers()
+        const pos = positionSel?.value || 'any';
+        const matches = filteredPlayers(pos)
             .filter(p => !selected.has(p.id) && (p.name || '').toLowerCase().includes(query))
             .slice(0, 10);
         if (matches.length === 0) { suggestions.classList.add('hidden'); return; }
         suggestions.innerHTML = '';
         matches.forEach(p => {
             const item = document.createElement('div');
-            item.className = 'px-3 py-2 hover:bg-emerald-50 cursor-pointer flex justify-between items-center';
-            item.innerHTML = `<span class="font-medium">${p.name}</span>
-                              <span class="text-gray-500 text-sm">${p.club || ''}</span>`;
+            item.className = 'px-3 py-2 hover:bg-emerald-50 cursor-pointer flex justify-between items-center gap-2';
+            item.innerHTML = `<div class="min-w-0">
+                                <div class="font-medium truncate">${p.name}</div>
+                                <div class="text-xs text-gray-500 truncate">${p.club || ''}</div>
+                              </div>
+                              <span class="text-xs rounded-full bg-blue-100 text-blue-700 px-2 py-0.5 whitespace-nowrap">${p.position || ''}</span>`;
             item.addEventListener('mousedown', (e) => {
                 e.preventDefault();
                 selected.add(p.id);
