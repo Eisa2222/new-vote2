@@ -12,7 +12,13 @@
 <body class="bg-ink-50 text-ink-900 min-h-screen">
 <div class="min-h-screen flex">
 
-    <aside class="w-72 bg-brand-700 text-white hidden lg:flex lg:flex-col">
+    {{-- Mobile drawer overlay --}}
+    <div id="drawerOverlay" class="hidden fixed inset-0 bg-black/50 z-40 lg:hidden" onclick="toggleDrawer(false)"></div>
+
+    <aside id="adminSidebar"
+           class="w-72 bg-brand-700 text-white flex flex-col fixed inset-y-0 z-50 transform transition-transform lg:static lg:translate-x-0
+                  {{ app()->getLocale() === 'ar' ? 'right-0 translate-x-full' : 'left-0 -translate-x-full' }}"
+           data-dir="{{ app()->getLocale() === 'ar' ? 'rtl' : 'ltr' }}">
         <div class="px-6 py-6 border-b border-white/10">
             <div class="flex items-center gap-3">
                 <div class="w-11 h-11 rounded-xl bg-white/10 flex items-center justify-center text-base font-bold tracking-wide">FPA</div>
@@ -61,11 +67,17 @@
     </aside>
 
     <div class="flex-1 flex flex-col min-w-0">
-        <header class="bg-white border-b border-ink-200 px-4 md:px-8 py-4 sticky top-0 z-20">
+        <header class="bg-white border-b border-ink-200 px-4 md:px-8 py-4 sticky top-0 z-30">
             <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-                <div>
-                    <h1 class="text-2xl font-bold text-ink-900">@yield('page_title', __('Dashboard'))</h1>
-                    <p class="text-sm text-ink-500 mt-0.5">@yield('page_description', __('Manage the e-voting platform'))</p>
+                <div class="flex items-center gap-3">
+                    <button type="button" onclick="toggleDrawer(true)"
+                            class="lg:hidden inline-flex w-10 h-10 items-center justify-center rounded-lg border border-ink-200 hover:bg-ink-50">
+                        <span class="text-xl">☰</span>
+                    </button>
+                    <div>
+                        <h1 class="text-xl md:text-2xl font-bold text-ink-900">@yield('page_title', __('Dashboard'))</h1>
+                        <p class="text-xs md:text-sm text-ink-500 mt-0.5">@yield('page_description', __('Manage the e-voting platform'))</p>
+                    </div>
                 </div>
                 <div class="flex items-center gap-3">
                     <select onchange="window.location.href='/set-locale/'+this.value"
@@ -109,6 +121,26 @@
         </footer>
     </div>
 </div>
+<script>
+    function toggleDrawer(show) {
+        const sb = document.getElementById('adminSidebar');
+        const ov = document.getElementById('drawerOverlay');
+        const dir = sb.dataset.dir === 'rtl' ? 'translate-x-full' : '-translate-x-full';
+        if (show) {
+            sb.classList.remove(dir);
+            sb.classList.add('translate-x-0');
+            ov.classList.remove('hidden');
+        } else {
+            sb.classList.remove('translate-x-0');
+            sb.classList.add(dir);
+            ov.classList.add('hidden');
+        }
+    }
+    // Close drawer when clicking a nav link on mobile
+    document.querySelectorAll('#adminSidebar nav a').forEach(a => {
+        a.addEventListener('click', () => { if (window.innerWidth < 1024) toggleDrawer(false); });
+    });
+</script>
 @stack('scripts')
 </body>
 </html>
