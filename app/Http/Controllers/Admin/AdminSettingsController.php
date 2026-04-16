@@ -23,9 +23,10 @@ final class AdminSettingsController extends Controller
         abort_unless(auth()->user()?->can('users.manage'), 403);
 
         return view('admin.settings.index', [
-            'sports'        => Sport::orderBy('name_en')->get(),
-            'campaignTypes' => CampaignType::cases(),
-            'positions'     => PlayerPosition::cases(),
+            'sports'            => Sport::orderBy('name_en')->get(),
+            'campaignTypes'     => CampaignType::cases(),
+            'positions'         => PlayerPosition::cases(),
+            'committeeMembers'  => \App\Models\User::role('committee')->orderBy('name')->get(),
             'generalSettings' => [
                 'app_name'             => $settings->get('app_name', 'SFPA Voting'),
                 'contact_email'        => $settings->get('contact_email', 'admin@sfpa.sa'),

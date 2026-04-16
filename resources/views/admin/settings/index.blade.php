@@ -25,6 +25,10 @@
                     class="tab-btn pb-3 border-b-2 border-transparent font-semibold text-ink-500 hover:text-ink-900 whitespace-nowrap transition">
                 🗳️ {{ __('Campaign types') }}
             </button>
+            <button type="button" data-tab="committee"
+                    class="tab-btn pb-3 border-b-2 border-transparent font-semibold text-ink-500 hover:text-ink-900 whitespace-nowrap transition">
+                👥 {{ __('Committee') }}
+            </button>
         </nav>
     </div>
 
@@ -167,6 +171,84 @@
 
             <div class="mt-5 rounded-2xl bg-info-500/5 border border-info-500/30 text-info-500 p-4 text-sm">
                 ℹ️ {{ __('Adding a new position requires a code change to maintain domain invariants (TOS formation). If you need an additional position for a non-football sport, contact the development team.') }}
+            </div>
+        </div>
+    </section>
+
+    {{-- COMMITTEE --}}
+    <section data-pane="committee" class="tab-pane hidden space-y-4">
+        <div class="card">
+            <div class="flex items-center justify-between mb-4 flex-wrap gap-3">
+                <div>
+                    <h2 class="text-xl font-bold">{{ __('Voting Committee') }}</h2>
+                    <p class="text-sm text-ink-500 mt-1">
+                        {{ __('Committee members approve, announce, or hide voting results. They cannot create campaigns or manage clubs/players.') }}
+                    </p>
+                </div>
+                <a href="/admin/users/create"
+                   class="rounded-xl bg-brand-600 hover:bg-brand-700 text-white px-4 py-2 font-medium text-sm">
+                    + {{ __('Add member') }}
+                </a>
+            </div>
+
+            <div class="rounded-2xl bg-brand-50 border border-brand-200 p-4 text-sm text-brand-900 mb-4">
+                💡 {{ __('To create a committee member: go to Users → New User → assign the "committee" role.') }}
+            </div>
+
+            <div class="rounded-xl border border-ink-200 overflow-hidden">
+                <table class="w-full text-sm">
+                    <thead class="bg-ink-50 text-ink-500 text-xs uppercase">
+                        <tr>
+                            <th class="text-start p-3">{{ __('Name') }}</th>
+                            <th class="text-start p-3">{{ __('Email') }}</th>
+                            <th class="text-start p-3">{{ __('Status') }}</th>
+                            <th class="text-start p-3">{{ __('Actions') }}</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-ink-100">
+                        @forelse($committeeMembers as $m)
+                            <tr class="hover:bg-ink-50">
+                                <td class="p-3 font-medium">{{ $m->name }}</td>
+                                <td class="p-3 text-ink-500">{{ $m->email }}</td>
+                                <td class="p-3">
+                                    @if(($m->status ?? 'active') === 'active')
+                                        <span class="badge badge-active">{{ __('Active') }}</span>
+                                    @else
+                                        <span class="badge badge-inactive">{{ __('Inactive') }}</span>
+                                    @endif
+                                </td>
+                                <td class="p-3">
+                                    <a href="/admin/users/{{ $m->id }}/edit"
+                                       class="rounded-lg border border-ink-200 hover:bg-ink-50 px-3 py-1.5 text-xs font-medium">
+                                        ✏️ {{ __('Edit') }}
+                                    </a>
+                                </td>
+                            </tr>
+                        @empty
+                            <tr>
+                                <td colspan="4" class="p-8 text-center text-ink-500">
+                                    {{ __('No committee members yet. Create a user and assign the "committee" role.') }}
+                                </td>
+                            </tr>
+                        @endforelse
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="mt-5">
+                <h3 class="font-bold text-ink-800 mb-2">{{ __('What committee members can do') }}</h3>
+                <ul class="text-sm text-ink-700 space-y-1.5 list-disc ps-5">
+                    <li>{{ __('Recalculate voting results') }}</li>
+                    <li>{{ __('Approve results for publication') }}</li>
+                    <li>{{ __('Announce results to the public') }}</li>
+                    <li>{{ __('Hide results after announcement (emergency takedown)') }}</li>
+                </ul>
+                <h3 class="font-bold text-ink-800 mt-4 mb-2">{{ __('What committee members cannot do') }}</h3>
+                <ul class="text-sm text-ink-500 space-y-1.5 list-disc ps-5">
+                    <li>{{ __('Create or edit campaigns, clubs, or players') }}</li>
+                    <li>{{ __('Manage other users or permissions') }}</li>
+                    <li>{{ __('Change system settings') }}</li>
+                </ul>
             </div>
         </div>
     </section>
