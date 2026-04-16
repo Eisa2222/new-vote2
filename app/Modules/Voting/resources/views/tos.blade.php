@@ -122,21 +122,27 @@
     </form>
 
     {{-- spacer so content isn't hidden behind fixed footer --}}
-    <div class="h-24"></div>
+    <div class="h-32 sm:h-24"></div>
 </div>
 
-<div class="fixed bottom-0 inset-x-0 bg-white border-t border-gray-200 shadow-2xl z-50">
-    <div class="max-w-7xl mx-auto p-4 flex items-center justify-between gap-4">
-        <div id="summary" class="text-sm text-ink-700">
-            <span class="font-semibold"><span id="progressCount">0</span> / 11</span> —
-            {{ __('Pick :a attack, :m midfield, :d defense, 1 goalkeeper.', [
-                'a' => $formation['attack'], 'm' => $formation['midfield'], 'd' => $formation['defense'],
-            ]) }}
+<div class="fixed bottom-0 inset-x-0 bg-white border-t-2 border-brand-200 shadow-2xl z-50">
+    <div class="max-w-7xl mx-auto p-3 md:p-4">
+        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+            <div id="summary" class="text-xs md:text-sm text-ink-700 text-center sm:text-start">
+                <span class="text-base md:text-lg font-bold text-brand-700">
+                    <span id="progressCount">0</span> / {{ array_sum($formation) }}
+                </span>
+                <span class="hidden sm:inline">—
+                    {{ __('Pick :a attack, :m midfield, :d defense, 1 goalkeeper.', [
+                        'a' => $formation['attack'], 'm' => $formation['midfield'], 'd' => $formation['defense'],
+                    ]) }}
+                </span>
+            </div>
+            <button type="button" id="submitBtn" disabled
+                    class="w-full sm:w-auto rounded-2xl bg-brand-600 hover:bg-brand-700 text-white px-6 md:px-8 py-3 font-bold text-base shadow-brand disabled:bg-slate-300 disabled:cursor-not-allowed disabled:hover:bg-slate-300">
+                ✓ {{ __('Submit my Team of the Season') }}
+            </button>
         </div>
-        <button type="button" id="submitBtn" disabled
-                class="rounded-2xl bg-brand-600 hover:bg-brand-700 text-white px-8 py-3 font-bold text-base shadow-brand disabled:bg-slate-300 disabled:cursor-not-allowed disabled:hover:bg-slate-300 whitespace-nowrap">
-            ✓ {{ __('Submit my Team of the Season') }}
-        </button>
     </div>
 </div>
 

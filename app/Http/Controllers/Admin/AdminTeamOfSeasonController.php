@@ -21,9 +21,9 @@ final class AdminTeamOfSeasonController extends Controller
     {
         $this->authorize('create', Campaign::class);
         return view('admin.tos.create', [
-            'default' => TeamOfSeasonFormation::default(),
-            'minLine' => TeamOfSeasonFormation::MIN_LINE,
-            'maxLine' => TeamOfSeasonFormation::MAX_LINE,
+            'default'  => TeamOfSeasonFormation::default(),
+            'minLine'  => TeamOfSeasonFormation::MIN_LINE,
+            'maxLine'  => TeamOfSeasonFormation::MAX_LINE,
             'outfield' => TeamOfSeasonFormation::OUTFIELD_TOTAL,
         ]);
     }
@@ -49,6 +49,7 @@ final class AdminTeamOfSeasonController extends Controller
         } catch (\DomainException $e) {
             return back()->withInput()->withErrors(['formation' => $e->getMessage()]);
         }
+
         return redirect("/admin/tos/{$campaign->id}/candidates")
             ->with('success', __('Campaign created. Now attach the candidates for each line.'));
     }
@@ -58,39 +59,77 @@ final class AdminTeamOfSeasonController extends Controller
         $this->authorize('update', $campaign);
         $campaign->load('categories.candidates.player.club');
 
-        $byPosition = [];
+        $alreadyAttached = $campaign->categories
+            ->flatMap->candidates
+            ->pluck('player_id')
+            ->filter()
+            ->all();
+
+        $availableByPosition = [];
         foreach (PlayerPosition::cases() as $pos) {
-            $byPosition[$pos->value] = Player::active()
-                ->with('club')->where('position', $pos->value)
-                ->orderBy('name_en')->get();
+            $availableByPosition[$pos->value] = Player::active()
+                ->with('club')
+                ->where('position', $pos->value)
+                ->whereNotIn('id', $alreadyAttached)
+                ->orderBy('name_en')
+                ->get();
         }
 
         return view('admin.tos.candidates', [
-            'campaign'   => $campaign,
-            'byPosition' => $byPosition,
-            'formation'  => TeamOfSeasonFormation::fromCampaign($campaign),
+            'campaign'            => $campaign,
+            'availableByPosition' => $availableByPosition,
+            'formation'           => TeamOfSeasonFormation::fromCampaign($campaign),
         ]);
     }
 
+    /**
+     * Unified attach: accepts player_ids[] across all positions and routes
+     * each player to the line that matches their position. Backward
+     * compatible — also accepts the legacy {category_id, player_ids[]} payload.
+     */
     public function attachCandidates(
         Request $request,
         Campaign $campaign,
         AttachTeamOfSeasonCandidatesAction $action,
     ): RedirectResponse {
         $this->authorize('update', $campaign);
+
+        // Legacy payload (single category)
+        if ($request->filled('category_id')) {
+            $data = $request->validate([
+                'category_id'  => ['required', 'integer', 'exists:voting_categories,id'],
+                'player_ids'   => ['required', 'array', 'min:1'],
+                'player_ids.*' => ['integer', 'exists:players,id'],
+            ]);
+            $category = $campaign->categories()->findOrFail($data['category_id']);
+            try {
+                $added = $action->execute($campaign, $category, $data['player_ids']);
+                return back()->with('success', __(':n candidates added.', ['n' => $added]));
+            } catch (\DomainException $e) {
+                return back()->withErrors(['player_ids' => $e->getMessage()]);
+            }
+        }
+
+        // New unified payload — auto-route by position
         $data = $request->validate([
-            'category_id' => ['required', 'integer', 'exists:voting_categories,id'],
-            'player_ids'  => ['required', 'array', 'min:1'],
-            'player_ids.*'=> ['integer', 'exists:players,id'],
+            'player_ids'   => ['required', 'array', 'min:1'],
+            'player_ids.*' => ['integer', 'exists:players,id'],
         ]);
 
-        $category = $campaign->categories()->findOrFail($data['category_id']);
+        $players = Player::active()->whereIn('id', $data['player_ids'])->get();
+        $byPosition = $players->groupBy(fn ($p) => $p->position?->value);
+        $totalAttached = 0;
 
-        try {
-            $added = $action->execute($campaign, $category, $data['player_ids']);
-            return back()->with('success', __(':n candidates added.', ['n' => $added]));
-        } catch (\DomainException $e) {
-            return back()->withErrors(['player_ids' => $e->getMessage()]);
+        foreach ($byPosition as $slot => $group) {
+            $category = $campaign->categories()->where('position_slot', $slot)->first();
+            if (! $category) continue;
+            try {
+                $totalAttached += $action->execute($campaign, $category, $group->pluck('id')->all());
+            } catch (\DomainException $e) {
+                return back()->withErrors(['player_ids' => $e->getMessage()]);
+            }
         }
+
+        return back()->with('success', __(':n candidates added.', ['n' => $totalAttached]));
     }
 }
