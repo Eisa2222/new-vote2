@@ -25,6 +25,12 @@ function seedRolesAndPermissions(): void
     }
     $super = Role::findOrCreate('super_admin', 'web');
     $super->syncPermissions(Permission::all());
+
+    Role::findOrCreate('committee', 'web')->syncPermissions([
+        'campaigns.viewAny', 'clubs.viewAny', 'players.viewAny',
+        'results.view', 'results.calculate', 'results.approve',
+        'results.hide', 'results.announce',
+    ]);
 }
 
 function makeSuperAdmin(): User
