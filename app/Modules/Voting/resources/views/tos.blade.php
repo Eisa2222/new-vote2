@@ -117,33 +117,30 @@
         </div>
     </section>
 
-    <form method="post" id="tosForm" action="{{ route('voting.submit', $campaign->public_token) }}" class="hidden">
+    {{-- The actual submit form — always visible, prominent submit button --}}
+    <form method="post" action="{{ route('voting.submit', $campaign->public_token) }}" id="tosForm"
+          class="rounded-3xl bg-white border-2 border-brand-300 p-6 shadow-brand">
         @csrf
-    </form>
+        <div id="hiddenInputs"></div>
 
-    {{-- spacer so content isn't hidden behind fixed footer --}}
-    <div class="h-32 sm:h-24"></div>
-</div>
-
-<div class="fixed bottom-0 inset-x-0 bg-white border-t-2 border-brand-200 shadow-2xl z-50">
-    <div class="max-w-7xl mx-auto p-3 md:p-4">
-        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-            <div id="summary" class="text-xs md:text-sm text-ink-700 text-center sm:text-start">
-                <span class="text-base md:text-lg font-bold text-brand-700">
+        <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+            <div class="text-center md:text-start">
+                <div class="text-2xl font-bold text-brand-700">
                     <span id="progressCount">0</span> / {{ array_sum($formation) }}
-                </span>
-                <span class="hidden sm:inline">—
+                </div>
+                <div class="text-sm text-ink-500 mt-1">
                     {{ __('Pick :a attack, :m midfield, :d defense, 1 goalkeeper.', [
                         'a' => $formation['attack'], 'm' => $formation['midfield'], 'd' => $formation['defense'],
                     ]) }}
-                </span>
+                </div>
+                <div id="errorMsg" class="hidden mt-2 text-sm text-danger-600 font-semibold"></div>
             </div>
-            <button type="button" id="submitBtn" disabled
-                    class="w-full sm:w-auto rounded-2xl bg-brand-600 hover:bg-brand-700 text-white px-6 md:px-8 py-3 font-bold text-base shadow-brand disabled:bg-slate-300 disabled:cursor-not-allowed disabled:hover:bg-slate-300">
+            <button type="submit" id="submitBtn"
+                    class="w-full md:w-auto rounded-2xl bg-brand-600 hover:bg-brand-700 text-white px-10 py-4 font-bold text-lg shadow-brand">
                 ✓ {{ __('Submit my Team of the Season') }}
             </button>
         </div>
-    </div>
+    </form>
 </div>
 
 <script>
@@ -194,26 +191,42 @@
         ['attack','midfield','defense','goalkeeper'].forEach(slot => {
             document.getElementById('count-'+slot).textContent = selected[slot].size;
             total += selected[slot].size;
-            // No disabled state — clicking a new candidate swaps out the oldest pick.
         });
         const pc = document.getElementById('progressCount');
         if (pc) pc.textContent = total;
-        const complete = ['attack','midfield','defense','goalkeeper']
-            .every(s => selected[s].size === REQUIRED[s]);
-        document.getElementById('submitBtn').disabled = !complete;
     }
 
-    document.getElementById('submitBtn').addEventListener('click', () => {
-        const form = document.getElementById('tosForm');
-        [...form.querySelectorAll('input[type="hidden"]:not([name="_token"])')].forEach(e => e.remove());
+    // Form-submit handler: validates picks, builds hidden inputs, submits.
+    document.getElementById('tosForm').addEventListener('submit', (e) => {
+        const errorEl = document.getElementById('errorMsg');
+        const missing = [];
+        ['attack','midfield','defense','goalkeeper'].forEach(slot => {
+            const got = selected[slot].size;
+            if (got !== REQUIRED[slot]) {
+                missing.push(`${slot}: ${got}/${REQUIRED[slot]}`);
+            }
+        });
+        if (missing.length) {
+            e.preventDefault();
+            errorEl.textContent = '⚠ ' + '{{ __('Selection incomplete') }}: ' + missing.join(' · ');
+            errorEl.classList.remove('hidden');
+            errorEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            return;
+        }
+
+        // Build hidden inputs from selections
+        const container = document.getElementById('hiddenInputs');
+        container.innerHTML = '';
         Object.entries(selected).forEach(([slot, ids]) => {
             ids.forEach(id => {
                 const i = document.createElement('input');
                 i.type = 'hidden'; i.name = `${slot}[]`; i.value = id;
-                form.appendChild(i);
+                container.appendChild(i);
             });
         });
-        form.submit();
+        // Form submits naturally; disable button to prevent double-submit
+        document.getElementById('submitBtn').textContent = '⏳ {{ __('Submitting...') }}';
+        document.getElementById('submitBtn').disabled = true;
     });
 
     update();
