@@ -24,7 +24,9 @@ final class DatabaseSeeder extends Seeder
 
     private function seedUser(string $name, string $email, string $password, string $role): void
     {
-        $user = User::firstOrCreate(
+        // updateOrCreate keeps the password in sync with the seed each run —
+        // prevents stale hashes from old runs from blocking login in dev.
+        $user = User::updateOrCreate(
             ['email' => $email],
             [
                 'name'     => $name,
