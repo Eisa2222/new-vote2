@@ -6,9 +6,12 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Modules\Campaigns\Actions\AttachTeamOfSeasonCandidatesAction;
+use App\Modules\Campaigns\Actions\AutoPopulateTeamOfSeasonFromLeagueAction;
 use App\Modules\Campaigns\Actions\CreateTeamOfSeasonCampaignAction;
 use App\Modules\Campaigns\Domain\TeamOfSeasonFormation;
+use App\Modules\Campaigns\Http\Requests\StoreTeamOfSeasonCampaignRequest;
 use App\Modules\Campaigns\Models\Campaign;
+use App\Modules\Leagues\Models\League;
 use App\Modules\Players\Enums\PlayerPosition;
 use App\Modules\Players\Models\Player;
 use Illuminate\Contracts\View\View;
@@ -25,82 +28,44 @@ final class AdminTeamOfSeasonController extends Controller
             'minLine'  => TeamOfSeasonFormation::MIN_LINE,
             'maxLine'  => TeamOfSeasonFormation::MAX_LINE,
             'outfield' => TeamOfSeasonFormation::OUTFIELD_TOTAL,
-            'leagues'  => \App\Modules\Leagues\Models\League::active()->with('sport')->orderBy('name_en')->get(),
+            'leagues'  => League::active()->with('sport')->orderBy('name_en')->get(),
         ]);
     }
 
     public function store(
-        Request $request,
-        CreateTeamOfSeasonCampaignAction $action,
-        AttachTeamOfSeasonCandidatesAction $attach,
+        StoreTeamOfSeasonCampaignRequest $request,
+        CreateTeamOfSeasonCampaignAction $create,
+        AutoPopulateTeamOfSeasonFromLeagueAction $autoPopulate,
     ): RedirectResponse {
-        $this->authorize('create', Campaign::class);
-        $data = $request->validate([
-            'title_ar'       => ['required', 'string', 'max:180'],
-            'title_en'       => ['required', 'string', 'max:180'],
-            'description_ar' => ['nullable', 'string'],
-            'description_en' => ['nullable', 'string'],
-            'league_id'      => ['nullable', 'integer', 'exists:leagues,id'],
-            'auto_populate'  => ['nullable', 'boolean'],
-            'start_at'       => ['required', 'date'],
-            'end_at'         => ['required', 'date', 'after:start_at'],
-            'max_voters'     => ['nullable', 'integer', 'min:1'],
-            'attack'         => ['required', 'integer', 'min:'.TeamOfSeasonFormation::MIN_LINE, 'max:'.TeamOfSeasonFormation::MAX_LINE],
-            'midfield'       => ['required', 'integer', 'min:'.TeamOfSeasonFormation::MIN_LINE, 'max:'.TeamOfSeasonFormation::MAX_LINE],
-            'defense'        => ['required', 'integer', 'min:'.TeamOfSeasonFormation::MIN_LINE, 'max:'.TeamOfSeasonFormation::MAX_LINE],
-        ]);
-
-        $autoPopulate = $request->boolean('auto_populate') && !empty($data['league_id']);
+        $data = $request->validated();
 
         try {
-            $campaign = $action->execute($data);
+            $campaign = $create->execute($data);
         } catch (\DomainException $e) {
             return back()->withInput()->withErrors(['formation' => $e->getMessage()]);
         }
 
-        $autoAdded = 0;
-        $leagueHadNoClubs = false;
-        $leagueHadNoActivePlayers = false;
-        if ($autoPopulate) {
-            $clubIds = \App\Modules\Leagues\Models\League::find($data['league_id'])
-                ?->clubs()->pluck('clubs.id')->all() ?? [];
-
-            if (empty($clubIds)) {
-                $leagueHadNoClubs = true;
-            } else {
-                $players = Player::active()
-                    ->whereIn('club_id', $clubIds)
-                    ->whereNotNull('position')
-                    ->get()
-                    ->groupBy(fn ($p) => $p->position?->value);
-
-                if ($players->flatten()->isEmpty()) {
-                    $leagueHadNoActivePlayers = true;
-                }
-
-                foreach ($players as $slot => $group) {
-                    $category = $campaign->categories()->where('position_slot', $slot)->first();
-                    if (!$category) continue;
-                    try {
-                        $autoAdded += $attach->execute($campaign, $category, $group->pluck('id')->all());
-                    } catch (\DomainException) {
-                        // ignore per-line failures; admin can add manually
-                    }
-                }
-            }
+        $summary = ['attached' => 0, 'no_clubs' => false, 'no_active_players' => false];
+        if ($request->wantsAutoPopulate()) {
+            $summary = $autoPopulate->execute($campaign, (int) $data['league_id']);
         }
 
-        $flash = redirect("/admin/tos/{$campaign->id}/candidates");
-        if ($autoAdded > 0) {
-            $flash = $flash->with('success', __('Campaign created and :n players auto-attached from the league.', ['n' => $autoAdded]));
-        } elseif ($leagueHadNoClubs) {
-            $flash = $flash->with('success', __('Campaign created. The selected league has NO clubs linked to it, so no players were auto-attached. Link clubs to the league from Settings → Leagues, or add candidates manually below.'));
-        } elseif ($leagueHadNoActivePlayers) {
-            $flash = $flash->with('success', __('Campaign created. The league has clubs but no active players with positions set. Add candidates manually below.'));
-        } else {
-            $flash = $flash->with('success', __('Campaign created. Now attach the candidates for each line.'));
+        return redirect("/admin/tos/{$campaign->id}/candidates")
+            ->with('success', $this->autoPopulateMessage($summary));
+    }
+
+    private function autoPopulateMessage(array $summary): string
+    {
+        if ($summary['attached'] > 0) {
+            return __('Campaign created and :n players auto-attached from the league.', ['n' => $summary['attached']]);
         }
-        return $flash;
+        if ($summary['no_clubs']) {
+            return __('Campaign created. The selected league has NO clubs linked to it, so no players were auto-attached. Link clubs to the league from Settings → Leagues, or add candidates manually below.');
+        }
+        if ($summary['no_active_players']) {
+            return __('Campaign created. The league has clubs but no active players with positions set. Add candidates manually below.');
+        }
+        return __('Campaign created. Now attach the candidates for each line.');
     }
 
     public function candidates(Campaign $campaign): View

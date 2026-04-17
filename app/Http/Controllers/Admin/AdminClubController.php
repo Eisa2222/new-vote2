@@ -9,6 +9,7 @@ use App\Modules\Clubs\Actions\CreateClubAction;
 use App\Modules\Clubs\Actions\ExportClubsAction;
 use App\Modules\Clubs\Actions\ImportClubsAction;
 use App\Modules\Clubs\Actions\UpdateClubAction;
+use App\Modules\Clubs\Http\Requests\ImportClubsRequest;
 use App\Modules\Clubs\Http\Requests\StoreClubRequest;
 use App\Modules\Clubs\Http\Requests\UpdateClubRequest;
 use App\Modules\Clubs\Models\Club;
@@ -111,14 +112,10 @@ final class AdminClubController extends Controller
         return $action->template();
     }
 
-    public function import(Request $request, ImportClubsAction $action): RedirectResponse
+    public function import(ImportClubsRequest $request, ImportClubsAction $action): RedirectResponse
     {
-        $this->authorize('create', Club::class);
-        $request->validate([
-            'file' => ['required', 'file', 'mimes:csv,txt', 'max:5120'],
-        ]);
-
         $result = $action->execute($request->file('file'));
+
         $msg = __(':c created, :u updated. :s row(s) skipped.', [
             'c' => $result['created'],
             'u' => $result['updated'],

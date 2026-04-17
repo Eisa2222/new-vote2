@@ -11,6 +11,7 @@ use App\Modules\Players\Actions\ExportPlayersAction;
 use App\Modules\Players\Actions\ImportPlayersAction;
 use App\Modules\Players\Actions\UpdatePlayerAction;
 use App\Modules\Players\Enums\PlayerPosition;
+use App\Modules\Players\Http\Requests\ImportPlayersRequest;
 use App\Modules\Players\Http\Requests\StorePlayerRequest;
 use App\Modules\Players\Http\Requests\UpdatePlayerRequest;
 use App\Modules\Players\Models\Player;
@@ -100,21 +101,25 @@ final class AdminPlayerController extends Controller
         return $action->template();
     }
 
-    public function import(Request $request, ImportPlayersAction $action): RedirectResponse
+    public function import(ImportPlayersRequest $request, ImportPlayersAction $action): RedirectResponse
     {
-        $this->authorize('create', Player::class);
-        $request->validate([
-            'file' => ['required', 'file', 'mimes:csv,txt', 'max:5120'],
-        ]);
-
         $result = $action->execute($request->file('file'));
+        return $this->importRedirect('/admin/players', $result);
+    }
+
+    /**
+     * Build the flash redirect for a CSV import result. Shared by
+     * players/clubs imports to keep the flash shape identical.
+     */
+    private function importRedirect(string $path, array $result): RedirectResponse
+    {
         $msg = __(':c created, :u updated. :s row(s) skipped.', [
             'c' => $result['created'],
             'u' => $result['updated'],
             's' => count($result['skipped']),
         ]);
 
-        $redirect = redirect('/admin/players')->with('success', $msg);
+        $redirect = redirect($path)->with('success', $msg);
         if (!empty($result['skipped'])) {
             $lines = array_map(fn ($r) => "Row {$r['row']}: {$r['error']}", $result['skipped']);
             $redirect = $redirect->with('import_errors', array_slice($lines, 0, 20));
