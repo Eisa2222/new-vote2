@@ -59,15 +59,24 @@ final class AdminTeamOfSeasonController extends Controller
         }
 
         $autoAdded = 0;
+        $leagueHadNoClubs = false;
+        $leagueHadNoActivePlayers = false;
         if ($autoPopulate) {
             $clubIds = \App\Modules\Leagues\Models\League::find($data['league_id'])
                 ?->clubs()->pluck('clubs.id')->all() ?? [];
-            if (!empty($clubIds)) {
+
+            if (empty($clubIds)) {
+                $leagueHadNoClubs = true;
+            } else {
                 $players = Player::active()
                     ->whereIn('club_id', $clubIds)
                     ->whereNotNull('position')
                     ->get()
                     ->groupBy(fn ($p) => $p->position?->value);
+
+                if ($players->flatten()->isEmpty()) {
+                    $leagueHadNoActivePlayers = true;
+                }
 
                 foreach ($players as $slot => $group) {
                     $category = $campaign->categories()->where('position_slot', $slot)->first();
@@ -81,11 +90,17 @@ final class AdminTeamOfSeasonController extends Controller
             }
         }
 
-        $msg = $autoAdded > 0
-            ? __('Campaign created and :n players auto-attached from the league.', ['n' => $autoAdded])
-            : __('Campaign created. Now attach the candidates for each line.');
-
-        return redirect("/admin/tos/{$campaign->id}/candidates")->with('success', $msg);
+        $flash = redirect("/admin/tos/{$campaign->id}/candidates");
+        if ($autoAdded > 0) {
+            $flash = $flash->with('success', __('Campaign created and :n players auto-attached from the league.', ['n' => $autoAdded]));
+        } elseif ($leagueHadNoClubs) {
+            $flash = $flash->with('success', __('Campaign created. The selected league has NO clubs linked to it, so no players were auto-attached. Link clubs to the league from Settings → Leagues, or add candidates manually below.'));
+        } elseif ($leagueHadNoActivePlayers) {
+            $flash = $flash->with('success', __('Campaign created. The league has clubs but no active players with positions set. Add candidates manually below.'));
+        } else {
+            $flash = $flash->with('success', __('Campaign created. Now attach the candidates for each line.'));
+        }
+        return $flash;
     }
 
     public function candidates(Campaign $campaign): View

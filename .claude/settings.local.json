@@ -49,7 +49,9 @@
       "Bash(curl -s -o /dev/null -w \"HTTP %{http_code}\\\\n\" http://127.0.0.1:8000/vote/07WhL7huvlLgxnsGYaWMU9eI2QayTa8d)",
       "Bash(rm resources/views/components/team-of-season/position-panel.blade.php)",
       "Bash(curl -s -o /dev/null -w \"login: %{http_code}\\\\n\" http://127.0.0.1:8000/login)",
-      "Bash(curl -s -o /dev/null -w \"admin: %{http_code}\\\\n\" http://127.0.0.1:8000/admin)"
+      "Bash(curl -s -o /dev/null -w \"admin: %{http_code}\\\\n\" http://127.0.0.1:8000/admin)",
+      "Bash(curl -s -o /tmp/login-check.html -w \"status: %{http_code}\\\\ntime: %{time_total}s\\\\nsize: %{size_download}\\\\n\" http://127.0.0.1:8000/login)",
+      "Bash(taskkill //F //IM php.exe)"
     ]
   }
 }
