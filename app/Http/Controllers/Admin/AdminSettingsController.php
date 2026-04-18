@@ -5,130 +5,148 @@ declare(strict_types=1);
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\User;
 use App\Modules\Campaigns\Enums\CampaignType;
+use App\Modules\Leagues\Actions\DeleteLeagueAction;
+use App\Modules\Leagues\Http\Requests\StoreLeagueRequest;
 use App\Modules\Leagues\Models\League;
 use App\Modules\Players\Enums\PlayerPosition;
+use App\Modules\Shared\Http\Requests\UpdateGeneralSettingsRequest;
 use App\Modules\Shared\Services\SettingsService;
+use App\Modules\Sports\Actions\DeleteSportAction;
+use App\Modules\Sports\Http\Requests\StoreSportRequest;
+use App\Modules\Sports\Http\Requests\UpdateSportRequest;
 use App\Modules\Sports\Models\Sport;
+use DomainException;
 use Illuminate\Contracts\View\View;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
-use Illuminate\Http\Request;
-use Illuminate\Support\Str;
-use Illuminate\Validation\Rule;
 
 final class AdminSettingsController extends Controller
 {
-    public function index(SettingsService $settings): View
+    /** General-settings keys stored in the `settings` table. */
+    private const GENERAL_SETTING_DEFAULTS = [
+        'app_name'              => 'SFPA Voting',
+        'contact_email'         => 'admin@sfpa.sa',
+        'default_max_voters'    => '',
+        'default_campaign_days' => '7',
+        'committee_name_ar'     => 'لجنة التصويت',
+        'committee_name_en'     => 'Voting Committee',
+    ];
+
+    private function authorizeManage(): void
     {
         abort_unless(auth()->user()?->can('users.manage'), 403);
+    }
+
+    public function index(SettingsService $settings): View
+    {
+        $this->authorizeManage();
 
         return view('admin.settings.index', [
             'sports'           => Sport::orderBy('name_en')->get(),
-            'leagues'          => League::with('sport')->withCount('clubs', 'campaigns')->orderBy('name_en')->get(),
+            'leagues'          => League::with('sport')->withCount(['clubs', 'campaigns'])->orderBy('name_en')->get(),
             'campaignTypes'    => CampaignType::cases(),
             'positions'        => PlayerPosition::cases(),
-            'committeeMembers' => \App\Models\User::role('committee')->orderBy('name')->get(),
-            'generalSettings'  => [
-                'app_name'              => $settings->get('app_name', 'SFPA Voting'),
-                'contact_email'         => $settings->get('contact_email', 'admin@sfpa.sa'),
-                'default_max_voters'    => $settings->get('default_max_voters', ''),
-                'default_campaign_days' => $settings->get('default_campaign_days', '7'),
-                'committee_name_ar'     => $settings->get('committee_name_ar', 'لجنة التصويت'),
-                'committee_name_en'     => $settings->get('committee_name_en', 'Voting Committee'),
-            ],
+            'committeeMembers' => User::role('committee')->orderBy('name')->get(),
+            'generalSettings'  => $this->readGeneralSettings($settings),
         ]);
     }
 
-    public function updateGeneral(Request $request, SettingsService $settings): RedirectResponse
+    public function updateGeneral(UpdateGeneralSettingsRequest $request, SettingsService $settings): RedirectResponse
     {
-        abort_unless(auth()->user()?->can('users.manage'), 403);
-        $data = $request->validate([
-            'app_name'              => ['required', 'string', 'max:120'],
-            'contact_email'         => ['required', 'email'],
-            'default_max_voters'    => ['nullable', 'integer', 'min:1'],
-            'default_campaign_days' => ['required', 'integer', 'min:1', 'max:365'],
-            'committee_name_ar'     => ['required', 'string', 'max:120'],
-            'committee_name_en'     => ['required', 'string', 'max:120'],
-        ]);
-        $settings->setMany($data, 'general');
-        return back()->with('success', __('Settings saved.'));
+        $settings->setMany($request->validated(), 'general');
+
+        return redirect()
+            ->route('admin.settings.index')
+            ->with('success', __('Settings saved.'));
     }
 
-    public function storeSport(Request $request): RedirectResponse
+    // ─── Sports ────────────────────────────────────────────────
+
+    public function storeSport(StoreSportRequest $request): RedirectResponse
     {
-        abort_unless(auth()->user()?->can('users.manage'), 403);
-        $data = $request->validate([
-            'slug'    => ['nullable', 'string', 'max:60'],
-            'name_ar' => ['required', 'string', 'max:100'],
-            'name_en' => ['required', 'string', 'max:100'],
-            'status'  => ['required', 'in:active,inactive'],
-        ]);
-        $data['slug'] = ($data['slug'] ?? null) ?: Str::slug($data['name_en']);
-        $request->merge(['slug' => $data['slug']])->validate([
-            'slug' => [Rule::unique('sports', 'slug')],
-        ]);
-        Sport::create($data);
-        return back()->with('success', __('Sport added.'));
+        Sport::create($request->validated());
+
+        return redirect()
+            ->route('admin.settings.index')
+            ->with('success', __('Sport added.'));
     }
 
-    public function updateSport(Request $request, Sport $sport): RedirectResponse
+    public function updateSport(UpdateSportRequest $request, Sport $sport): RedirectResponse
     {
-        abort_unless(auth()->user()?->can('users.manage'), 403);
-        $sport->update($request->validate([
-            'name_ar' => ['required', 'string', 'max:100'],
-            'name_en' => ['required', 'string', 'max:100'],
-            'status'  => ['required', 'in:active,inactive'],
-        ]));
-        return back()->with('success', __('Sport updated.'));
+        $sport->update($request->validated());
+
+        return redirect()
+            ->route('admin.settings.index')
+            ->with('success', __('Sport updated.'));
     }
 
-    public function destroySport(Sport $sport): RedirectResponse
+    public function destroySport(Sport $sport, DeleteSportAction $deleter): RedirectResponse
     {
-        abort_unless(auth()->user()?->can('users.manage'), 403);
-        if ($sport->clubs()->exists()) {
-            return back()->withErrors(['sport' => __('Cannot delete a sport that is linked to clubs.')]);
+        $this->authorizeManage();
+
+        try {
+            $deleter->execute($sport);
+            return redirect()
+                ->route('admin.settings.index')
+                ->with('success', __('Sport removed.'));
+        } catch (DomainException $exception) {
+            return redirect()
+                ->route('admin.settings.index')
+                ->withErrors(['sport' => $exception->getMessage()]);
         }
-        $sport->delete();
-        return back()->with('success', __('Sport removed.'));
     }
 
-    // ---- Leagues ----
+    // ─── Leagues ───────────────────────────────────────────────
 
-    public function storeLeague(Request $request): RedirectResponse
+    public function storeLeague(StoreLeagueRequest $request): RedirectResponse
     {
-        abort_unless(auth()->user()?->can('users.manage'), 403);
-        $data = $request->validate([
-            'sport_id' => ['required', 'integer', Rule::exists('sports', 'id')],
-            'name_ar'  => ['required', 'string', 'max:150'],
-            'name_en'  => ['required', 'string', 'max:150'],
-            'slug'     => ['nullable', 'string', 'max:80'],
-            'status'   => ['required', 'in:active,inactive'],
-        ]);
-        $data['slug'] = ($data['slug'] ?? null) ?: Str::slug($data['name_en']);
-        $request->merge(['slug' => $data['slug']])->validate([
-            'slug' => [Rule::unique('leagues', 'slug')],
-        ]);
-        League::create($data);
-        return back()->with('success', __('League added.'));
+        League::create($request->validated());
+
+        return redirect()
+            ->route('admin.settings.index')
+            ->with('success', __('League added.'));
     }
 
-    public function destroyLeague(League $league): RedirectResponse
+    public function destroyLeague(League $league, DeleteLeagueAction $deleter): RedirectResponse
     {
-        abort_unless(auth()->user()?->can('users.manage'), 403);
-        if ($league->campaigns()->exists()) {
-            return back()->withErrors(['league' => __('Cannot delete a league that has campaigns.')]);
+        $this->authorizeManage();
+
+        try {
+            $deleter->execute($league);
+            return redirect()
+                ->route('admin.settings.index')
+                ->with('success', __('League removed.'));
+        } catch (DomainException $exception) {
+            return redirect()
+                ->route('admin.settings.index')
+                ->withErrors(['league' => $exception->getMessage()]);
         }
-        $league->clubs()->detach();
-        $league->delete();
-        return back()->with('success', __('League removed.'));
     }
 
     /** JSON endpoint — returns clubs belonging to a league (used by campaign create). */
-    public function leagueClubs(League $league)
+    public function leagueClubs(League $league): JsonResponse
     {
-        abort_unless(auth()->user()?->can('users.manage') || auth()->user()?->can('campaigns.create'), 403);
-        return response()->json([
-            'data' => $league->clubs()->active()->orderBy('name_en')->get(['clubs.id', 'clubs.name_ar', 'clubs.name_en']),
-        ]);
+        $authorized = auth()->user()?->can('users.manage')
+            || auth()->user()?->can('campaigns.create');
+        abort_unless($authorized, 403);
+
+        $clubs = $league->clubs()
+            ->active()
+            ->orderBy('name_en')
+            ->get(['clubs.id', 'clubs.name_ar', 'clubs.name_en']);
+
+        return response()->json(['data' => $clubs]);
+    }
+
+    /** @return array<string,string> */
+    private function readGeneralSettings(SettingsService $settings): array
+    {
+        $result = [];
+        foreach (self::GENERAL_SETTING_DEFAULTS as $key => $default) {
+            $result[$key] = (string) $settings->get($key, $default);
+        }
+        return $result;
     }
 }
