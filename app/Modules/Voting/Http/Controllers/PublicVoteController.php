@@ -25,6 +25,31 @@ use Illuminate\Http\Request;
 
 final class PublicVoteController extends Controller
 {
+    /**
+     * Public directory of campaigns that are currently open for voting.
+     * Each card links to /vote/{token} which handles the verify-then-vote
+     * flow.
+     */
+    public function index(CampaignAvailabilityService $avail): View
+    {
+        // Candidates shown publicly: Active (voting is live) and Published
+        // (approved, waiting for start_at). Anything Draft / PendingApproval
+        // / Rejected / Closed / Archived is hidden.
+        $candidates = Campaign::query()
+            ->whereIn('status', ['active', 'published'])
+            ->withCount('votes')
+            ->orderByDesc('start_at')
+            ->get();
+
+        // Filter out anything the availability service says isn't actually
+        // voteable (e.g. end_at in past, max_voters hit). We still keep
+        // "not started yet" so upcoming campaigns are visible as teasers.
+        $open     = $candidates->filter(fn ($c) => $avail->reasonFor($c) === CampaignAvailabilityService::OK)->values();
+        $upcoming = $candidates->filter(fn ($c) => $avail->reasonFor($c) === CampaignAvailabilityService::NOT_STARTED)->values();
+
+        return view('voting::public_index', compact('open', 'upcoming'));
+    }
+
     public function show(string $token, CheckVoterSessionAction $check): View|RedirectResponse
     {
         $campaign = Campaign::where('public_token', $token)->firstOrFail();

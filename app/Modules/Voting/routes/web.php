@@ -15,6 +15,11 @@ use Illuminate\Support\Facades\Route;
 | (`php artisan cache:clear`) resets every throttle counter instantly.
 */
 
+// Public directory of open campaigns — landing page for voters.
+Route::get('/campaigns', [PublicVoteController::class, 'index'])
+    ->middleware('throttle:120,1')
+    ->name('public.campaigns');
+
 Route::prefix('vote')->group(function () {
     Route::get('{token}', [PublicVoteController::class, 'show'])
         ->middleware('throttle:60,1')
