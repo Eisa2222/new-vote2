@@ -78,14 +78,14 @@
         <div class="flex items-center justify-between gap-3 flex-wrap mb-5">
             <h2 class="text-xl font-bold">{{ __('Ranking') }}</h2>
             <div class="flex gap-2 flex-wrap">
-                <form method="post" action="{{ route('results.calculate', $campaign) }}">
+                <form method="post" action="{{ route('admin.results.calculate', $campaign) }}">
                     @csrf
                     <button class="rounded-xl border border-ink-200 hover:bg-ink-50 px-4 py-2 text-sm font-medium">
                         🔄 {{ __('Recalculate') }}
                     </button>
                 </form>
                 @if($resultStatus === 'calculated')
-                    <form method="post" action="{{ route('results.approve', $result) }}">
+                    <form method="post" action="{{ route('admin.results.approve', $result) }}">
                         @csrf
                         <button class="rounded-xl bg-amber-500 hover:bg-amber-600 text-white px-4 py-2 text-sm font-semibold">
                             ✓ {{ __('Approve') }}
@@ -93,7 +93,7 @@
                     </form>
                 @endif
                 @if($resultStatus === 'approved')
-                    <form method="post" action="{{ route('results.announce', $result) }}">
+                    <form method="post" action="{{ route('admin.results.announce', $result) }}">
                         @csrf
                         <button class="rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 text-sm font-semibold">
                             📢 {{ __('Announce') }}
@@ -101,7 +101,7 @@
                     </form>
                 @endif
                 @if($result && $resultStatus !== 'hidden')
-                    <form method="post" action="{{ route('results.hide', $result) }}">
+                    <form method="post" action="{{ route('admin.results.hide', $result) }}">
                         @csrf
                         <button class="rounded-xl border border-ink-200 text-ink-700 hover:bg-ink-50 px-4 py-2 text-sm font-medium">
                             🔒 {{ __('Hide') }}

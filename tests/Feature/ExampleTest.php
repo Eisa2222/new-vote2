@@ -1,7 +1,7 @@
 <?php
 
-test('root redirects to login', function () {
-    $this->get('/')->assertRedirect('/login');
+test('root redirects to public campaigns listing', function () {
+    $this->get('/')->assertRedirect(route('public.campaigns'));
 });
 
 test('login page renders', function () {

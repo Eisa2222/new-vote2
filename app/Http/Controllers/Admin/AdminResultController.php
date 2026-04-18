@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Modules\Campaigns\Enums\CampaignStatus;
 use App\Modules\Campaigns\Models\Campaign;
 use App\Modules\Results\Actions\AnnounceResultsAction;
 use App\Modules\Results\Actions\ApproveResultsAction;
@@ -12,15 +13,23 @@ use App\Modules\Results\Actions\CalculateCampaignResultsAction;
 use App\Modules\Results\Actions\HideResultsAction;
 use App\Modules\Results\Actions\ResolveTieAction;
 use App\Modules\Results\Models\CampaignResult;
+use DomainException;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 
 final class AdminResultController extends Controller
 {
-    private function requirePermission(string $perm): void
+    /** Statuses whose results are worth opening in the admin. */
+    private const RESULT_RELEVANT_STATUSES = [
+        CampaignStatus::Active->value,
+        CampaignStatus::Closed->value,
+        CampaignStatus::Published->value,
+    ];
+
+    private function requirePermission(string $permission): void
     {
-        abort_unless(auth()->user()?->can($perm), 403);
+        abort_unless(auth()->user()?->can($permission), 403);
     }
 
     public function index(): View
@@ -28,8 +37,9 @@ final class AdminResultController extends Controller
         $this->requirePermission('results.view');
 
         $campaigns = Campaign::with('result')
-            ->whereIn('status', ['active', 'closed', 'published'])
-            ->orderByDesc('id')->paginate(20);
+            ->whereIn('status', self::RESULT_RELEVANT_STATUSES)
+            ->orderByDesc('id')
+            ->paginate(config('voting.pagination.results'));
 
         return view('admin.results.index', compact('campaigns'));
     }
@@ -38,38 +48,65 @@ final class AdminResultController extends Controller
     {
         $this->requirePermission('results.view');
 
-        $result = $campaign->result()->with('items.candidate.player.club', 'items.candidate.club', 'items.category')
+        $result = $campaign->result()
+            ->with(['items.candidate.player.club', 'items.candidate.club', 'items.category'])
             ->first();
 
         return view('admin.results.show', compact('campaign', 'result'));
     }
 
-    public function calculate(Campaign $campaign, CalculateCampaignResultsAction $a): RedirectResponse
+    public function calculate(Campaign $campaign, CalculateCampaignResultsAction $calculator): RedirectResponse
     {
         $this->requirePermission('results.calculate');
-        $a->execute($campaign->load('categories'));
-        return back()->with('success', __('Results recalculated.'));
+
+        $calculator->execute($campaign->load('categories'));
+
+        return redirect()
+            ->route('admin.results.show', $campaign)
+            ->with('success', __('Results recalculated.'));
     }
 
-    public function approve(CampaignResult $result, ApproveResultsAction $a): RedirectResponse
+    public function approve(CampaignResult $result, ApproveResultsAction $approver): RedirectResponse
     {
         $this->requirePermission('results.approve');
-        try { $a->execute($result); return back()->with('success', __('Results approved.')); }
-        catch (\DomainException $e) { return back()->withErrors(['status' => $e->getMessage()]); }
+
+        try {
+            $approver->execute($result);
+            return redirect()
+                ->route('admin.results.show', $result->campaign_id)
+                ->with('success', __('Results approved.'));
+        } catch (DomainException $exception) {
+            return redirect()
+                ->route('admin.results.show', $result->campaign_id)
+                ->withErrors(['status' => $exception->getMessage()]);
+        }
     }
 
-    public function hide(CampaignResult $result, HideResultsAction $a): RedirectResponse
+    public function hide(CampaignResult $result, HideResultsAction $hider): RedirectResponse
     {
         $this->requirePermission('results.hide');
-        $a->execute($result);
-        return back()->with('success', __('Results hidden.'));
+
+        $hider->execute($result);
+
+        return redirect()
+            ->route('admin.results.show', $result->campaign_id)
+            ->with('success', __('Results hidden.'));
     }
 
-    public function announce(CampaignResult $result, AnnounceResultsAction $a): RedirectResponse
+    public function announce(CampaignResult $result, AnnounceResultsAction $announcer): RedirectResponse
     {
         $this->requirePermission('results.announce');
-        try { $a->execute($result); return back()->with('success', __('Results announced.')); }
-        catch (\DomainException $e) { return back()->withErrors(['status' => $e->getMessage()]); }
+
+        try {
+            $announcer->execute($result);
+            return redirect()
+                ->route('admin.results.show', $result->campaign_id)
+                ->with('success', __('Results announced.'));
+        } catch (DomainException $exception) {
+            return redirect()
+                ->route('admin.results.show', $result->campaign_id)
+                ->withErrors(['status' => $exception->getMessage()]);
+        }
     }
 
     /**
@@ -79,20 +116,25 @@ final class AdminResultController extends Controller
     public function resolveTie(
         Request $request,
         CampaignResult $result,
-        ResolveTieAction $action,
+        ResolveTieAction $resolver,
     ): RedirectResponse {
         $this->requirePermission('results.approve');
-        $data = $request->validate([
-            'category_id' => ['required', 'integer'],
-            'winner_ids'  => ['required', 'array', 'min:1'],
-            'winner_ids.*'=> ['integer'],
+
+        $validated = $request->validate([
+            'category_id'   => ['required', 'integer'],
+            'winner_ids'    => ['required', 'array', 'min:1'],
+            'winner_ids.*'  => ['integer'],
         ]);
 
         try {
-            $action->execute($result, (int) $data['category_id'], $data['winner_ids']);
-            return back()->with('success', __('Tie resolved.'));
-        } catch (\DomainException $e) {
-            return back()->withErrors(['tie' => $e->getMessage()]);
+            $resolver->execute($result, (int) $validated['category_id'], $validated['winner_ids']);
+            return redirect()
+                ->route('admin.results.show', $result->campaign_id)
+                ->with('success', __('Tie resolved.'));
+        } catch (DomainException $exception) {
+            return redirect()
+                ->route('admin.results.show', $result->campaign_id)
+                ->withErrors(['tie' => $exception->getMessage()]);
         }
     }
 }

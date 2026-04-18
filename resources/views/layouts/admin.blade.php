@@ -7,15 +7,17 @@
     // nobody sees a tab they can't open. Order is stable; gates keep the
     // layout from hitting permission checks in the child views.
     $nav = collect([
-        ['path' => '/admin',           'icon' => '🏠', 'label' => __('Dashboard'), 'can' => true],
-        ['path' => '/admin/users',     'icon' => '👥', 'label' => __('Users'),     'can' => (bool) $user?->can('users.manage')],
-        ['path' => '/admin/roles',     'icon' => '🛡️', 'label' => __('Roles'),     'can' => (bool) $user?->can('users.manage')],
-        ['path' => '/admin/clubs',     'icon' => '🏟️', 'label' => __('Clubs'),     'can' => (bool) $user?->can('clubs.viewAny')],
-        ['path' => '/admin/players',   'icon' => '🧍', 'label' => __('Players'),   'can' => (bool) $user?->can('players.viewAny')],
-        ['path' => '/admin/campaigns', 'icon' => '🗳️', 'label' => __('Campaigns'), 'can' => (bool) $user?->can('campaigns.viewAny')],
-        ['path' => '/admin/results',   'icon' => '🏆', 'label' => __('Results'),   'can' => (bool) $user?->can('results.view')],
-        ['path' => '/admin/settings',  'icon' => '⚙️', 'label' => __('Settings'),  'can' => (bool) $user?->can('users.manage')],
-    ])->filter(fn ($item) => $item['can'])->values();
+        ['route' => 'admin.landing',         'icon' => '🏠', 'label' => __('Dashboard'), 'can' => true],
+        ['route' => 'admin.users.index',     'icon' => '👥', 'label' => __('Users'),     'can' => (bool) $user?->can('users.manage')],
+        ['route' => 'admin.roles.index',     'icon' => '🛡️', 'label' => __('Roles'),     'can' => (bool) $user?->can('users.manage')],
+        ['route' => 'admin.clubs.index',     'icon' => '🏟️', 'label' => __('Clubs'),     'can' => (bool) $user?->can('clubs.viewAny')],
+        ['route' => 'admin.players.index',   'icon' => '🧍', 'label' => __('Players'),   'can' => (bool) $user?->can('players.viewAny')],
+        ['route' => 'admin.campaigns.index', 'icon' => '🗳️', 'label' => __('Campaigns'), 'can' => (bool) $user?->can('campaigns.viewAny')],
+        ['route' => 'admin.results.index',   'icon' => '🏆', 'label' => __('Results'),   'can' => (bool) $user?->can('results.view')],
+        ['route' => 'admin.settings.index',  'icon' => '⚙️', 'label' => __('Settings'),  'can' => (bool) $user?->can('users.manage')],
+    ])->filter(fn ($item) => $item['can'])
+      ->map(fn ($item) => $item + ['path' => route($item['route'])])
+      ->values();
 
     $current = '/'.trim(request()->path(), '/');
 

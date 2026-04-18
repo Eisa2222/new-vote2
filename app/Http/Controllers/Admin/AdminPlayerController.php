@@ -35,7 +35,7 @@ final class AdminPlayerController extends Controller
                 $t = '%'.$request->string('q').'%';
                 $q->where(fn ($w) => $w->where('name_ar', 'like', $t)->orWhere('name_en', 'like', $t));
             })
-            ->orderByDesc('id')->paginate(20)->withQueryString();
+            ->orderByDesc('id')->paginate(config('voting.pagination.players'))->withQueryString();
 
         return view('admin.players.index', [
             'players'   => $players,

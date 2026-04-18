@@ -16,7 +16,7 @@
                 'announced' => 'bg-emerald-100 text-emerald-700',
             ][$visibility] ?? 'bg-gray-100 text-gray-700';
         @endphp
-        <a href="{{ route('results.show', $c) }}"
+        <a href="{{ route('admin.results.show', $c) }}"
            class="block rounded-2xl border border-gray-200 p-5 hover:border-emerald-400 hover:shadow-md transition">
             <div class="flex items-center justify-between gap-4 flex-wrap">
                 <div>

@@ -16,7 +16,7 @@ final class ImportClubsRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'file' => ['required', 'file', 'mimes:csv,txt', 'max:5120'],
+            'file' => ['required', 'file', 'mimes:csv,txt', 'max:'.config('voting.import.max_size_kb')],
         ];
     }
 }

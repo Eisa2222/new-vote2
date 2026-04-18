@@ -29,7 +29,7 @@ final class AdminClubController extends Controller
             ->search($request->string('q')->toString())
             ->when($request->filled('status'), fn ($q) => $q->where('status', $request->string('status')))
             ->orderByDesc('id')
-            ->paginate(15)
+            ->paginate(config('voting.pagination.clubs'))
             ->withQueryString();
 
         return view('admin.clubs.index', compact('clubs'));

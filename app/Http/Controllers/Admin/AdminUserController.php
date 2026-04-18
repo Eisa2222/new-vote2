@@ -23,7 +23,7 @@ final class AdminUserController extends Controller
     public function index(): View
     {
         $this->authorizeManage();
-        $users = User::with('roles')->orderByDesc('id')->paginate(20);
+        $users = User::with('roles')->orderByDesc('id')->paginate(config('voting.pagination.users'));
         return view('admin.users.index', compact('users'));
     }
 

@@ -30,7 +30,8 @@ final class AdminCampaignController extends Controller
     public function index(): View
     {
         $this->authorize('viewAny', Campaign::class);
-        $campaigns = Campaign::withCount('votes')->orderByDesc('id')->paginate(15);
+        $campaigns = Campaign::withCount('votes')->orderByDesc('id')
+            ->paginate(config('voting.pagination.campaigns'));
         return view('admin.campaigns.index', compact('campaigns'));
     }
 
