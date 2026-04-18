@@ -33,7 +33,7 @@
 
         <div>
             <label class="block text-sm font-medium text-slate-700 mb-1">{{ __('Logo') }}</label>
-            <input type="file" name="logo" accept="image/*" class="w-full">
+            <input type="file" name="logo" accept="image/png,image/jpeg,image/webp" class="w-full">
         </div>
 
         <div>

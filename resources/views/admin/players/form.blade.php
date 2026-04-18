@@ -96,7 +96,7 @@
 
         <div>
             <label class="block text-sm font-medium text-slate-700 mb-1">{{ __('Photo') }}</label>
-            <input type="file" name="photo" accept="image/*">
+            <input type="file" name="photo" accept="image/png,image/jpeg,image/webp">
         </div>
 
         <div class="sticky bottom-0 bg-white pt-4 border-t flex gap-2">
