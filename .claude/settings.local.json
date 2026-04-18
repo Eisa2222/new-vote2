@@ -57,7 +57,8 @@
       "Bash(curl -s -o /dev/null -w \"local: %{http_code}\\\\n\" http://127.0.0.1:8000/login)",
       "Bash(curl -s -o /dev/null -w \"lan:   %{http_code}\\\\n\" http://192.168.100.149:8000/login)",
       "Read(//c/Users/WinDows/Downloads/**)",
-      "Bash(sort -t: -k2 -nr)"
+      "Bash(sort -t: -k2 -nr)",
+      "Bash(grep -n \"/admin/campaigns\\\\|action=\\\\\"\\\\\\\\/\" resources/views/admin/campaigns/form.blade.php)"
     ]
   }
 }

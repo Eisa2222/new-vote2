@@ -5,7 +5,7 @@
 @section('page_description', __('Set up a campaign, its questions, and answers'))
 
 @section('content')
-<form method="post" action="/admin/campaigns" class="space-y-6" id="campaignForm">
+<form method="post" action="{{ route('admin.campaigns.store') }}" class="space-y-6" id="campaignForm">
     @csrf
 
     <div class="rounded-3xl border border-gray-200 bg-white p-6 shadow-sm space-y-5">
@@ -90,7 +90,7 @@
     </div>
 
     <div class="sticky bottom-0 bg-white border-t border-gray-200 p-4 rounded-t-3xl shadow-lg flex items-center justify-between">
-        <a href="/admin/campaigns" class="rounded-2xl border px-5 py-3 hover:bg-gray-50">{{ __('Cancel') }}</a>
+        <a href="{{ route('admin.campaigns.index') }}" class="rounded-2xl border px-5 py-3 hover:bg-gray-50">{{ __('Cancel') }}</a>
         <button class="rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white px-8 py-3 font-semibold">
             {{ __('Create campaign') }}
         </button>
