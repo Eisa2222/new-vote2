@@ -97,13 +97,33 @@ it('auto-closes the campaign when max_voters reached', function () {
 it('blocks the vote page when campaign is not active', function () {
     $c = makeActiveIndividualCampaign();
     $c->update(['status' => CampaignStatus::Draft->value]);
-    $this->get("/vote/{$c->public_token}")->assertStatus(410);
+    // Now renders the friendly "unavailable" view (HTTP 200) instead of 410.
+    $this->get("/vote/{$c->public_token}")
+        ->assertStatus(200)
+        ->assertSee(__('Not open yet'));
 });
 
 it('blocks the vote page after end date', function () {
     $c = makeActiveIndividualCampaign();
     $c->update(['end_at' => now()->subMinute()]);
-    $this->get("/vote/{$c->public_token}")->assertStatus(410);
+    $this->get("/vote/{$c->public_token}")
+        ->assertStatus(200)
+        ->assertSee(__('Voting has ended'));
+});
+
+it('shows a voter-limit-reached page once max_voters is hit', function () {
+    $c = makeActiveIndividualCampaign(maxVoters: 1);
+    $cat = $c->categories->first();
+    $cand = $cat->candidates->first();
+    verifyAs($c, '1000000001');
+    $this->post(route('voting.submit', $c->public_token), [
+        'selections' => [['category_id' => $cat->id, 'candidate_ids' => [$cand->id]]],
+    ]);
+
+    // A second visitor sees the friendly limit page instead of a 410.
+    $this->get("/vote/{$c->public_token}")
+        ->assertStatus(200)
+        ->assertSee(__('Voter limit reached'));
 });
 
 it('rejects wrong number of picks even when verified', function () {

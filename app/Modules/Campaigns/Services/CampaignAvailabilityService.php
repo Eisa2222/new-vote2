@@ -23,8 +23,15 @@ final class CampaignAvailabilityService
 
     public function reasonFor(Campaign $campaign): string
     {
-        $now    = now();
         $status = $campaign->status;
+
+        // Check max_voters FIRST — when a campaign auto-closes because
+        // it filled up, its status becomes Closed, but the voter deserves
+        // the real reason ("Voter limit reached") rather than a generic
+        // "Campaign closed" message.
+        if ($campaign->max_voters !== null && $campaign->votes()->count() >= $campaign->max_voters) {
+            return self::MAX_VOTERS_REACHED;
+        }
 
         if ($status === CampaignStatus::Draft || $status === CampaignStatus::Archived) {
             return self::NOT_PUBLISHED;
@@ -37,9 +44,6 @@ final class CampaignAvailabilityService
         }
         if ($campaign->end_at->isPast()) {
             return self::ENDED;
-        }
-        if ($campaign->max_voters !== null && $campaign->votes()->count() >= $campaign->max_voters) {
-            return self::MAX_VOTERS_REACHED;
         }
 
         return self::OK;

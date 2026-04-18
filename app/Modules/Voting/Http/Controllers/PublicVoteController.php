@@ -28,16 +28,29 @@ final class PublicVoteController extends Controller
     public function show(string $token, CheckVoterSessionAction $check): View|RedirectResponse
     {
         $campaign = Campaign::where('public_token', $token)->firstOrFail();
-        abort_unless(
-            app(CampaignAvailabilityService::class)->isAvailable($campaign),
-            410,
-            __('This campaign is not open for voting.'),
-        );
+
+        if ($unavailable = $this->unavailableView($campaign)) {
+            return $unavailable;
+        }
 
         if ($check->execute($campaign)) {
             return redirect()->route('voting.form', $token);
         }
         return view('voting::verify', compact('campaign'));
+    }
+
+    /**
+     * Returns a rendered "campaign unavailable" view if the campaign
+     * can't accept votes right now; null when voting is open.
+     * Keeps the three public endpoints (show, verify, form) DRY.
+     */
+    private function unavailableView(Campaign $campaign): ?View
+    {
+        $reason = app(CampaignAvailabilityService::class)->reasonFor($campaign);
+        if ($reason === CampaignAvailabilityService::OK) {
+            return null;
+        }
+        return view('voting::unavailable', compact('campaign', 'reason'));
     }
 
     public function verify(
@@ -46,13 +59,14 @@ final class PublicVoteController extends Controller
         VerifyVoterIdentityAction $verify,
         CreateVoterSessionAction $create,
         PreventDuplicateVoteByPlayerAction $dup,
-    ): RedirectResponse {
+    ): RedirectResponse|View {
         $campaign = Campaign::where('public_token', $token)->firstOrFail();
-        abort_unless(
-            app(CampaignAvailabilityService::class)->isAvailable($campaign),
-            410,
-            __('This campaign is not open for voting.'),
-        );
+
+        // Campaign might have filled up between the time the voter opened
+        // the page and the time they submitted the identity form.
+        if ($unavailable = $this->unavailableView($campaign)) {
+            return $unavailable;
+        }
 
         try {
             $result = $verify->execute(
@@ -74,6 +88,11 @@ final class PublicVoteController extends Controller
     public function form(string $token, CheckVoterSessionAction $check, GetPublicCampaignAction $loader): View|RedirectResponse
     {
         $campaign = Campaign::where('public_token', $token)->firstOrFail();
+
+        if ($unavailable = $this->unavailableView($campaign)) {
+            return $unavailable;
+        }
+
         $session  = $check->execute($campaign);
         if (! $session) {
             return redirect()->route('voting.show', $token);
@@ -95,8 +114,16 @@ final class PublicVoteController extends Controller
         SubmitVoteAction $action,
         SubmitTeamOfSeasonVoteAction $tosAction,
         CreateVoterSessionAction $session,
-    ): RedirectResponse {
+    ): RedirectResponse|View {
         $campaign = Campaign::where('public_token', $token)->firstOrFail();
+
+        // Race: another voter may have been the one to hit max_voters
+        // between the form loading and this POST. Show the same friendly
+        // page instead of a raw 410.
+        if ($unavailable = $this->unavailableView($campaign)) {
+            return $unavailable;
+        }
+
         $submittedLineup = null;
 
         try {
