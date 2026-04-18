@@ -18,6 +18,7 @@ use App\Modules\Campaigns\Enums\CampaignStatus;
 use App\Modules\Campaigns\Enums\CampaignType;
 use App\Modules\Campaigns\Http\Requests\StoreCampaignRequest;
 use App\Modules\Campaigns\Models\Campaign;
+use App\Modules\Campaigns\Queries\CampaignIndexData;
 use App\Modules\Clubs\Models\Club;
 use App\Modules\Leagues\Models\League;
 use App\Modules\Players\Models\Player;
@@ -30,15 +31,13 @@ use Illuminate\Http\Request;
 
 final class AdminCampaignController extends Controller
 {
-    public function index(): View
+    public function index(CampaignIndexData $query): View
     {
         $this->authorize('viewAny', Campaign::class);
 
-        $campaigns = Campaign::withCount('votes')
-            ->orderByDesc('id')
-            ->paginate(config('voting.pagination.campaigns'));
-
-        return view('admin.campaigns.index', compact('campaigns'));
+        return view('admin.campaigns.index', $query->fetch(
+            perPage: config('voting.pagination.campaigns'),
+        ));
     }
 
     public function create(): View
