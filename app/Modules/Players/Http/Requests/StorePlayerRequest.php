@@ -20,11 +20,19 @@ final class StorePlayerRequest extends FormRequest
 
     public function rules(): array
     {
+        // Per-club name uniqueness — stops the "same player twice" case
+        // that previously slipped past validation and triggered a
+        // 500 on insert (TC022).
+        $clubId = $this->integer('club_id');
+        $sameClubRule = fn (string $field) => Rule::unique('players', $field)
+            ->where('club_id', $clubId)
+            ->whereNull('deleted_at');
+
         return [
             'club_id'       => ['required', 'integer', Rule::exists('clubs', 'id')->whereNull('deleted_at')],
             'sport_id'      => ['required', 'integer', Rule::exists('sports', 'id')],
-            'name_ar'       => ['required', 'string', 'max:120'],
-            'name_en'       => ['required', 'string', 'max:120'],
+            'name_ar'       => ['required', 'string', 'max:120', $sameClubRule('name_ar')],
+            'name_en'       => ['required', 'string', 'max:120', $sameClubRule('name_en')],
             'photo'         => ['nullable', 'image', 'mimes:png,jpg,jpeg,webp', 'max:4096'],
             'position'      => ['required', new Enum(PlayerPosition::class)],
             'is_captain'    => ['boolean'],

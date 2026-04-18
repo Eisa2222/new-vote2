@@ -14,12 +14,29 @@ beforeEach(function () { seedRolesAndPermissions(); });
 
 function makeDraftCampaign(): Campaign
 {
-    return Campaign::create([
+    $campaign = Campaign::create([
         'title_ar' => 'مسودة', 'title_en' => 'Draft',
         'type'     => CampaignType::IndividualAward->value,
         'status'   => CampaignStatus::Draft->value,
         'start_at' => now(), 'end_at' => now()->addDay(),
     ]);
+
+    // Every test scenario here expects a reviewable campaign — one
+    // with at least one category. Mirrors the real admin flow where
+    // a category is always created before submission.
+    $campaign->categories()->create([
+        'title_ar'       => 'س',
+        'title_en'       => 'Q',
+        'category_type'  => 'single_choice',
+        'position_slot'  => 'any',
+        'required_picks' => 1,
+        'selection_min'  => 1,
+        'selection_max'  => 1,
+        'is_active'      => true,
+        'display_order'  => 0,
+    ]);
+
+    return $campaign;
 }
 
 it('admin submits a draft for approval; status becomes pending_approval', function () {

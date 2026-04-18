@@ -25,6 +25,16 @@ final class SubmitCampaignForApprovalAction
             );
         }
 
+        // Guard: a campaign with zero categories can't be voted on — reject
+        // submission early with a friendly DomainException (which the
+        // controller renders as a flash error) instead of letting the
+        // committee approve it and then hit an empty-voting experience.
+        if ($campaign->categories()->count() === 0) {
+            throw new \DomainException(
+                __('Add at least one category and candidate before submitting for approval.'),
+            );
+        }
+
         $campaign->update([
             'status' => CampaignStatus::PendingApproval->value,
         ]);

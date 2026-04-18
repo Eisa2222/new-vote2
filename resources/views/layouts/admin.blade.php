@@ -39,7 +39,13 @@
     <title>@yield('title', __('SFPA Voting'))</title>
     @include('partials.brand-head')
     <script defer src="https://unpkg.com/alpinejs@3.14.3/dist/cdn.min.js"></script>
-    <style>[x-cloak] { display: none !important; }</style>
+    <style>
+        [x-cloak] { display: none !important; }
+        /* TC011 — desktop sidebar collapse. Toggles via the header button. */
+        @media (min-width: 1024px) {
+            html.sidebar-collapsed #adminSidebar { display: none; }
+        }
+    </style>
 </head>
 <body class="bg-ink-50 text-ink-900 min-h-screen">
 <div class="min-h-screen flex">
@@ -78,8 +84,14 @@
         <header class="bg-white border-b border-ink-200 px-4 md:px-8 py-3 sticky top-0 z-30">
             <div class="flex items-center gap-4 justify-between">
                 <div class="flex items-center gap-3 min-w-0">
-                    <button type="button" onclick="toggleDrawer(true)"
+                    {{-- Mobile: opens the drawer.
+                         Desktop: collapses/expands the sidebar (TC011). --}}
+                    <button type="button" onclick="toggleDrawer(true)" aria-label="{{ __('Open menu') }}"
                             class="lg:hidden inline-flex w-10 h-10 items-center justify-center rounded-lg border border-ink-200 hover:bg-ink-50">
+                        <span class="text-xl">☰</span>
+                    </button>
+                    <button type="button" onclick="toggleSidebarCollapse()" aria-label="{{ __('Collapse sidebar') }}"
+                            class="hidden lg:inline-flex w-10 h-10 items-center justify-center rounded-lg border border-ink-200 hover:bg-ink-50">
                         <span class="text-xl">☰</span>
                     </button>
                     <div class="min-w-0">
@@ -158,6 +170,19 @@
 <x-admin.toaster />
 
 <script>
+    /* Desktop sidebar collapse — toggles between the normal 72-unit width
+       and a fully hidden state. Preference is stored in localStorage so
+       reloading the page keeps the same layout (TC011). */
+    (function restoreSidebarState() {
+        if (localStorage.getItem('sidebarCollapsed') === '1') {
+            document.documentElement.classList.add('sidebar-collapsed');
+        }
+    })();
+    function toggleSidebarCollapse() {
+        const collapsed = document.documentElement.classList.toggle('sidebar-collapsed');
+        localStorage.setItem('sidebarCollapsed', collapsed ? '1' : '0');
+    }
+
     function toggleDrawer(show) {
         const sb = document.getElementById('adminSidebar');
         const ov = document.getElementById('drawerOverlay');

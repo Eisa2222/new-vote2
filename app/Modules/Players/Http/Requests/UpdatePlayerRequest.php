@@ -20,12 +20,21 @@ final class UpdatePlayerRequest extends FormRequest
     public function rules(): array
     {
         $player = $this->route('player');
+        $clubId = $this->integer('club_id', $player?->club_id);
+
+        // Same per-club name uniqueness as the store rule, excluding
+        // the current record so an update of other fields doesn't
+        // trip over its own row.
+        $sameClubRule = fn (string $field) => Rule::unique('players', $field)
+            ->ignore($player?->id)
+            ->where('club_id', $clubId)
+            ->whereNull('deleted_at');
 
         return [
             'club_id'       => ['sometimes', 'required', 'integer', Rule::exists('clubs', 'id')],
             'sport_id'      => ['sometimes', 'required', 'integer', Rule::exists('sports', 'id')],
-            'name_ar'       => ['sometimes', 'required', 'string', 'max:120'],
-            'name_en'       => ['sometimes', 'required', 'string', 'max:120'],
+            'name_ar'       => ['sometimes', 'required', 'string', 'max:120', $sameClubRule('name_ar')],
+            'name_en'       => ['sometimes', 'required', 'string', 'max:120', $sameClubRule('name_en')],
             'photo'         => ['nullable', 'image', 'mimes:png,jpg,jpeg,webp', 'max:4096'],
             'position'      => ['sometimes', new Enum(PlayerPosition::class)],
             'is_captain'    => ['boolean'],

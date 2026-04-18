@@ -57,13 +57,16 @@
             @endisset
             <div>
                 <label class="block text-sm font-medium mb-1">{{ __('Start at') }}</label>
-                <input type="datetime-local" name="start_at" value="{{ old('start_at') }}" required
+                <input type="datetime-local" name="start_at" id="startAtInput" value="{{ old('start_at') }}" required
                        class="w-full rounded-2xl border border-gray-300 px-4 py-3">
             </div>
             <div>
                 <label class="block text-sm font-medium mb-1">{{ __('End at') }}</label>
-                <input type="datetime-local" name="end_at" value="{{ old('end_at') }}" required
+                <input type="datetime-local" name="end_at" id="endAtInput" value="{{ old('end_at') }}" required
                        class="w-full rounded-2xl border border-gray-300 px-4 py-3">
+                <p id="dateError" class="hidden text-xs text-rose-600 mt-1 font-medium">
+                    {{ __('End date must be after the start date.') }}
+                </p>
             </div>
             <div>
                 <label class="block text-sm font-medium mb-1">{{ __('Max voters') }}</label>
@@ -78,7 +81,7 @@
         <div class="flex items-center justify-between">
             <div>
                 <h2 class="text-xl font-bold">{{ __('Questions') }}</h2>
-                <p class="text-sm text-gray-500 mt-1">{{ __('Each question has its own list of answers (players).') }}</p>
+                <p class="text-sm text-gray-500 mt-1">{{ __('Each question has its own list of answers (players). At least one question is required.') }}</p>
             </div>
             <button type="button" id="addQuestionBtn"
                     class="rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white px-5 py-3 font-semibold">
@@ -97,7 +100,9 @@
     </div>
 </form>
 
-<?php
+@php
+    // Pre-encode the reference data + any resubmitted (old()) categories
+    // so the JS can rehydrate the form on validation failure.
     $playersJson = $players->map(fn($p) => [
         'id'       => $p->id,
         'name'     => $p->localized('name'),
@@ -109,9 +114,15 @@
     $leagueClubsMap = isset($leagues)
         ? $leagues->mapWithKeys(fn ($l) => [$l->id => $l->clubs->pluck('id')->all()])->toJson()
         : '{}';
-?>
+
+    // `old('categories')` is whatever the admin last typed; we feed it back
+    // into the JS renderer so nothing is lost on a failed submit (TC014).
+    $oldCategoriesJson = json_encode(old('categories', []), JSON_UNESCAPED_UNICODE);
+@endphp
+
 <script id="playersData" type="application/json">{!! $playersJson !!}</script>
 <script id="leagueClubs" type="application/json">{!! $leagueClubsMap !!}</script>
+<script id="oldCategories" type="application/json">{!! $oldCategoriesJson !!}</script>
 
 <template id="questionTemplate">
     <div class="question-row rounded-2xl border-2 border-gray-200 p-5 bg-gray-50">
@@ -173,11 +184,37 @@
 </template>
 
 <script>
-const allPlayers = JSON.parse(document.getElementById('playersData').textContent);
+const allPlayers  = JSON.parse(document.getElementById('playersData').textContent);
 const leagueClubs = JSON.parse(document.getElementById('leagueClubs').textContent);
-const tpl = document.getElementById('questionTemplate');
-const container = document.getElementById('questionsContainer');
-let qIndex = 0;
+const oldCats     = JSON.parse(document.getElementById('oldCategories').textContent) || [];
+const tpl         = document.getElementById('questionTemplate');
+const container   = document.getElementById('questionsContainer');
+let qIndex        = 0;
+
+/* ── TC012 + TC013 — end_at must be strictly after start_at ───────
+   Client-side guard: update the min attribute live and surface a
+   red helper text before the user ever submits.                    */
+(function () {
+    const startEl = document.getElementById('startAtInput');
+    const endEl   = document.getElementById('endAtInput');
+    const errEl   = document.getElementById('dateError');
+    if (!startEl || !endEl) return;
+
+    function syncMin() {
+        const startValue = startEl.value;
+        if (startValue) endEl.min = startValue;
+        if (endEl.value && endEl.value <= startValue) {
+            errEl.classList.remove('hidden');
+            endEl.setCustomValidity('{{ __("End date must be after the start date.") }}');
+        } else {
+            errEl.classList.add('hidden');
+            endEl.setCustomValidity('');
+        }
+    }
+    startEl.addEventListener('change', syncMin);
+    endEl.addEventListener('change', syncMin);
+    syncMin();
+})();
 
 function filteredPlayers(position) {
     const sel = document.getElementById('leagueSelect');
@@ -193,16 +230,45 @@ function filteredPlayers(position) {
     return list;
 }
 
-function addQuestion() {
+/**
+ * Builds one question row. Accepts an optional `prefill` object with
+ * values the user already submitted (title_ar / title_en /
+ * position_slot / required_picks / player_ids[]) so we can restore
+ * their work on a failed submit (TC014).
+ */
+function addQuestion(prefill = null) {
     const i = qIndex++;
     const clone = tpl.content.cloneNode(true);
     const row = clone.querySelector('.question-row');
     row.querySelector('.q-number').textContent = '#' + (i + 1);
-    row.querySelectorAll('[name="TITLE_AR"]')      .forEach(e => e.name = `categories[${i}][title_ar]`);
-    row.querySelectorAll('[name="TITLE_EN"]')      .forEach(e => e.name = `categories[${i}][title_en]`);
-    row.querySelectorAll('[name="POSITION_SLOT"]') .forEach(e => e.name = `categories[${i}][position_slot]`);
-    row.querySelectorAll('[name="REQUIRED_PICKS"]').forEach(e => e.name = `categories[${i}][required_picks]`);
-    row.querySelector('.remove-q').addEventListener('click', () => row.remove());
+
+    const fieldMap = {
+        TITLE_AR:       `categories[${i}][title_ar]`,
+        TITLE_EN:       `categories[${i}][title_en]`,
+        POSITION_SLOT:  `categories[${i}][position_slot]`,
+        REQUIRED_PICKS: `categories[${i}][required_picks]`,
+    };
+    Object.entries(fieldMap).forEach(([tplName, realName]) => {
+        row.querySelectorAll(`[name="${tplName}"]`).forEach(el => el.name = realName);
+    });
+
+    // Restore fields if this is a replay of a failed submit.
+    if (prefill) {
+        row.querySelector(`[name="${fieldMap.TITLE_AR}"]`).value       = prefill.title_ar       ?? '';
+        row.querySelector(`[name="${fieldMap.TITLE_EN}"]`).value       = prefill.title_en       ?? '';
+        row.querySelector(`[name="${fieldMap.POSITION_SLOT}"]`).value  = prefill.position_slot  ?? 'any';
+        row.querySelector(`[name="${fieldMap.REQUIRED_PICKS}"]`).value = prefill.required_picks ?? 1;
+    }
+
+    // TC015 — removing is allowed only if at least one other question remains.
+    row.querySelector('.remove-q').addEventListener('click', () => {
+        const rows = document.querySelectorAll('.question-row');
+        if (rows.length <= 1) {
+            alert('{{ __("At least one question is required.") }}');
+            return;
+        }
+        row.remove();
+    });
 
     const search        = row.querySelector('.answer-search');
     const list          = row.querySelector('.players-list');
@@ -210,8 +276,8 @@ function addQuestion() {
     const countLabel    = row.querySelector('.selected-count');
     const selectAllBtn  = row.querySelector('.select-all-btn');
     const clearAllBtn   = row.querySelector('.clear-all-btn');
-    const positionSel   = row.querySelector(`[name="categories[${i}][position_slot]"]`);
-    const selected      = new Set();
+    const positionSel   = row.querySelector(`[name="${fieldMap.POSITION_SLOT}"]`);
+    const selected      = new Set((prefill?.player_ids || []).map(Number));
 
     function render() {
         const pos   = positionSel?.value || 'any';
@@ -273,12 +339,19 @@ function addQuestion() {
     render();
 }
 
-document.getElementById('addQuestionBtn').addEventListener('click', addQuestion);
-addQuestion();
+document.getElementById('addQuestionBtn').addEventListener('click', () => addQuestion());
+
+/* Restore previously-typed questions on validation failure,
+   otherwise start with one empty question (TC014 + TC015). */
+if (Array.isArray(oldCats) && oldCats.length > 0) {
+    oldCats.forEach(cat => addQuestion(cat));
+} else {
+    addQuestion();
+}
 
 document.getElementById('campaignForm').addEventListener('submit', function (e) {
     const bad = [...document.querySelectorAll('.question-row')].filter(row =>
-        row.querySelectorAll('input[name$="[player_ids][]"]').length === 0
+        row.querySelectorAll('input[name$="[player_ids][]"]:checked').length === 0
     );
     if (bad.length) {
         e.preventDefault();

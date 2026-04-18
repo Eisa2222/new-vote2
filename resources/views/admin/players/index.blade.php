@@ -35,16 +35,22 @@
         </a>
     </form>
 
+    <div class="text-xs text-ink-500 mt-2">
+        {{ __(':total players — showing :shown', ['total' => $players->total(), 'shown' => $players->count()]) }}
+    </div>
+
     @if($players->count())
-        <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
+        {{-- Denser 4-column grid keeps the page compact when the
+             player count grows (TC021). --}}
+        <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-3">
             @foreach($players as $player)
-                <div class="rounded-3xl border border-gray-200 p-5 bg-white shadow-sm hover:shadow-md transition">
-                    <div class="flex items-start gap-4">
+                <div class="rounded-2xl border border-gray-200 p-4 bg-white shadow-sm hover:shadow-md transition">
+                    <div class="flex items-start gap-3">
                         @if($player->photo_path)
                             <img src="{{ \Illuminate\Support\Facades\Storage::url($player->photo_path) }}"
-                                 class="w-16 h-16 rounded-2xl object-cover" alt="">
+                                 class="w-12 h-12 rounded-xl object-cover" alt="">
                         @else
-                            <div class="w-16 h-16 rounded-2xl bg-slate-100 flex items-center justify-center text-2xl">🧍</div>
+                            <div class="w-12 h-12 rounded-xl bg-slate-100 flex items-center justify-center text-xl">🧍</div>
                         @endif
                         <div class="flex-1 min-w-0">
                             <div class="flex items-start justify-between gap-2">

@@ -177,8 +177,10 @@
         update();
     </script>
 
-    <div class="flex items-center justify-between">
-        <a href="/admin/campaigns" class="rounded-2xl border px-5 py-3 hover:bg-gray-50">{{ __('Cancel') }}</a>
+    {{-- Sticky submit bar — sits above the page footer with extra bottom
+         padding so the layout footer never overlaps the primary action. --}}
+    <div class="sticky bottom-0 z-20 bg-white border-t border-gray-200 p-4 rounded-t-3xl shadow-lg flex items-center justify-between mt-6 mb-6">
+        <a href="{{ route('admin.campaigns.index') }}" class="rounded-2xl border px-5 py-3 hover:bg-gray-50">{{ __('Cancel') }}</a>
         <button class="rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white px-8 py-3 font-semibold">
             {{ __('Create & add candidates') }}
         </button>

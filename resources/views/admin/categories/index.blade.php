@@ -5,13 +5,44 @@
 @section('page_description', __('Manage categories and candidates'))
 
 @section('content')
-<div class="flex items-center gap-2 text-sm text-gray-500 mb-6">
-    <a href="/admin/campaigns" class="hover:underline">{{ __('Campaigns') }}</a>
+<div class="flex items-center gap-2 text-sm text-gray-500 mb-4">
+    <a href="{{ route('admin.campaigns.index') }}" class="hover:underline">{{ __('Campaigns') }}</a>
     <span>·</span>
-    <a href="/admin/campaigns/{{ $campaign->id }}" class="hover:underline">{{ $campaign->localized('title') }}</a>
+    <a href="{{ route('admin.campaigns.show', $campaign) }}" class="hover:underline">{{ $campaign->localized('title') }}</a>
     <span>·</span>
     <span>{{ __('Categories') }}</span>
+    <span class="ms-auto">
+        {{-- TC017 — show the real status here so admins don't think
+             "Manage categories" implies the campaign is already active. --}}
+        <span class="inline-flex items-center gap-1 rounded-full px-3 py-1 text-xs font-semibold
+                     {{ match($campaign->status->value) {
+                        'draft'            => 'bg-amber-100 text-amber-700',
+                        'pending_approval' => 'bg-amber-100 text-amber-800',
+                        'rejected'         => 'bg-rose-100 text-rose-700',
+                        'published'        => 'bg-blue-100 text-blue-700',
+                        'active'           => 'bg-emerald-100 text-emerald-700',
+                        default            => 'bg-slate-100 text-slate-700',
+                     } }}">
+            {{ $campaign->status->label() }}
+        </span>
+    </span>
 </div>
+
+@if(in_array($campaign->status->value, ['draft', 'rejected', 'pending_approval'], true))
+    <div class="rounded-2xl bg-amber-50 border border-amber-200 p-4 mb-6 flex items-start gap-3 text-sm text-amber-900">
+        <span class="text-xl">⚠️</span>
+        <div>
+            <div class="font-bold">{{ __('Voting is not open yet.') }}</div>
+            <div class="mt-0.5">
+                @if($campaign->status->value === 'pending_approval')
+                    {{ __('Waiting for committee approval — you can still edit categories and candidates meanwhile.') }}
+                @else
+                    {{ __('Submit the campaign for committee approval from its page before voting can start.') }}
+                @endif
+            </div>
+        </div>
+    </div>
+@endif
 
 <div class="rounded-3xl border border-gray-200 bg-white p-6 shadow-sm mb-6">
     <h2 class="text-xl font-bold mb-4">{{ __('Add category') }}</h2>
