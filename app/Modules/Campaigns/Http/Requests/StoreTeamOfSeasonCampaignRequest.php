@@ -16,6 +16,9 @@ final class StoreTeamOfSeasonCampaignRequest extends FormRequest
 
     public function rules(): array
     {
+        $minLine = TeamOfSeasonFormation::minLine();
+        $maxLine = TeamOfSeasonFormation::maxLine();
+
         return [
             'title_ar'       => ['required', 'string', 'max:180'],
             'title_en'       => ['required', 'string', 'max:180'],
@@ -26,9 +29,9 @@ final class StoreTeamOfSeasonCampaignRequest extends FormRequest
             'start_at'       => ['required', 'date'],
             'end_at'         => ['required', 'date', 'after:start_at'],
             'max_voters'     => ['nullable', 'integer', 'min:1'],
-            'attack'         => ['required', 'integer', 'min:'.TeamOfSeasonFormation::MIN_LINE, 'max:'.TeamOfSeasonFormation::MAX_LINE],
-            'midfield'       => ['required', 'integer', 'min:'.TeamOfSeasonFormation::MIN_LINE, 'max:'.TeamOfSeasonFormation::MAX_LINE],
-            'defense'        => ['required', 'integer', 'min:'.TeamOfSeasonFormation::MIN_LINE, 'max:'.TeamOfSeasonFormation::MAX_LINE],
+            'attack'         => ['required', 'integer', "min:{$minLine}", "max:{$maxLine}"],
+            'midfield'       => ['required', 'integer', "min:{$minLine}", "max:{$maxLine}"],
+            'defense'        => ['required', 'integer', "min:{$minLine}", "max:{$maxLine}"],
         ];
     }
 

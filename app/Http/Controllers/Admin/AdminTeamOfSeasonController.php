@@ -25,9 +25,9 @@ final class AdminTeamOfSeasonController extends Controller
         $this->authorize('create', Campaign::class);
         return view('admin.tos.create', [
             'default'  => TeamOfSeasonFormation::default(),
-            'minLine'  => TeamOfSeasonFormation::MIN_LINE,
-            'maxLine'  => TeamOfSeasonFormation::MAX_LINE,
-            'outfield' => TeamOfSeasonFormation::OUTFIELD_TOTAL,
+            'minLine'  => TeamOfSeasonFormation::minLine(),
+            'maxLine'  => TeamOfSeasonFormation::maxLine(),
+            'outfield' => TeamOfSeasonFormation::outfieldTotal(),
             'leagues'  => League::active()->with('sport')->orderBy('name_en')->get(),
         ]);
     }

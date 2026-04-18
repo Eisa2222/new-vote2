@@ -6,30 +6,45 @@ namespace App\Modules\Campaigns\Domain;
 
 use App\Modules\Campaigns\Models\Campaign;
 use App\Modules\Players\Enums\PlayerPosition;
+use DomainException;
 
 /**
- * Team of the Season formation rules.
+ * Team of the Season formation rules — pure domain, no UI concerns.
  *
- * Only the goalkeeper is fixed (1). Defense / midfield / attack are flexible,
- * but together they must sum to 10 outfield players — total lineup = 11.
+ * Goalkeeper is fixed at 1. Defense/midfield/attack are flexible,
+ * but together they must sum to OUTFIELD_TOTAL.
  *
- * Common formations: 4-3-3, 3-4-3, 4-4-2, 5-3-2, 3-5-2, 4-5-1.
+ * Constants are sourced from config('voting.team_of_the_season') so
+ * operations can tune them without touching compiled code.
  */
 final class TeamOfSeasonFormation
 {
-    public const GOALKEEPER_COUNT = 1;
-    public const OUTFIELD_TOTAL   = 10;
-    public const TOTAL            = 11;
-    public const MIN_LINE         = 2;
-    public const MAX_LINE         = 6;
-
-    public const DEFAULT_ATTACK   = 3;
-    public const DEFAULT_MIDFIELD = 3;
-    public const DEFAULT_DEFENSE  = 4;
-
     public const LINE_ORDER = ['goalkeeper', 'defense', 'midfield', 'attack'];
 
-    public static function total(): int { return self::TOTAL; }
+    public static function goalkeeperCount(): int
+    {
+        return (int) config('voting.team_of_the_season.goalkeeper_count', 1);
+    }
+
+    public static function outfieldTotal(): int
+    {
+        return (int) config('voting.team_of_the_season.outfield_total', 10);
+    }
+
+    public static function total(): int
+    {
+        return (int) config('voting.team_of_the_season.total', 11);
+    }
+
+    public static function minLine(): int
+    {
+        return (int) config('voting.team_of_the_season.min_line', 2);
+    }
+
+    public static function maxLine(): int
+    {
+        return (int) config('voting.team_of_the_season.max_line', 6);
+    }
 
     public static function position(string $slot): ?PlayerPosition
     {
@@ -38,59 +53,65 @@ final class TeamOfSeasonFormation
 
     /**
      * @param  array<string,int>  $formation
+     *
+     * @throws DomainException
      */
     public static function validate(array $formation): void
     {
-        foreach (['attack', 'midfield', 'defense', 'goalkeeper'] as $slot) {
+        $goalkeeperCount = self::goalkeeperCount();
+        $outfieldTotal   = self::outfieldTotal();
+        $minLine         = self::minLine();
+        $maxLine         = self::maxLine();
+
+        foreach (self::LINE_ORDER as $slot) {
             if (! array_key_exists($slot, $formation)) {
-                throw new \DomainException("Formation missing '{$slot}' line.");
+                throw new DomainException("Formation missing '{$slot}' line.");
             }
         }
-        if ($formation['goalkeeper'] !== self::GOALKEEPER_COUNT) {
-            throw new \DomainException('Goalkeeper count must be exactly '.self::GOALKEEPER_COUNT.'.');
+        if ((int) $formation['goalkeeper'] !== $goalkeeperCount) {
+            throw new DomainException("Goalkeeper count must be exactly {$goalkeeperCount}.");
         }
         foreach (['attack', 'midfield', 'defense'] as $slot) {
-            $n = (int) $formation[$slot];
-            if ($n < self::MIN_LINE || $n > self::MAX_LINE) {
-                throw new \DomainException(
-                    "{$slot} line must be between ".self::MIN_LINE.' and '.self::MAX_LINE.' players.',
+            $count = (int) $formation[$slot];
+            if ($count < $minLine || $count > $maxLine) {
+                throw new DomainException(
+                    "{$slot} line must be between {$minLine} and {$maxLine} players.",
                 );
             }
         }
         $outfield = $formation['attack'] + $formation['midfield'] + $formation['defense'];
-        if ($outfield !== self::OUTFIELD_TOTAL) {
-            throw new \DomainException(
-                "Attack + midfield + defense must equal ".self::OUTFIELD_TOTAL." (got {$outfield}).",
+        if ($outfield !== $outfieldTotal) {
+            throw new DomainException(
+                "Attack + midfield + defense must equal {$outfieldTotal} (got {$outfield}).",
             );
         }
     }
 
+    /** @return array<string,int> */
     public static function default(): array
     {
+        $config = config('voting.team_of_the_season');
         return [
-            'attack'     => self::DEFAULT_ATTACK,
-            'midfield'   => self::DEFAULT_MIDFIELD,
-            'defense'    => self::DEFAULT_DEFENSE,
-            'goalkeeper' => self::GOALKEEPER_COUNT,
+            'attack'     => (int) ($config['default_attack']   ?? 3),
+            'midfield'   => (int) ($config['default_midfield'] ?? 3),
+            'defense'    => (int) ($config['default_defense']  ?? 4),
+            'goalkeeper' => self::goalkeeperCount(),
         ];
     }
 
-    public static function lineTitles(string $locale = 'ar'): array
+    /**
+     * Reads the formation actually stored on a campaign's categories.
+     *
+     * @return array<string,int>
+     */
+    public static function fromCampaign(Campaign $campaign): array
     {
-        return $locale === 'ar'
-            ? ['attack' => 'خط الهجوم', 'midfield' => 'خط الوسط', 'defense' => 'خط الدفاع', 'goalkeeper' => 'حارس المرمى']
-            : ['attack' => 'Attack Line', 'midfield' => 'Midfield Line', 'defense' => 'Defense Line', 'goalkeeper' => 'Goalkeeper'];
-    }
-
-    /** Reads the formation actually stored on a campaign's categories. */
-    public static function fromCampaign(Campaign $c): array
-    {
-        $map = [];
-        foreach ($c->categories as $cat) {
-            if (in_array($cat->position_slot, ['attack', 'midfield', 'defense', 'goalkeeper'], true)) {
-                $map[$cat->position_slot] = (int) $cat->required_picks;
+        $formation = [];
+        foreach ($campaign->categories as $category) {
+            if (in_array($category->position_slot, self::LINE_ORDER, true)) {
+                $formation[$category->position_slot] = (int) $category->required_picks;
             }
         }
-        return $map;
+        return $formation;
     }
 }

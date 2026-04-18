@@ -14,22 +14,36 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 
 /**
- * Creates a Team of the Season campaign + seeds the 4 line categories.
- * Goalkeeper is always 1; attack/midfield/defense are taken from the
- * admin input (defaults to 3-3-4) and validated against
- * TeamOfSeasonFormation rules.
+ * Creates a Team of the Season campaign + seeds the line categories.
+ * The admin supplies attack/midfield/defense; goalkeeper is fixed.
+ * Formation is validated against TeamOfSeasonFormation rules.
  */
 final class CreateTeamOfSeasonCampaignAction
 {
+    /**
+     * Category titles per line. Kept in the Action layer (not the
+     * Domain class) because they're presentational text — the
+     * domain doesn't care what the admin labels a line.
+     *
+     * @var array<string, array<string,string>>
+     */
+    private const LINE_TITLES = [
+        'goalkeeper' => ['ar' => 'حارس المرمى', 'en' => 'Goalkeeper'],
+        'defense'    => ['ar' => 'خط الدفاع',    'en' => 'Defense Line'],
+        'midfield'   => ['ar' => 'خط الوسط',     'en' => 'Midfield Line'],
+        'attack'     => ['ar' => 'خط الهجوم',    'en' => 'Attack Line'],
+    ];
+
     public function __construct(private readonly LogActivityAction $log) {}
 
     public function execute(array $data): Campaign
     {
+        $defaults  = TeamOfSeasonFormation::default();
         $formation = [
-            'attack'     => (int) ($data['attack']   ?? TeamOfSeasonFormation::DEFAULT_ATTACK),
-            'midfield'   => (int) ($data['midfield'] ?? TeamOfSeasonFormation::DEFAULT_MIDFIELD),
-            'defense'    => (int) ($data['defense']  ?? TeamOfSeasonFormation::DEFAULT_DEFENSE),
-            'goalkeeper' => TeamOfSeasonFormation::GOALKEEPER_COUNT,
+            'attack'     => (int) ($data['attack']   ?? $defaults['attack']),
+            'midfield'   => (int) ($data['midfield'] ?? $defaults['midfield']),
+            'defense'    => (int) ($data['defense']  ?? $defaults['defense']),
+            'goalkeeper' => TeamOfSeasonFormation::goalkeeperCount(),
         ];
         TeamOfSeasonFormation::validate($formation);
 
@@ -50,15 +64,14 @@ final class CreateTeamOfSeasonCampaignAction
 
             $order = 0;
             foreach (TeamOfSeasonFormation::LINE_ORDER as $slot) {
-                $count = $formation[$slot];
                 $campaign->categories()->create([
-                    'title_ar'       => TeamOfSeasonFormation::lineTitles('ar')[$slot],
-                    'title_en'       => TeamOfSeasonFormation::lineTitles('en')[$slot],
+                    'title_ar'       => self::LINE_TITLES[$slot]['ar'],
+                    'title_en'       => self::LINE_TITLES[$slot]['en'],
                     'category_type'  => CategoryType::Lineup->value,
                     'position_slot'  => $slot,
-                    'required_picks' => $count,
-                    'selection_min'  => $count,
-                    'selection_max'  => $count,
+                    'required_picks' => $formation[$slot],
+                    'selection_min'  => $formation[$slot],
+                    'selection_max'  => $formation[$slot],
                     'is_active'      => true,
                     'display_order'  => $order++,
                 ]);
