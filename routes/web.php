@@ -5,6 +5,7 @@ use App\Http\Controllers\Admin\AdminCategoryController;
 use App\Http\Controllers\Admin\AdminClubController;
 use App\Http\Controllers\Admin\AdminPlayerController;
 use App\Http\Controllers\Admin\AdminResultController;
+use App\Http\Controllers\Admin\AdminRoleController;
 use App\Http\Controllers\Admin\AdminSettingsController;
 use App\Http\Controllers\Admin\AdminUserController;
 use App\Http\Controllers\Auth\LoginController;
@@ -112,6 +113,13 @@ Route::middleware(['web', 'auth'])->prefix('admin')->group(function () {
     Route::put('users/{user}',           [AdminUserController::class, 'update']);
     Route::post('users/{user}/toggle',   [AdminUserController::class, 'toggle']);
     Route::delete('users/{user}',        [AdminUserController::class, 'destroy']);
+
+    Route::get('roles',              [AdminRoleController::class, 'index'])->name('admin.roles.index');
+    Route::get('roles/create',       [AdminRoleController::class, 'create'])->name('admin.roles.create');
+    Route::post('roles',             [AdminRoleController::class, 'store'])->name('admin.roles.store');
+    Route::get('roles/{role}/edit', [AdminRoleController::class, 'edit'])->name('admin.roles.edit');
+    Route::put('roles/{role}',      [AdminRoleController::class, 'update'])->name('admin.roles.update');
+    Route::delete('roles/{role}',   [AdminRoleController::class, 'destroy'])->name('admin.roles.destroy');
 });
 
 // Set locale via ?locale=ar|en
