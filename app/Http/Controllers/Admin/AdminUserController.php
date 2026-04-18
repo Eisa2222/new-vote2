@@ -6,11 +6,15 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\User;
+use App\Modules\Users\Actions\CreateUserAction;
+use App\Modules\Users\Actions\DeleteUserAction;
+use App\Modules\Users\Actions\ToggleUserStatusAction;
+use App\Modules\Users\Actions\UpdateUserAction;
+use App\Modules\Users\Http\Requests\StoreUserRequest;
+use App\Modules\Users\Http\Requests\UpdateUserRequest;
+use DomainException;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Hash;
-use Illuminate\Validation\Rule;
 use Spatie\Permission\Models\Role;
 
 final class AdminUserController extends Controller
@@ -23,90 +27,78 @@ final class AdminUserController extends Controller
     public function index(): View
     {
         $this->authorizeManage();
-        $users = User::with('roles')->orderByDesc('id')->paginate(config('voting.pagination.users'));
+
+        $users = User::with('roles')
+            ->orderByDesc('id')
+            ->paginate(config('voting.pagination.users'));
+
         return view('admin.users.index', compact('users'));
     }
 
     public function create(): View
     {
         $this->authorizeManage();
-        return view('admin.users.form', ['user' => new User(), 'roles' => Role::all()]);
+
+        return view('admin.users.form', [
+            'user'  => new User(),
+            'roles' => Role::orderBy('name')->get(),
+        ]);
     }
 
-    public function store(Request $r): RedirectResponse
+    public function store(StoreUserRequest $request, CreateUserAction $creator): RedirectResponse
     {
-        $this->authorizeManage();
-        $data = $r->validate([
-            'name'     => ['required', 'string', 'max:120'],
-            'email'    => ['required', 'email', 'unique:users,email'],
-            'password' => ['required', 'string', 'min:8'],
-            'status'   => ['nullable', 'in:active,inactive'],
-            'roles'    => ['array'],
-            'roles.*'  => ['string', Rule::exists('roles', 'name')],
-        ]);
+        $creator->execute($request->validated());
 
-        $user = User::create([
-            'name'     => $data['name'],
-            'email'    => $data['email'],
-            'password' => Hash::make($data['password']),
-            'status'   => $data['status'] ?? 'active',
-        ]);
-        $user->syncRoles($data['roles'] ?? []);
-
-        return redirect('/admin/users')->with('success', __('User created.'));
+        return redirect()
+            ->route('admin.users.index')
+            ->with('success', __('User created.'));
     }
 
     public function edit(User $user): View
     {
         $this->authorizeManage();
-        return view('admin.users.form', ['user' => $user->load('roles'), 'roles' => Role::all()]);
-    }
 
-    public function update(Request $r, User $user): RedirectResponse
-    {
-        $this->authorizeManage();
-        $data = $r->validate([
-            'name'     => ['required', 'string', 'max:120'],
-            'email'    => ['required', 'email', Rule::unique('users', 'email')->ignore($user->id)],
-            'password' => ['nullable', 'string', 'min:8'],
-            'status'   => ['nullable', 'in:active,inactive'],
-            'roles'    => ['array'],
-            'roles.*'  => ['string', Rule::exists('roles', 'name')],
+        return view('admin.users.form', [
+            'user'  => $user->load('roles'),
+            'roles' => Role::orderBy('name')->get(),
         ]);
-
-        $user->name   = $data['name'];
-        $user->email  = $data['email'];
-        $user->status = $data['status'] ?? $user->status ?? 'active';
-        if (! empty($data['password'])) {
-            $user->password = Hash::make($data['password']);
-        }
-        $user->save();
-        $user->syncRoles($data['roles'] ?? []);
-
-        return redirect('/admin/users')->with('success', __('User updated.'));
     }
 
-    public function toggle(User $user): RedirectResponse
+    public function update(UpdateUserRequest $request, User $user, UpdateUserAction $updater): RedirectResponse
     {
-        $this->authorizeManage();
-        if ($user->id === auth()->id()) {
-            return back()->withErrors(['status' => __('You cannot deactivate your own account.')]);
-        }
-        $user->update(['status' => $user->status === 'active' ? 'inactive' : 'active']);
-        $msg = $user->status === 'active' ? __('User activated.') : __('User deactivated.');
-        return back()->with('success', $msg);
+        $updater->execute($user, $request->validated());
+
+        return redirect()
+            ->route('admin.users.index')
+            ->with('success', __('User updated.'));
     }
 
-    public function destroy(User $user): RedirectResponse
+    public function toggle(User $user, ToggleUserStatusAction $toggler): RedirectResponse
     {
         $this->authorizeManage();
-        if ($user->id === auth()->id()) {
-            return back()->withErrors(['user' => __('You cannot delete your own account.')]);
+
+        try {
+            $updated = $toggler->execute($user);
+            $message = $updated->status === 'active' ? __('User activated.') : __('User deactivated.');
+            return redirect()->route('admin.users.index')->with('success', $message);
+        } catch (DomainException $exception) {
+            return redirect()
+                ->route('admin.users.index')
+                ->withErrors(['status' => $exception->getMessage()]);
         }
-        if ($user->hasRole('super_admin') && User::role('super_admin')->count() <= 1) {
-            return back()->withErrors(['user' => __('Cannot remove the last super admin.')]);
+    }
+
+    public function destroy(User $user, DeleteUserAction $deleter): RedirectResponse
+    {
+        $this->authorizeManage();
+
+        try {
+            $deleter->execute($user);
+            return redirect()->route('admin.users.index')->with('success', __('User deleted.'));
+        } catch (DomainException $exception) {
+            return redirect()
+                ->route('admin.users.index')
+                ->withErrors(['user' => $exception->getMessage()]);
         }
-        $user->delete();
-        return back()->with('success', __('User deleted.'));
     }
 }

@@ -14,14 +14,17 @@ use App\Modules\Campaigns\Actions\DeleteCampaignAction;
 use App\Modules\Campaigns\Actions\PublishVotingCampaignAction;
 use App\Modules\Campaigns\Actions\RejectCampaignAction;
 use App\Modules\Campaigns\Actions\SubmitCampaignForApprovalAction;
-use App\Modules\Voting\Services\LiveVoterCountService;
-use Illuminate\Http\JsonResponse;
 use App\Modules\Campaigns\Enums\CampaignStatus;
 use App\Modules\Campaigns\Enums\CampaignType;
+use App\Modules\Campaigns\Http\Requests\StoreCampaignRequest;
 use App\Modules\Campaigns\Models\Campaign;
 use App\Modules\Clubs\Models\Club;
+use App\Modules\Leagues\Models\League;
 use App\Modules\Players\Models\Player;
+use App\Modules\Voting\Services\LiveVoterCountService;
+use DomainException;
 use Illuminate\Contracts\View\View;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 
@@ -30,82 +33,58 @@ final class AdminCampaignController extends Controller
     public function index(): View
     {
         $this->authorize('viewAny', Campaign::class);
-        $campaigns = Campaign::withCount('votes')->orderByDesc('id')
+
+        $campaigns = Campaign::withCount('votes')
+            ->orderByDesc('id')
             ->paginate(config('voting.pagination.campaigns'));
+
         return view('admin.campaigns.index', compact('campaigns'));
     }
 
     public function create(): View
     {
         $this->authorize('create', Campaign::class);
+
         return view('admin.campaigns.form', [
             'types'   => CampaignType::cases(),
             'players' => Player::with('club')->orderBy('name_en')->get(),
             'clubs'   => Club::orderBy('name_en')->get(),
-            'leagues' => \App\Modules\Leagues\Models\League::active()->with('sport')->orderBy('name_en')->get(),
+            'leagues' => League::active()->with('sport')->orderBy('name_en')->get(),
         ]);
     }
 
-    public function store(Request $request, CreateVotingCampaignAction $action): RedirectResponse
+    public function store(StoreCampaignRequest $request, CreateVotingCampaignAction $creator): RedirectResponse
     {
-        $this->authorize('create', Campaign::class);
-
-        $data = $request->validate([
-            'title_ar'       => ['required', 'string', 'max:180'],
-            'title_en'       => ['required', 'string', 'max:180'],
-            'description_ar' => ['nullable', 'string'],
-            'description_en' => ['nullable', 'string'],
-            'type'           => ['required', 'in:individual_award,team_award,team_of_the_season'],
-            'league_id'      => ['nullable', 'integer', 'exists:leagues,id'],
-            'start_at'       => ['required', 'date'],
-            'end_at'         => ['required', 'date', 'after:start_at'],
-            'max_voters'     => ['nullable', 'integer', 'min:1'],
-
-            'categories'                        => ['required', 'array', 'min:1'],
-            'categories.*.title_ar'             => ['required', 'string', 'max:180'],
-            'categories.*.title_en'             => ['required', 'string', 'max:180'],
-            'categories.*.position_slot'        => ['required', 'in:attack,midfield,defense,goalkeeper,any'],
-            'categories.*.required_picks'       => ['required', 'integer', 'min:1', 'max:11'],
-            'categories.*.player_ids'           => ['array'],
-            'categories.*.player_ids.*'         => ['integer', 'exists:players,id'],
-            'categories.*.club_ids'             => ['array'],
-            'categories.*.club_ids.*'           => ['integer', 'exists:clubs,id'],
-        ]);
-
-        // Reshape candidates for the Action
-        foreach ($data['categories'] as &$cat) {
-            $cand = [];
-            foreach ($cat['player_ids'] ?? [] as $pid) $cand[] = ['player_id' => $pid];
-            foreach ($cat['club_ids']   ?? [] as $cid) $cand[] = ['club_id'   => $cid];
-            $cat['candidates'] = $cand;
-            unset($cat['player_ids'], $cat['club_ids']);
-        }
-        unset($cat);
-
         try {
-            $campaign = $action->execute($data);
-        } catch (\DomainException $e) {
-            return back()->withInput()->withErrors(['categories' => $e->getMessage()]);
+            $campaign = $creator->execute($request->toActionPayload());
+        } catch (DomainException $exception) {
+            return redirect()
+                ->route('admin.campaigns.create')
+                ->withInput()
+                ->withErrors(['categories' => $exception->getMessage()]);
         }
 
-        return redirect('/admin/campaigns/'.$campaign->id)->with('success', __('Campaign created.'));
+        return redirect()
+            ->route('admin.campaigns.show', $campaign)
+            ->with('success', __('Campaign created.'));
     }
 
     public function show(Campaign $campaign): View
     {
         $this->authorize('view', $campaign);
-        $campaign->load('categories.candidates.player.club', 'categories.candidates.club')->loadCount('votes');
+
+        $campaign
+            ->load(['categories.candidates.player.club', 'categories.candidates.club'])
+            ->loadCount('votes');
+
         return view('admin.campaigns.show', compact('campaign'));
     }
 
     public function edit(Campaign $campaign): View
     {
         $this->authorize('update', $campaign);
-        abort_unless(
-            $campaign->status === CampaignStatus::Draft,
-            403,
-            __('Only draft campaigns can be edited.'),
-        );
+        $this->assertEditable($campaign);
+
         return view('admin.campaigns.edit', [
             'campaign' => $campaign,
             'types'    => CampaignType::cases(),
@@ -115,11 +94,7 @@ final class AdminCampaignController extends Controller
     public function update(Request $request, Campaign $campaign): RedirectResponse
     {
         $this->authorize('update', $campaign);
-        abort_unless(
-            $campaign->status === CampaignStatus::Draft,
-            403,
-            __('Only draft campaigns can be edited.'),
-        );
+        $this->assertEditable($campaign);
 
         $data = $request->validate([
             'title_ar'       => ['required', 'string', 'max:180'],
@@ -133,52 +108,42 @@ final class AdminCampaignController extends Controller
         ]);
 
         $campaign->update($data);
-        return redirect('/admin/campaigns/'.$campaign->id)
+
+        return redirect()
+            ->route('admin.campaigns.show', $campaign)
             ->with('success', __('Campaign updated.'));
     }
 
-    public function publish(Campaign $campaign, PublishVotingCampaignAction $a): RedirectResponse
+    public function publish(Campaign $campaign, PublishVotingCampaignAction $publisher): RedirectResponse
     {
-        $this->authorize('publish', $campaign);
-        try {
-            $a->execute($campaign);
-            return back()->with('success', __('Campaign published.'));
-        } catch (\DomainException $e) {
-            return back()->withErrors(['status' => $e->getMessage()]);
-        }
+        return $this->runLifecycleAction($campaign, 'publish',
+            fn () => $publisher->execute($campaign),
+            __('Campaign published.'),
+        );
     }
 
-    public function close(Campaign $campaign, CloseVotingCampaignAction $a): RedirectResponse
+    public function activate(Campaign $campaign, ActivateVotingCampaignAction $activator): RedirectResponse
     {
-        $this->authorize('close', $campaign);
-        try {
-            $a->execute($campaign);
-            return back()->with('success', __('Campaign closed.'));
-        } catch (\DomainException $e) {
-            return back()->withErrors(['status' => $e->getMessage()]);
-        }
+        return $this->runLifecycleAction($campaign, 'publish',
+            fn () => $activator->execute($campaign),
+            __('Campaign activated.'),
+        );
     }
 
-    public function activate(Campaign $campaign, ActivateVotingCampaignAction $a): RedirectResponse
+    public function close(Campaign $campaign, CloseVotingCampaignAction $closer): RedirectResponse
     {
-        $this->authorize('publish', $campaign);
-        try {
-            $a->execute($campaign);
-            return back()->with('success', __('Campaign activated.'));
-        } catch (\DomainException $e) {
-            return back()->withErrors(['status' => $e->getMessage()]);
-        }
+        return $this->runLifecycleAction($campaign, 'close',
+            fn () => $closer->execute($campaign),
+            __('Campaign closed.'),
+        );
     }
 
-    public function archive(Campaign $campaign, ArchiveVotingCampaignAction $a): RedirectResponse
+    public function archive(Campaign $campaign, ArchiveVotingCampaignAction $archiver): RedirectResponse
     {
-        $this->authorize('update', $campaign);
-        try {
-            $a->execute($campaign);
-            return back()->with('success', __('Campaign archived.'));
-        } catch (\DomainException $e) {
-            return back()->withErrors(['status' => $e->getMessage()]);
-        }
+        return $this->runLifecycleAction($campaign, 'update',
+            fn () => $archiver->execute($campaign),
+            __('Campaign archived.'),
+        );
     }
 
     /** Live stats JSON for admin dashboard polling. */
@@ -190,47 +155,79 @@ final class AdminCampaignController extends Controller
 
     // ─── Committee approval flow ─────────────────────────────────
 
-    public function submitForApproval(Campaign $campaign, SubmitCampaignForApprovalAction $a): RedirectResponse
+    public function submitForApproval(Campaign $campaign, SubmitCampaignForApprovalAction $submitter): RedirectResponse
     {
-        $this->authorize('submitApproval', $campaign);
-        try {
-            $a->execute($campaign);
-            return back()->with('success', __('Campaign submitted to committee for approval.'));
-        } catch (\DomainException $e) {
-            return back()->withErrors(['status' => $e->getMessage()]);
-        }
+        return $this->runLifecycleAction($campaign, 'submitApproval',
+            fn () => $submitter->execute($campaign),
+            __('Campaign submitted to committee for approval.'),
+        );
     }
 
-    public function approve(Campaign $campaign, ApproveCampaignAction $a): RedirectResponse
+    public function approve(Campaign $campaign, ApproveCampaignAction $approver): RedirectResponse
     {
-        $this->authorize('approve', $campaign);
-        try {
-            $a->execute($campaign);
-            return back()->with('success', __('Campaign approved. It is now Published.'));
-        } catch (\DomainException $e) {
-            return back()->withErrors(['status' => $e->getMessage()]);
-        }
+        return $this->runLifecycleAction($campaign, 'approve',
+            fn () => $approver->execute($campaign),
+            __('Campaign approved. It is now Published.'),
+        );
     }
 
-    public function reject(Request $request, Campaign $campaign, RejectCampaignAction $a): RedirectResponse
+    public function reject(Request $request, Campaign $campaign, RejectCampaignAction $rejecter): RedirectResponse
     {
-        $this->authorize('approve', $campaign);
-        try {
-            $a->execute($campaign, $request->input('reason'));
-            return back()->with('success', __('Campaign rejected. The admin can edit and resubmit.'));
-        } catch (\DomainException $e) {
-            return back()->withErrors(['status' => $e->getMessage()]);
-        }
+        return $this->runLifecycleAction($campaign, 'approve',
+            fn () => $rejecter->execute($campaign, $request->input('reason')),
+            __('Campaign rejected. The admin can edit and resubmit.'),
+        );
     }
 
-    public function destroy(Campaign $campaign, DeleteCampaignAction $a): RedirectResponse
+    public function destroy(Campaign $campaign, DeleteCampaignAction $deleter): RedirectResponse
     {
         $this->authorize('delete', $campaign);
+
         try {
-            $a->execute($campaign);
-            return redirect('/admin/campaigns')->with('success', __('Campaign deleted.'));
-        } catch (\DomainException $e) {
-            return back()->withErrors(['delete' => $e->getMessage()]);
+            $deleter->execute($campaign);
+            return redirect()
+                ->route('admin.campaigns.index')
+                ->with('success', __('Campaign deleted.'));
+        } catch (DomainException $exception) {
+            return redirect()
+                ->route('admin.campaigns.show', $campaign)
+                ->withErrors(['delete' => $exception->getMessage()]);
         }
+    }
+
+    // ─── Internals ───────────────────────────────────────────────
+
+    /**
+     * Runs a lifecycle callback (publish / activate / close / approve / …)
+     * with the standard try/authorize/redirect envelope, so the individual
+     * controller actions can stay one-liners.
+     */
+    private function runLifecycleAction(
+        Campaign $campaign,
+        string $ability,
+        \Closure $action,
+        string $successMessage,
+    ): RedirectResponse {
+        $this->authorize($ability, $campaign);
+
+        try {
+            $action();
+            return redirect()
+                ->route('admin.campaigns.show', $campaign)
+                ->with('success', $successMessage);
+        } catch (DomainException $exception) {
+            return redirect()
+                ->route('admin.campaigns.show', $campaign)
+                ->withErrors(['status' => $exception->getMessage()]);
+        }
+    }
+
+    private function assertEditable(Campaign $campaign): void
+    {
+        abort_unless(
+            $campaign->status === CampaignStatus::Draft,
+            403,
+            __('Only draft campaigns can be edited.'),
+        );
     }
 }
