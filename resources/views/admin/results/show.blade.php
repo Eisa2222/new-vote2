@@ -41,35 +41,7 @@
     <a href="/admin/campaigns/{{ $campaign->id }}" class="hover:underline">{{ $campaign->localized('title') }}</a>
 </div>
 
-{{-- WORKFLOW TIMELINE --}}
-<div class="rounded-3xl border border-gray-200 bg-white p-5 md:p-6 shadow-sm mb-5">
-    <h2 class="text-sm font-bold text-ink-700 uppercase tracking-wide mb-5">
-        {{ __('Results workflow') }}
-    </h2>
-    <div class="flex items-center gap-2 md:gap-4">
-        @foreach([
-            ['label' => __('Calculate'),  'desc' => __('Tally votes'),       'done' => $step >= 1],
-            ['label' => __('Approve'),    'desc' => __('Committee sign-off'),'done' => $step >= 2],
-            ['label' => __('Announce'),   'desc' => __('Publish publicly'),  'done' => $step >= 3],
-        ] as $i => $s)
-            <div class="flex-1">
-                <div class="flex items-center gap-2 md:gap-3">
-                    <div class="w-10 h-10 md:w-12 md:h-12 rounded-full flex items-center justify-center font-bold flex-shrink-0
-                                {{ $s['done'] ? 'bg-emerald-600 text-white' : 'bg-slate-100 text-slate-400' }}">
-                        {{ $s['done'] ? '✓' : $i + 1 }}
-                    </div>
-                    @if($i < 2)
-                        <div class="flex-1 h-1 rounded-full {{ ($s['done'] && $step > $i + 1) ? 'bg-emerald-500' : 'bg-slate-100' }}"></div>
-                    @endif
-                </div>
-                <div class="mt-2">
-                    <div class="font-semibold text-sm md:text-base {{ $s['done'] ? 'text-emerald-700' : 'text-ink-500' }}">{{ $s['label'] }}</div>
-                    <div class="text-xs text-ink-500">{{ $s['desc'] }}</div>
-                </div>
-            </div>
-        @endforeach
-    </div>
-</div>
+<x-admin.results.workflow-timeline :step="$step" />
 
 <div class="grid grid-cols-1 xl:grid-cols-3 gap-5">
 
@@ -120,86 +92,7 @@
                 </p>
             </div>
         @else
-            {{-- COMMITTEE TIE-BREAK PANEL — shown only when ties exist --}}
-            @php
-                $tiedByCategory = $result->items->where('needs_committee_decision', true)->groupBy('voting_category_id');
-            @endphp
-            @if($tiedByCategory->isNotEmpty())
-                <div class="mb-6 rounded-3xl border-2 border-amber-300 bg-gradient-to-br from-amber-50 to-rose-50 p-5 md:p-6 shadow-sm">
-                    <div class="flex items-start gap-3 mb-4">
-                        <div class="w-11 h-11 rounded-2xl bg-amber-500 text-white flex items-center justify-center text-2xl flex-shrink-0">⚖️</div>
-                        <div class="flex-1 min-w-0">
-                            <h2 class="font-extrabold text-amber-900 text-lg">
-                                {{ __('Tied candidates — committee decision needed') }}
-                            </h2>
-                            <p class="text-sm text-amber-800 mt-0.5">
-                                {{ __('Two or more candidates tied on the winners cutoff. Pick who gets the remaining slot(s) in each line. Approval and announcement are blocked until every tie is resolved.') }}
-                            </p>
-                        </div>
-                    </div>
-
-                    @foreach($tiedByCategory as $catId => $tiedItems)
-                        @php
-                            $cat = $campaign->categories->firstWhere('id', $catId);
-                            if (!$cat) continue;
-                            $confirmedWinners = $result->items->where('voting_category_id', $catId)->where('is_winner', true)->count();
-                            $remaining = max(0, (int) $cat->required_picks - $confirmedWinners);
-                        @endphp
-                        <form method="post" action="/admin/results/{{ $result->id }}/resolve-tie"
-                              class="rounded-2xl bg-white border border-amber-200 p-4 mb-3">
-                            @csrf
-                            <input type="hidden" name="category_id" value="{{ $cat->id }}">
-
-                            <div class="flex items-center justify-between gap-2 mb-3 flex-wrap">
-                                <div>
-                                    <div class="font-bold text-ink-900">{{ $cat->localized('title') }}</div>
-                                    <div class="text-xs text-ink-500">
-                                        {{ __('Pick :n of :t tied candidates', ['n' => $remaining, 't' => $tiedItems->count()]) }}
-                                        · {{ $tiedItems->first()?->votes_count }} {{ __('votes each') }}
-                                    </div>
-                                </div>
-                                <span class="inline-flex items-center gap-1 rounded-full bg-amber-100 text-amber-800 px-2.5 py-1 text-xs font-bold">
-                                    ⚖️ {{ __('Tie') }}
-                                </span>
-                            </div>
-
-                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-4">
-                                @foreach($tiedItems as $item)
-                                    @php
-                                        $p = $item->candidate?->player;
-                                        $name = $p?->localized('name') ?? $item->candidate?->club?->localized('name');
-                                        $club = $p?->club?->localized('name');
-                                        $photo = $p?->photo_path ? \Illuminate\Support\Facades\Storage::url($p->photo_path) : null;
-                                    @endphp
-                                    <label class="flex items-center gap-3 rounded-xl border border-ink-200 p-3 cursor-pointer hover:border-brand-400 has-[:checked]:border-brand-600 has-[:checked]:bg-brand-50 transition">
-                                        <input type="checkbox" name="winner_ids[]" value="{{ $item->candidate_id }}"
-                                               class="w-5 h-5 rounded border-ink-300 text-brand-600 focus:ring-brand-500">
-                                        @if($photo)
-                                            <img src="{{ $photo }}" alt="{{ $name }}" class="w-10 h-10 rounded-full object-cover">
-                                        @else
-                                            <div class="w-10 h-10 rounded-full bg-brand-100 text-brand-700 flex items-center justify-center font-bold">
-                                                {{ mb_strtoupper(mb_substr($name ?? '?', 0, 1)) }}
-                                            </div>
-                                        @endif
-                                        <div class="flex-1 min-w-0">
-                                            <div class="font-semibold text-sm truncate">{{ $name }}</div>
-                                            @if($club)<div class="text-xs text-ink-500 truncate">{{ $club }}</div>@endif
-                                        </div>
-                                        <span class="text-xs font-bold text-ink-500 whitespace-nowrap">
-                                            {{ $item->votes_count }} {{ __('votes') }}
-                                        </span>
-                                    </label>
-                                @endforeach
-                            </div>
-
-                            <button type="submit"
-                                    class="w-full rounded-xl bg-brand-600 hover:bg-brand-700 text-white px-5 py-3 font-bold shadow-brand">
-                                ⚖️ {{ __('Save committee decision') }}
-                            </button>
-                        </form>
-                    @endforeach
-                </div>
-            @endif
+            <x-admin.results.tie-break-panel :result="$result" :campaign="$campaign" />
 
             {{-- Pitch view for TOS campaigns after approval --}}
             @if($campaign->type?->value === 'team_of_the_season' && in_array($resultStatus, ['approved', 'announced']))
