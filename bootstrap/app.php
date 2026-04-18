@@ -17,7 +17,19 @@ return Application::configure(basePath: dirname(__DIR__))
             \App\Http\Middleware\SecurityHeaders::class,
         ]);
     })
-    ->withExceptions(function (Exceptions $exceptions) {})
+    ->withExceptions(function (Exceptions $exceptions) {
+        // Domain rule violations (e.g. "campaign already approved",
+        // "votes exist") are *expected* failures, not bugs. Return them
+        // as 422 with a clean JSON body for API clients; web requests
+        // continue to flow through the controller's catch + flash flow.
+        $exceptions->render(function (\DomainException $e, \Illuminate\Http\Request $request) {
+            if ($request->expectsJson()) {
+                return response()->json([
+                    'message' => $e->getMessage(),
+                ], 422);
+            }
+        });
+    })
     ->withSchedule(function ($schedule) {
         $schedule->command('campaigns:tick')->everyMinute();
     })

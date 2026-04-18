@@ -7,7 +7,9 @@ namespace App\Modules\Campaigns\Http\Controllers;
 use App\Http\Controllers\Controller;
 use App\Modules\Campaigns\Actions\CloseVotingCampaignAction;
 use App\Modules\Campaigns\Actions\CreateVotingCampaignAction;
+use App\Modules\Campaigns\Actions\DeleteCampaignAction;
 use App\Modules\Campaigns\Actions\PublishVotingCampaignAction;
+use App\Modules\Campaigns\Actions\UpdateCampaignAction;
 use App\Modules\Campaigns\Http\Requests\StoreCampaignRequest;
 use App\Modules\Campaigns\Http\Requests\UpdateCampaignRequest;
 use App\Modules\Campaigns\Http\Resources\CampaignResource;
@@ -45,10 +47,12 @@ final class CampaignController extends Controller
         return new CampaignResource($action->execute($request->validated()));
     }
 
-    public function update(UpdateCampaignRequest $request, Campaign $campaign): CampaignResource
+    public function update(UpdateCampaignRequest $request, Campaign $campaign, UpdateCampaignAction $action): CampaignResource
     {
-        $campaign->update($request->validated());
-        return new CampaignResource($campaign->fresh());
+        // UpdateCampaignAction enforces the "Draft or Rejected only" rule
+        // — same guard the admin web controller uses, so the API cannot
+        // mutate a Published / Active / Closed campaign by mistake.
+        return new CampaignResource($action->execute($campaign, $request->validated()));
     }
 
     public function publish(Campaign $campaign, PublishVotingCampaignAction $action): CampaignResource
@@ -63,10 +67,13 @@ final class CampaignController extends Controller
         return new CampaignResource($action->execute($campaign));
     }
 
-    public function destroy(Campaign $campaign): JsonResponse
+    public function destroy(Request $request, Campaign $campaign, DeleteCampaignAction $action): JsonResponse
     {
-        $this->authorize('update', $campaign);
-        $campaign->delete();
+        // Use the dedicated delete policy (was incorrectly checking `update`)
+        // and route through DeleteCampaignAction so the same vote-count
+        // safety net applied in the admin UI also protects the API.
+        $this->authorize('delete', $campaign);
+        $action->execute($campaign, force: $request->boolean('force'));
         return response()->json(status: 204);
     }
 }

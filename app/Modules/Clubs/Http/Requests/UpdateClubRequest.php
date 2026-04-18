@@ -24,7 +24,8 @@ final class UpdateClubRequest extends FormRequest
             'name_ar'    => ['sometimes', 'required', 'string', 'max:120', Rule::unique('clubs', 'name_ar')->ignore($id)],
             'name_en'    => ['sometimes', 'required', 'string', 'max:120', Rule::unique('clubs', 'name_en')->ignore($id)],
             'short_name' => ['nullable', 'string', 'max:20'],
-            'logo'       => ['nullable', 'image', 'mimes:png,jpg,jpeg,svg,webp', 'max:2048'],
+            // No SVG — see StoreClubRequest for the reasoning (XSS risk).
+            'logo'       => ['nullable', 'image', 'mimes:png,jpg,jpeg,webp', 'max:2048'],
             'status'     => ['nullable', new Enum(ActiveStatus::class)],
             'sport_ids'  => ['array'],
             'sport_ids.*'=> ['integer', Rule::exists('sports', 'id')],

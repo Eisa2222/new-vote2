@@ -17,6 +17,7 @@ function seedRolesAndPermissions(): void
         'players.viewAny', 'players.create', 'players.update', 'players.delete',
         'campaigns.viewAny', 'campaigns.create', 'campaigns.update',
         'campaigns.publish', 'campaigns.close', 'campaigns.archive',
+        'campaigns.delete', 'campaigns.approve',
         'results.view', 'results.calculate', 'results.approve',
         'results.hide', 'results.announce',
         'users.manage',

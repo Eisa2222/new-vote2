@@ -23,7 +23,10 @@ final class StoreClubRequest extends FormRequest
             'name_ar'    => ['required', 'string', 'max:120', 'unique:clubs,name_ar'],
             'name_en'    => ['required', 'string', 'max:120', 'unique:clubs,name_en'],
             'short_name' => ['nullable', 'string', 'max:20'],
-            'logo'       => ['nullable', 'image', 'mimes:png,jpg,jpeg,svg,webp', 'max:2048'],
+            // SVG removed: an attacker-uploaded .svg can ship inline JS or
+            // external <script> refs and would execute when served from
+            // /storage. Stick to raster formats the browser cannot script.
+            'logo'       => ['nullable', 'image', 'mimes:png,jpg,jpeg,webp', 'max:2048'],
             'status'     => ['nullable', new Enum(ActiveStatus::class)],
             'sport_ids'  => ['array'],
             'sport_ids.*'=> ['integer', Rule::exists('sports', 'id')],

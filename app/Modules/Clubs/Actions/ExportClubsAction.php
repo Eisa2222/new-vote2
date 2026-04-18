@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Modules\Clubs\Actions;
 
 use App\Modules\Clubs\Models\Club;
+use App\Support\Csv;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
 final class ExportClubsAction
@@ -26,13 +27,14 @@ final class ExportClubsAction
 
             Club::with(['sports', 'leagues'])->orderBy('id')->chunk(500, function ($clubs) use ($out) {
                 foreach ($clubs as $c) {
+                    // Csv::safe defuses formula injection on every cell.
                     fputcsv($out, [
-                        $c->name_ar,
-                        $c->name_en,
-                        $c->short_name ?? '',
-                        $c->status?->value ?? 'active',
-                        $c->sports->pluck('name_en')->implode('|'),
-                        $c->leagues->pluck('name_en')->implode('|'),
+                        Csv::safe($c->name_ar),
+                        Csv::safe($c->name_en),
+                        Csv::safe($c->short_name),
+                        Csv::safe($c->status?->value ?? 'active'),
+                        Csv::safe($c->sports->pluck('name_en')->implode('|')),
+                        Csv::safe($c->leagues->pluck('name_en')->implode('|')),
                     ]);
                 }
             });

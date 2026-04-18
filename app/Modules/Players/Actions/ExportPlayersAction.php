@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Modules\Players\Actions;
 
 use App\Modules\Players\Models\Player;
+use App\Support\Csv;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
 /**
@@ -33,19 +34,24 @@ final class ExportPlayersAction
             fwrite($out, "sep=,\r\n");
             fputcsv($out, self::COLUMNS);
 
-            Player::with(['club', 'sport'])->orderBy('id')->chunk(500, function ($players) use ($out) {
+            $maskPii = (bool) config('voting.export.mask_pii_by_default', true);
+
+            Player::with(['club', 'sport'])->orderBy('id')->chunk(500, function ($players) use ($out, $maskPii) {
                 foreach ($players as $p) {
+                    // Every cell goes through Csv::safe() to neutralise
+                    // formula injection (a name starting with `=` would
+                    // otherwise execute when Excel opens the file).
                     fputcsv($out, [
-                        $p->name_ar,
-                        $p->name_en,
-                        $p->club?->name_en ?? '',
-                        $p->sport?->name_en ?? '',
-                        $p->position?->value ?? '',
-                        $p->jersey_number ?? '',
-                        $p->is_captain ? '1' : '0',
-                        $p->national_id ?? '',
-                        $p->mobile_number ?? '',
-                        $p->status?->value ?? 'active',
+                        Csv::safe($p->name_ar),
+                        Csv::safe($p->name_en),
+                        Csv::safe($p->club?->name_en),
+                        Csv::safe($p->sport?->name_en),
+                        Csv::safe($p->position?->value),
+                        Csv::safe($p->jersey_number),
+                        Csv::safe($p->is_captain),
+                        $maskPii ? Csv::maskNationalId($p->national_id) : Csv::safe($p->national_id),
+                        $maskPii ? Csv::maskMobile($p->mobile_number)   : Csv::safe($p->mobile_number),
+                        Csv::safe($p->status?->value ?? 'active'),
                     ]);
                 }
             });
