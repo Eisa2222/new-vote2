@@ -64,17 +64,19 @@
                     </div>
                 @endif
 
-                <form method="post" action="{{ route('login') }}" class="space-y-4">
+                <form method="post" action="{{ route('login.attempt') }}" class="space-y-4" autocomplete="on" novalidate>
                     @csrf
                     <div>
-                        <label class="block text-sm font-medium mb-1.5 text-ink-800">{{ __('Email') }}</label>
-                        <input type="email" name="email" value="{{ old('email') }}" required autofocus
+                        <label for="loginEmail" class="block text-sm font-medium mb-1.5 text-ink-800">{{ __('Email') }}</label>
+                        <input id="loginEmail" type="email" name="email" value="{{ old('email') }}" required autofocus
+                               autocomplete="username" inputmode="email" spellcheck="false"
                                class="w-full rounded-xl border border-ink-200 px-4 py-3 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-brand-500"
                                placeholder="admin@sfpa.sa">
                     </div>
                     <div>
-                        <label class="block text-sm font-medium mb-1.5 text-ink-800">{{ __('Password') }}</label>
-                        <input type="password" name="password" required
+                        <label for="loginPassword" class="block text-sm font-medium mb-1.5 text-ink-800">{{ __('Password') }}</label>
+                        <input id="loginPassword" type="password" name="password" required
+                               autocomplete="current-password"
                                class="w-full rounded-xl border border-ink-200 px-4 py-3 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-brand-500"
                                placeholder="••••••••">
                     </div>

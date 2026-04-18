@@ -454,6 +454,7 @@
     "The role key cannot be changed after creation.": "لا يمكن تغيير مُعرّف الدور بعد الإنشاء.",
     "There is no pending tie in this line.": "لا يوجد تعادل معلّق في هذا الخط.",
     "These credentials do not match our records.": "بيانات الدخول غير صحيحة.",
+    "Too many login attempts. Try again in :seconds seconds.": "محاولات دخول كثيرة. حاول مجدداً بعد :seconds ثانية.",
     "These four positions are part of the core system because the Team of the Season rule (3-3-4-1) and position-based category filtering depend on them.": "هذه المراكز الأربعة جزء أساسي من النظام لأن قاعدة تشكيلة الموسم والتصفية حسب المركز تعتمد عليها.",
     "This campaign has ended.": "انتهت هذه الحملة.",
     "This campaign has not started yet.": "لم تبدأ هذه الحملة بعد.",
