@@ -14,8 +14,9 @@
         ['route' => 'admin.players.index',   'icon' => '🧍', 'label' => __('Players'),   'can' => (bool) $user?->can('players.viewAny')],
         ['route' => 'admin.campaigns.index', 'icon' => '🗳️', 'label' => __('Campaigns'), 'can' => (bool) $user?->can('campaigns.viewAny')],
         ['route' => 'admin.results.index',   'icon' => '🏆', 'label' => __('Results'),   'can' => (bool) $user?->can('results.view')],
-        ['route' => 'admin.archive',         'icon' => '🗃', 'label' => __('Archive'),   'can' => (bool) $user?->can('users.manage') || (bool) $user?->can('clubs.viewAny') || (bool) $user?->can('players.viewAny') || (bool) $user?->can('campaigns.viewAny')],
-        ['route' => 'admin.settings.index',  'icon' => '⚙️', 'label' => __('Settings'),  'can' => (bool) $user?->can('users.manage')],
+        ['route' => 'admin.archive',         'icon' => '🗃', 'label' => __('Archive'),          'can' => (bool) $user?->can('users.manage') || (bool) $user?->can('clubs.viewAny') || (bool) $user?->can('players.viewAny') || (bool) $user?->can('campaigns.viewAny')],
+        ['route' => 'admin.email-templates.index', 'icon' => '✉️', 'label' => __('Email templates'), 'can' => (bool) $user?->can('users.manage')],
+        ['route' => 'admin.settings.index',  'icon' => '⚙️', 'label' => __('Settings'),         'can' => (bool) $user?->can('users.manage')],
     ])->filter(fn ($item) => $item['can'])
       ->map(fn ($item) => $item + ['path' => route($item['route'])])
       ->values();

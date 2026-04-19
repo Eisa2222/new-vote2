@@ -22,6 +22,7 @@ use App\Http\Controllers\Admin\AdminResultController;
 use App\Http\Controllers\Admin\AdminRoleController;
 use App\Http\Controllers\Admin\AdminSettingsController;
 use App\Http\Controllers\Admin\AdminTeamOfSeasonController;
+use App\Http\Controllers\Admin\AdminEmailTemplateController;
 use App\Http\Controllers\Admin\AdminUserController;
 use App\Http\Controllers\Admin\ArchiveHubController;
 use Illuminate\Support\Facades\Route;
@@ -117,6 +118,14 @@ Route::middleware(['web', 'auth'])->prefix('admin')->name('admin.')->group(funct
         Route::post('hide/{result}',                 [AdminResultController::class, 'hide'])->name('hide');
         Route::post('announce/{result}',             [AdminResultController::class, 'announce'])->name('announce');
         Route::post('{result}/resolve-tie',          [AdminResultController::class, 'resolveTie'])->name('resolveTie');
+    });
+
+    // Email templates — admin-editable bodies for every system email.
+    Route::prefix('email-templates')->name('email-templates.')->group(function () {
+        Route::get('/',        [AdminEmailTemplateController::class, 'index'])->name('index');
+        Route::get('edit',     [AdminEmailTemplateController::class, 'edit'])->name('edit');
+        Route::post('/',       [AdminEmailTemplateController::class, 'update'])->name('update');
+        Route::post('preview', [AdminEmailTemplateController::class, 'preview'])->name('preview');
     });
 
     // Settings

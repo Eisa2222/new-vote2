@@ -91,7 +91,8 @@
       "Bash(grep -rn 'localized\\('\\\\''title'\\\\''\\)\\\\|->status->label\\\\|$campaign->status' resources/views/admin/categories/)",
       "Bash(php vendor/bin/pest --filter=InviteAndArchive)",
       "Bash(php vendor/bin/pest --filter=MailSettingsTest)",
-      "Bash(php vendor/bin/pest --filter=\"test email\")"
+      "Bash(php vendor/bin/pest --filter=\"test email\")",
+      "Bash(php vendor/bin/pest --filter=EmailTemplates)"
     ]
   }
 }
