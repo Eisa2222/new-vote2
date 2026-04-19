@@ -14,8 +14,8 @@ return new class extends Migration {
             $t->text('description_ar')->nullable();
             $t->text('description_en')->nullable();
             $t->enum('type', ['individual_award', 'team_award', 'team_of_the_season']);
-            $t->timestamp('start_at');
-            $t->timestamp('end_at');
+            $t->dateTime('start_at');
+            $t->dateTime('end_at');
             $t->unsignedInteger('max_voters')->nullable();
             $t->string('public_token', 64)->unique();
             $t->enum('status', ['draft', 'published', 'active', 'closed', 'archived'])

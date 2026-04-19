@@ -1,10 +1,10 @@
 @props([
-    'action',                          // POST endpoint
+    'action',
     'selectAllId' => 'bulkSelectAll',
     'itemCheckboxClass' => 'bulk-check',
-    'confirmTemplate' => null,         // e.g. "Delete :n items?"
-    'label' => null,                   // button text, default "Delete selected"
-    'color' => 'rose',                 // tailwind color (rose, brand, amber)
+    'confirmTemplate' => null,
+    'label' => null,
+    'color' => 'rose',
 ])
 
 {{-- Reusable bulk-action toolbar.
@@ -58,8 +58,6 @@
 
 @once
 <script>
-    /* One Alpine data function shared by every bulk-toolbar on the page.
-       Registered inside @once so duplicates don't collide. */
     function bulkToolbar(confirmTpl) {
         return {
             count: 0,
