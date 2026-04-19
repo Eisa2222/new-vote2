@@ -47,8 +47,11 @@ final class UpdatePlayerRequest extends FormRequest
                     ->whereNull('deleted_at'),
             ],
             'status'        => ['nullable', new Enum(ActiveStatus::class)],
-            'national_id'   => ['nullable', 'string', 'max:20', Rule::unique('players', 'national_id')->ignore($player?->id)->whereNull('deleted_at')],
-            'mobile_number' => ['nullable', 'string', 'max:20', Rule::unique('players', 'mobile_number')->ignore($player?->id)->whereNull('deleted_at')],
+            // See StorePlayerRequest for why we don't ignore soft-deleted
+            // rows — the DB unique index does not, so validation must
+            // not either.
+            'national_id'   => ['nullable', 'string', 'max:20', Rule::unique('players', 'national_id')->ignore($player?->id)],
+            'mobile_number' => ['nullable', 'string', 'max:20', Rule::unique('players', 'mobile_number')->ignore($player?->id)],
         ];
     }
 

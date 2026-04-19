@@ -177,12 +177,19 @@
         update();
     </script>
 
-    {{-- Sticky submit bar — sits above the page footer with extra bottom
-         padding so the layout footer never overlaps the primary action. --}}
-    <div class="sticky bottom-0 z-20 bg-white border-t border-gray-200 p-4 rounded-t-3xl shadow-lg flex items-center justify-between mt-6 mb-6">
-        <a href="{{ route('admin.campaigns.index') }}" class="rounded-2xl border px-5 py-3 hover:bg-gray-50">{{ __('Cancel') }}</a>
-        <button class="rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white px-8 py-3 font-semibold">
-            {{ __('Create & add candidates') }}
+    {{--
+      Submit bar — NOT sticky.
+      A `sticky bottom-0` submit bar looked clever but on this short form
+      it rendered above the page footer (which lives outside the form in
+      the admin layout) because the sticky container has no scroll
+      ancestor tall enough to pin against. We use a plain flow row and
+      let the layout footer sit naturally below.
+    --}}
+    <div class="mt-6 bg-white border border-gray-200 p-4 rounded-3xl shadow-sm flex items-center justify-between gap-2">
+        <a href="{{ route('admin.campaigns.index') }}" class="btn-ghost">{{ __('Cancel') }}</a>
+        <button class="btn-save">
+            <span aria-hidden="true">💾</span>
+            <span>{{ __('Create & add candidates') }}</span>
         </button>
     </div>
 </form>

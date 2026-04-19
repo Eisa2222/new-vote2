@@ -36,10 +36,16 @@ final class AdminResultController extends Controller
     {
         $this->requirePermission('results.view');
 
+        // Paginate defensively: if the config falls back to null (e.g.
+        // cached config without the voting.* keys), Laravel's
+        // paginate(null) throws. Picking a sane default stops the
+        // Sidebar → "Results" click from 500'ing on fresh installs.
+        $perPage = (int) (config('voting.pagination.results') ?: 20);
+
         $campaigns = Campaign::with('result')
             ->whereIn('status', self::RESULT_RELEVANT_STATUSES)
             ->orderByDesc('id')
-            ->paginate(config('voting.pagination.results'));
+            ->paginate($perPage);
 
         return view('admin.results.index', compact('campaigns'));
     }

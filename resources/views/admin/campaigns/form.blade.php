@@ -83,10 +83,17 @@
                 <h2 class="text-xl font-bold">{{ __('Questions') }}</h2>
                 <p class="text-sm text-gray-500 mt-1">{{ __('Each question has its own list of answers (players). At least one question is required.') }}</p>
             </div>
-            <button type="button" id="addQuestionBtn"
-                    class="rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white px-5 py-3 font-semibold">
-                + {{ __('Add question') }}
-            </button>
+            <div class="flex items-center gap-3">
+                <span id="autoSavedHint"
+                      class="text-xs text-emerald-700 opacity-0 transition-opacity duration-300"
+                      aria-live="polite">
+                    ✓ {{ __('Draft auto-saved') }}
+                </span>
+                <button type="button" id="addQuestionBtn"
+                        class="rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white px-5 py-3 font-semibold">
+                    + {{ __('Add question') }}
+                </button>
+            </div>
         </div>
 
         <div id="questionsContainer" class="space-y-4"></div>
@@ -341,13 +348,77 @@ function addQuestion(prefill = null) {
 
 document.getElementById('addQuestionBtn').addEventListener('click', () => addQuestion());
 
-/* Restore previously-typed questions on validation failure,
-   otherwise start with one empty question (TC014 + TC015). */
+/* ── Bug 7 — Draft autosave ─────────────────────────────────────────
+   Admins lose work when they navigate away before finishing a campaign
+   (click the sidebar, hit Back, etc.). We persist the whole form to
+   localStorage on every input change and rehydrate it on next open.
+   Priority: `old()` (fresh validation failure) > localStorage draft >
+   empty form. Draft is cleared on successful submit.
+--------------------------------------------------------------------*/
+const DRAFT_KEY = 'sfpa:campaignForm:v1';
+
+function serializeCurrent() {
+    const form = document.getElementById('campaignForm');
+    const fd   = new FormData(form);
+    const top  = {};
+    const cats = [];
+    for (const [k, v] of fd.entries()) {
+        if (k === '_token') continue;
+        const m = k.match(/^categories\[(\d+)\]\[([^\]]+)\](\[\])?$/);
+        if (!m) { top[k] = v; continue; }
+        const i = +m[1], field = m[2], isArr = !!m[3];
+        cats[i] = cats[i] || {};
+        if (isArr) {
+            cats[i][field] = cats[i][field] || [];
+            cats[i][field].push(v);
+        } else {
+            cats[i][field] = v;
+        }
+    }
+    return { top, categories: cats.filter(Boolean) };
+}
+
+function restoreDraft() {
+    let draft = null;
+    try { draft = JSON.parse(localStorage.getItem(DRAFT_KEY) || 'null'); } catch (_) {}
+    if (!draft || typeof draft !== 'object') return null;
+    // Rehydrate top-level inputs (title, dates, type, league, max_voters).
+    Object.entries(draft.top || {}).forEach(([name, value]) => {
+        const el = document.querySelector(`[name="${CSS.escape(name)}"]`);
+        if (!el || el.type === 'file') return;
+        el.value = value;
+    });
+    return Array.isArray(draft.categories) ? draft.categories : [];
+}
+
+function saveDraft() {
+    try { localStorage.setItem(DRAFT_KEY, JSON.stringify(serializeCurrent())); } catch (_) {}
+    const hint = document.getElementById('autoSavedHint');
+    if (!hint) return;
+    hint.classList.remove('opacity-0');
+    clearTimeout(window.__savedTimer);
+    window.__savedTimer = setTimeout(() => hint.classList.add('opacity-0'), 1600);
+}
+
+/* Decide initial state: old() (server validation bounce) wins, then
+   localStorage draft, then a single empty question. */
+let initialCats = null;
 if (Array.isArray(oldCats) && oldCats.length > 0) {
-    oldCats.forEach(cat => addQuestion(cat));
+    initialCats = oldCats;
+} else {
+    initialCats = restoreDraft();
+}
+if (initialCats && initialCats.length > 0) {
+    initialCats.forEach(cat => addQuestion(cat));
 } else {
     addQuestion();
 }
+
+/* Debounced autosave on any input change in the whole form. */
+document.getElementById('campaignForm').addEventListener('input', () => {
+    clearTimeout(window.__draftDebounce);
+    window.__draftDebounce = setTimeout(saveDraft, 500);
+});
 
 document.getElementById('campaignForm').addEventListener('submit', function (e) {
     const bad = [...document.querySelectorAll('.question-row')].filter(row =>
@@ -356,7 +427,13 @@ document.getElementById('campaignForm').addEventListener('submit', function (e) 
     if (bad.length) {
         e.preventDefault();
         alert('{{ __('Each question must have at least one answer (player).') }}');
+        return;
     }
+    // Form is being submitted for real — clear the draft. If the server
+    // rejects with validation errors, the reloaded page will see old()
+    // and rebuild the state from there; subsequent edits will re-create
+    // a fresh draft immediately.
+    try { localStorage.removeItem(DRAFT_KEY); } catch (_) {}
 });
 </script>
 @endsection

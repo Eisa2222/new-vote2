@@ -44,8 +44,13 @@ final class StorePlayerRequest extends FormRequest
                     ->whereNull('deleted_at'),
             ],
             'status'        => ['nullable', new Enum(ActiveStatus::class)],
-            'national_id'   => ['nullable', 'string', 'max:20', Rule::unique('players', 'national_id')->whereNull('deleted_at')],
-            'mobile_number' => ['nullable', 'string', 'max:20', Rule::unique('players', 'mobile_number')->whereNull('deleted_at')],
+            // No `whereNull('deleted_at')` here — the DB unique index on
+            // national_id / mobile_number is global (covers soft-deleted
+            // rows too). Ignoring deleted_at in validation would let a
+            // request slip past and then 500 on the INSERT. Validating
+            // against every row gives the user a friendly error instead.
+            'national_id'   => ['nullable', 'string', 'max:20', Rule::unique('players', 'national_id')],
+            'mobile_number' => ['nullable', 'string', 'max:20', Rule::unique('players', 'mobile_number')],
         ];
     }
 

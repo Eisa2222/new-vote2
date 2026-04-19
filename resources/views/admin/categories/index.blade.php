@@ -83,8 +83,16 @@
                 </p>
             </div>
             <div class="flex gap-2">
+                {{--
+                  Bug-fix: the old label was "Active / Inactive", which the
+                  admin read as "the campaign is Active" — since the
+                  CampaignStatus badge at the top of this page *also* says
+                  "Active" for the Active state. Renaming the category
+                  toggle to "Enabled / Disabled" keeps the two concepts
+                  visually distinct and removes the confusion.
+                --}}
                 <span class="px-3 py-1 rounded-full text-xs font-semibold {{ $category->is_active ? 'bg-emerald-100 text-emerald-700' : 'bg-gray-100 text-gray-600' }}">
-                    {{ $category->is_active ? __('Active') : __('Inactive') }}
+                    {{ $category->is_active ? __('Enabled') : __('Disabled') }}
                 </span>
                 <form method="post" action="/admin/categories/{{ $category->id }}" onsubmit="return confirm('{{ __('Delete this category?') }}')">
                     @csrf @method('DELETE')

@@ -9,7 +9,13 @@
     @forelse($campaigns as $c)
         @php
             $r = $c->result;
-            $visibility = $c->results_visibility?->value ?? 'hidden';
+            // Defensive reads: if the DB has a historical row with a
+            // value that isn't part of the current enum (legacy / partial
+            // migration), try/catch keeps the list from crashing.
+            try { $visibility = $c->results_visibility?->value ?? 'hidden'; }
+            catch (\Throwable) { $visibility = 'hidden'; }
+            try { $statusText = $c->status?->value ?? '—'; }
+            catch (\Throwable) { $statusText = '—'; }
             $visClass = [
                 'hidden'    => 'bg-gray-100 text-gray-700',
                 'approved'  => 'bg-blue-100 text-blue-700',
@@ -22,7 +28,7 @@
                 <div>
                     <div class="font-bold text-lg">{{ $c->localized('title') }}</div>
                     <div class="text-sm text-gray-500 mt-1">
-                        {{ __('Status') }}: {{ $c->status->value }} ·
+                        {{ __('Status') }}: {{ $statusText }} ·
                         {{ __('Votes') }}: {{ $c->votes()->count() }}
                     </div>
                 </div>
