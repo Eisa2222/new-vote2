@@ -13,8 +13,10 @@ use App\Modules\Leagues\Models\League;
 use App\Modules\Players\Enums\PlayerPosition;
 use App\Modules\Shared\Http\Requests\UpdateGeneralSettingsRequest;
 use App\Modules\Shared\Http\Requests\UpdateMailSettingsRequest;
+use App\Modules\Shared\Http\Requests\UpdateSmsSettingsRequest;
 use App\Modules\Shared\Services\SettingsService;
 use App\Modules\Shared\Support\MailConfig;
+use App\Modules\Sms\Services\SmsService;
 use App\Modules\Sports\Actions\DeleteSportAction;
 use App\Modules\Sports\Http\Requests\StoreSportRequest;
 use App\Modules\Sports\Http\Requests\UpdateSportRequest;
@@ -54,6 +56,11 @@ final class AdminSettingsController extends Controller
             'generalSettings'  => $this->readGeneralSettings($settings),
             'mailSettings'     => $this->readMailSettings($settings),
             'mailPasswordSet'  => MailConfig::isPasswordSet($settings),
+            'smsSettings'      => $this->readSmsSettings($settings),
+            'smsHasSecrets'    => [
+                'twilio_token'    => ! empty($settings->get('sms_twilio_token')),
+                'unifonic_appsid' => ! empty($settings->get('sms_unifonic_appsid')),
+            ],
         ]);
     }
 
@@ -242,5 +249,52 @@ final class AdminSettingsController extends Controller
         return redirect()
             ->route('admin.settings.index')
             ->with('success', $flash);
+    }
+
+    // ─── SMS ───────────────────────────────────────────────────────
+
+    /** @return array<string,string> */
+    private function readSmsSettings(SettingsService $settings): array
+    {
+        return [
+            'sms_driver'          => (string) $settings->get('sms_driver', 'log'),
+            'sms_twilio_sid'      => (string) $settings->get('sms_twilio_sid', ''),
+            'sms_twilio_from'     => (string) $settings->get('sms_twilio_from', ''),
+            'sms_unifonic_sender' => (string) $settings->get('sms_unifonic_sender', ''),
+        ];
+    }
+
+    public function updateSms(UpdateSmsSettingsRequest $request, SettingsService $settings): RedirectResponse
+    {
+        $data = $request->validated();
+        // Secrets: encrypt if present, keep current if blank
+        // ("leave blank to keep" — same UX as the mail password).
+        $token  = trim((string) ($data['sms_twilio_token']    ?? ''));
+        $appSid = trim((string) ($data['sms_unifonic_appsid'] ?? ''));
+        unset($data['sms_twilio_token'], $data['sms_unifonic_appsid']);
+
+        if ($token !== '')  $settings->set('sms_twilio_token',    MailConfig::encryptSafe($token),  'sms');
+        if ($appSid !== '') $settings->set('sms_unifonic_appsid', MailConfig::encryptSafe($appSid), 'sms');
+
+        $testTo  = trim((string) ($data['test_to']      ?? ''));
+        $testMsg = trim((string) ($data['test_message'] ?? ''));
+        if ($testMsg === '') {
+            $testMsg = __('SMS test message from :n', ['n' => \App\Modules\Shared\Support\Branding::name()]);
+        }
+        unset($data['test_to'], $data['test_message']);
+
+        $settings->setMany($data, 'sms');
+
+        $flash = __('SMS settings saved.');
+        if ($testTo !== '') {
+            $r = app(SmsService::class)->send($testTo, $testMsg);
+            if (! ($r['ok'] ?? false)) {
+                return redirect()->route('admin.settings.index')
+                    ->with('warning', __('Settings saved but the test SMS failed: :err', ['err' => $r['error'] ?? 'unknown']));
+            }
+            $flash .= ' '.__('A test SMS was sent to :to.', ['to' => $testTo]);
+        }
+
+        return redirect()->route('admin.settings.index')->with('success', $flash);
     }
 }

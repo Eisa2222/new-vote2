@@ -37,6 +37,10 @@
                     class="tab-btn pb-3 border-b-2 border-transparent font-semibold text-ink-500 hover:text-ink-900 whitespace-nowrap transition">
                 ✉️ {{ __('Mail (SMTP)') }}
             </button>
+            <button type="button" data-tab="sms"
+                    class="tab-btn pb-3 border-b-2 border-transparent font-semibold text-ink-500 hover:text-ink-900 whitespace-nowrap transition">
+                📱 {{ __('SMS') }}
+            </button>
         </nav>
     </div>
 
@@ -528,6 +532,123 @@
                     </button>
                     <span class="text-xs text-ink-500">
                         🔒 {{ __('The password is stored encrypted using the application key.') }}
+                    </span>
+                </div>
+            </form>
+        </div>
+    </section>
+
+    {{-- SMS --------------------------------------------------------- --}}
+    <section data-pane="sms" class="tab-pane hidden space-y-4">
+        <div class="card space-y-5" x-data="{ driver: @js($smsSettings['sms_driver']), showT: false, showU: false }">
+            <div>
+                <h2 class="text-xl font-bold">{{ __('SMS gateway') }}</h2>
+                <p class="text-sm text-ink-500 mt-1">
+                    {{ __('Configure the outgoing SMS provider used for voter OTP, campaign alerts, and admin notifications.') }}
+                </p>
+            </div>
+
+            <form method="post" action="{{ route('admin.settings.sms.update') }}" class="space-y-5">
+                @csrf
+
+                <div>
+                    <label class="field-label">{{ __('Provider') }}</label>
+                    <select name="sms_driver" x-model="driver" class="field-select max-w-sm">
+                        <option value="log">{{ __('Log (development — writes to application log)') }}</option>
+                        <option value="twilio">Twilio</option>
+                        <option value="unifonic">Unifonic (Saudi Arabia)</option>
+                    </select>
+                    <p class="field-help">
+                        {{ __('Pick "Log" while testing — every send is written to storage/logs/laravel.log instead of costing real credits.') }}
+                    </p>
+                </div>
+
+                <div x-show="driver === 'twilio'" x-cloak class="rounded-2xl border border-ink-200 p-4 space-y-4">
+                    <h3 class="font-bold text-ink-800">Twilio</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="field-label">{{ __('Account SID') }}</label>
+                            <input name="sms_twilio_sid" value="{{ old('sms_twilio_sid', $smsSettings['sms_twilio_sid']) }}"
+                                   placeholder="ACxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx" class="field-input">
+                        </div>
+                        <div>
+                            <label class="field-label">
+                                {{ __('Auth token') }}
+                                @if($smsHasSecrets['twilio_token'])
+                                    <span class="text-ink-400 text-xs font-normal">({{ __('leave empty to keep current') }})</span>
+                                @endif
+                            </label>
+                            <div class="relative">
+                                <input name="sms_twilio_token" :type="showT ? 'text' : 'password'" autocomplete="new-password"
+                                       placeholder="{{ $smsHasSecrets['twilio_token'] ? '••••••••' : '' }}"
+                                       class="field-input {{ app()->getLocale() === 'ar' ? 'pl-12' : 'pr-12' }}">
+                                <button type="button" @click="showT = !showT"
+                                        class="absolute inset-y-0 {{ app()->getLocale() === 'ar' ? 'left-0' : 'right-0' }} flex items-center px-3 text-ink-500 hover:text-brand-700">
+                                    <span x-text="showT ? '🙈' : '👁'"></span>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="md:col-span-2">
+                            <label class="field-label">{{ __('From number (E.164)') }}</label>
+                            <input name="sms_twilio_from" value="{{ old('sms_twilio_from', $smsSettings['sms_twilio_from']) }}"
+                                   placeholder="+19715551234" class="field-input max-w-sm">
+                            <p class="field-help">{{ __('A Twilio-verified sender number including the country code.') }}</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div x-show="driver === 'unifonic'" x-cloak class="rounded-2xl border border-ink-200 p-4 space-y-4">
+                    <h3 class="font-bold text-ink-800">Unifonic</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="field-label">
+                                {{ __('AppSid') }}
+                                @if($smsHasSecrets['unifonic_appsid'])
+                                    <span class="text-ink-400 text-xs font-normal">({{ __('leave empty to keep current') }})</span>
+                                @endif
+                            </label>
+                            <div class="relative">
+                                <input name="sms_unifonic_appsid" :type="showU ? 'text' : 'password'" autocomplete="new-password"
+                                       placeholder="{{ $smsHasSecrets['unifonic_appsid'] ? '••••••••' : '' }}"
+                                       class="field-input {{ app()->getLocale() === 'ar' ? 'pl-12' : 'pr-12' }}">
+                                <button type="button" @click="showU = !showU"
+                                        class="absolute inset-y-0 {{ app()->getLocale() === 'ar' ? 'left-0' : 'right-0' }} flex items-center px-3 text-ink-500 hover:text-brand-700">
+                                    <span x-text="showU ? '🙈' : '👁'"></span>
+                                </button>
+                            </div>
+                        </div>
+                        <div>
+                            <label class="field-label">{{ __('Sender ID') }}</label>
+                            <input name="sms_unifonic_sender" value="{{ old('sms_unifonic_sender', $smsSettings['sms_unifonic_sender']) }}"
+                                   placeholder="SFPA" class="field-input">
+                            <p class="field-help">{{ __('Alphanumeric sender name approved by Unifonic (max 11 chars).') }}</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="rounded-2xl border border-ink-200 bg-ink-50/40 p-4 space-y-3">
+                    <label class="field-label flex items-center gap-2">
+                        <span>🧪</span>
+                        <span>{{ __('Send a test SMS after saving (optional)') }}</span>
+                    </label>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        <input name="test_to" type="text" value="{{ old('test_to') }}"
+                               placeholder="+9665XXXXXXXX  {{ __('or') }}  05XXXXXXXX" class="field-input">
+                        <input name="test_message" type="text" maxlength="300" value="{{ old('test_message') }}"
+                               placeholder="{{ __('SMS test from SFPA Voting') }}" class="field-input">
+                    </div>
+                    <p class="field-help">
+                        {{ __('Saudi numbers can be entered as 05XXXXXXXX — they are auto-converted to +966 E.164 format.') }}
+                    </p>
+                </div>
+
+                <div class="flex items-center gap-2">
+                    <button class="btn-save">
+                        <span aria-hidden="true">💾</span>
+                        <span>{{ __('Save SMS settings') }}</span>
+                    </button>
+                    <span class="text-xs text-ink-500">
+                        🔒 {{ __('Auth tokens / AppSid are stored encrypted.') }}
                     </span>
                 </div>
             </form>

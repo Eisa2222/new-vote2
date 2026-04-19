@@ -133,6 +133,7 @@ Route::middleware(['web', 'auth'])->prefix('admin')->name('admin.')->group(funct
         Route::get('/',                              [AdminSettingsController::class, 'index'])->name('index');
         Route::post('general',                       [AdminSettingsController::class, 'updateGeneral'])->name('general.update');
         Route::post('mail',                          [AdminSettingsController::class, 'updateMail'])->name('mail.update');
+        Route::post('sms',                           [AdminSettingsController::class, 'updateSms'])->name('sms.update');
         Route::post('sports',                        [AdminSettingsController::class, 'storeSport'])->name('sports.store');
         Route::put('sports/{sport}',                 [AdminSettingsController::class, 'updateSport'])->name('sports.update');
         Route::delete('sports/{sport}',              [AdminSettingsController::class, 'destroySport'])->name('sports.destroy');

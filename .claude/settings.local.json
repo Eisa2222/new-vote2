@@ -92,7 +92,8 @@
       "Bash(php vendor/bin/pest --filter=InviteAndArchive)",
       "Bash(php vendor/bin/pest --filter=MailSettingsTest)",
       "Bash(php vendor/bin/pest --filter=\"test email\")",
-      "Bash(php vendor/bin/pest --filter=EmailTemplates)"
+      "Bash(php vendor/bin/pest --filter=EmailTemplates)",
+      "Bash(php vendor/bin/pest --filter=SmsSettingsTest)"
     ]
   }
 }
