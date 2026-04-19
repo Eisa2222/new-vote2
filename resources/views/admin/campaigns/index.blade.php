@@ -13,12 +13,13 @@
 
     <div class="flex gap-2 flex-wrap">
         <a href="{{ route('admin.tos.create') }}"
-           class="inline-flex items-center justify-center rounded-2xl border-2 border-emerald-600 text-emerald-700 hover:bg-emerald-50 px-5 py-3 font-semibold whitespace-nowrap">
-            ⚽ {{ __('New Team of the Season') }}
+           class="inline-flex items-center gap-2 rounded-xl border-2 border-brand-600 text-brand-700 hover:bg-brand-50 px-5 py-2.5 font-semibold whitespace-nowrap transition">
+            <span aria-hidden="true">⚽</span>
+            <span>{{ __('New Team of the Season') }}</span>
         </a>
-        <a href="{{ route('admin.campaigns.create') }}"
-           class="inline-flex items-center justify-center rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white px-5 py-3 font-semibold whitespace-nowrap">
-            + {{ __('New Campaign') }}
+        <a href="{{ route('admin.campaigns.create') }}" class="btn-save whitespace-nowrap">
+            <span>+</span>
+            <span>{{ __('New Campaign') }}</span>
         </a>
     </div>
 </div>

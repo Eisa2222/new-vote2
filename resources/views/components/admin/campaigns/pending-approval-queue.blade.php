@@ -34,8 +34,9 @@
                         </a>
                         <form method="post" action="{{ route('admin.campaigns.approve', $campaign) }}" class="inline">
                             @csrf
-                            <button class="rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-2 text-xs font-bold">
-                                ✓ {{ __('Approve') }}
+                            <button class="inline-flex items-center gap-1 rounded-xl bg-brand-600 hover:bg-brand-700 text-white px-3 py-2 text-xs font-bold transition">
+                                <span aria-hidden="true">✓</span>
+                                <span>{{ __('Approve') }}</span>
                             </button>
                         </form>
                     </div>

@@ -27,8 +27,9 @@
     @if($resultStatus === 'approved')
         <form method="post" action="{{ route('admin.results.announce', $result) }}">
             @csrf
-            <button class="rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 text-sm font-semibold">
-                📢 {{ __('Announce') }}
+            <button class="inline-flex items-center gap-1.5 rounded-xl bg-brand-600 hover:bg-brand-700 text-white px-4 py-2 text-sm font-semibold transition">
+                <span aria-hidden="true">📢</span>
+                <span>{{ __('Announce') }}</span>
             </button>
         </form>
     @endif

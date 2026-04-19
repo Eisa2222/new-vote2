@@ -67,7 +67,7 @@
             <input type="number" name="selection_min" min="1" max="11" value="1" placeholder="min" class="w-20 rounded-xl border px-3 py-2">
             <input type="number" name="selection_max" min="1" max="11" value="1" placeholder="max" class="w-20 rounded-xl border px-3 py-2">
         </div>
-        <button class="rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 font-medium">+ {{ __('Add') }}</button>
+        <button class="btn-save justify-center">+ {{ __('Add') }}</button>
     </form>
 </div>
 
@@ -115,7 +115,7 @@
                     @endforeach
                 </optgroup>
             </select>
-            <button class="rounded-xl bg-slate-900 text-white px-4 py-2 font-medium">+ {{ __('Add candidate') }}</button>
+            <button class="btn-save">+ {{ __('Add candidate') }}</button>
         </form>
 
         <div class="grid grid-cols-1 md:grid-cols-3 gap-3">

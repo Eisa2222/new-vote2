@@ -68,21 +68,20 @@
         @if($status === 'published')
             <form method="post" action="{{ route('admin.campaigns.activate', $campaign) }}">
                 @csrf
-                <button class="rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2.5 font-semibold">
-                    ⚡ {{ __('Activate') }}
+                <button class="btn-save">
+                    <span aria-hidden="true">⚡</span>
+                    <span>{{ __('Activate') }}</span>
                 </button>
             </form>
         @endif
 
         @if(in_array($status, ['active', 'published'], true))
-            <a href="{{ url('/vote/'.$campaign->public_token) }}" target="_blank"
-               class="rounded-2xl border px-4 py-2.5 hover:bg-slate-50">
+            <a href="{{ url('/vote/'.$campaign->public_token) }}" target="_blank" class="btn-ghost">
                 {{ __('Public link') }}
             </a>
         @endif
 
-        <a href="{{ route('admin.campaigns.show', $campaign) }}"
-           class="rounded-2xl bg-slate-900 text-white px-4 py-2.5">
+        <a href="{{ route('admin.campaigns.show', $campaign) }}" class="btn-brand">
             {{ __('Manage') }}
         </a>
     </div>

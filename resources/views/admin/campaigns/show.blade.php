@@ -38,9 +38,9 @@
     <x-admin.campaigns.stats-grid :campaign="$campaign" />
 
     <div class="flex items-center gap-2 mb-4">
-        <a href="{{ route('admin.categories.index', $campaign) }}"
-           class="rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 font-medium">
-            + {{ __('Manage categories & candidates') }}
+        <a href="{{ route('admin.categories.index', $campaign) }}" class="btn-save">
+            <span>+</span>
+            <span>{{ __('Manage categories & candidates') }}</span>
         </a>
     </div>
 

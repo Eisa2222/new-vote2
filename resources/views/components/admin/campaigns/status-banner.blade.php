@@ -61,16 +61,18 @@
                 <div class="flex gap-2 flex-wrap">
                     <form method="post" action="{{ route('admin.campaigns.approve', $campaign) }}">
                         @csrf
-                        <button class="rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white px-6 py-3 font-bold shadow">
-                            ✓ {{ __('Approve') }}
+                        <button class="btn-save">
+                            <span aria-hidden="true">✓</span>
+                            <span>{{ __('Approve') }}</span>
                         </button>
                     </form>
                     <form method="post" action="{{ route('admin.campaigns.reject', $campaign) }}"
                           onsubmit="this.querySelector('[name=reason]').value = prompt('{{ __('Reason for rejection (optional):') }}') || ''">
                         @csrf
                         <input type="hidden" name="reason">
-                        <button class="rounded-2xl border-2 border-rose-400 text-rose-700 hover:bg-rose-50 px-6 py-3 font-bold">
-                            ✗ {{ __('Reject') }}
+                        <button class="btn-danger">
+                            <span aria-hidden="true">✗</span>
+                            <span>{{ __('Reject') }}</span>
                         </button>
                     </form>
                 </div>
@@ -90,8 +92,9 @@
         </div>
         <form method="post" action="{{ route('admin.campaigns.activate', $campaign) }}">
             @csrf
-            <button class="rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white px-5 py-2.5 font-semibold">
-                ⚡ {{ __('Activate now') }}
+            <button class="btn-save">
+                <span aria-hidden="true">⚡</span>
+                <span>{{ __('Activate now') }}</span>
             </button>
         </form>
     </div>

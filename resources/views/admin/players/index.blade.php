@@ -28,10 +28,10 @@
                 <option value="{{ $p->value }}" @selected(request('position') === $p->value)>{{ $p->label() }}</option>
             @endforeach
         </select>
-        <button class="rounded-2xl border border-gray-300 px-4 py-3 font-medium">{{ __('Filter') }}</button>
-        <a href="/admin/players/create"
-           class="inline-flex items-center justify-center rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white px-5 py-3 font-semibold">
-            + {{ __('New Player') }}
+        <button class="btn-ghost justify-center">{{ __('Filter') }}</button>
+        <a href="/admin/players/create" class="btn-save justify-center">
+            <span>+</span>
+            <span>{{ __('New Player') }}</span>
         </a>
     </form>
 
@@ -77,9 +77,13 @@
                         </div>
                     </div>
                     <div class="mt-5 flex gap-2">
-                        <a href="/admin/players/{{ $player->id }}/edit"
-                           class="flex-1 text-center rounded-2xl bg-slate-900 hover:bg-slate-800 text-white px-4 py-2.5 font-medium">
-                            {{ __('Edit') }}
+                        {{-- Edit button uses the shared btn-edit (amber)
+                             so the action vocabulary matches the rest of
+                             the app instead of a one-off dark slate button. --}}
+                        <a href="{{ route('admin.players.edit', $player) }}"
+                           class="btn-edit flex-1 justify-center">
+                            <span aria-hidden="true">✏️</span>
+                            <span>{{ __('Edit') }}</span>
                         </a>
                     </div>
                 </div>

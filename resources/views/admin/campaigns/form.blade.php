@@ -89,9 +89,9 @@
                       aria-live="polite">
                     ✓ {{ __('Draft auto-saved') }}
                 </span>
-                <button type="button" id="addQuestionBtn"
-                        class="rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white px-5 py-3 font-semibold">
-                    + {{ __('Add question') }}
+                <button type="button" id="addQuestionBtn" class="btn-save">
+                    <span>+</span>
+                    <span>{{ __('Add question') }}</span>
                 </button>
             </div>
         </div>
@@ -99,10 +99,11 @@
         <div id="questionsContainer" class="space-y-4"></div>
     </div>
 
-    <div class="sticky bottom-0 bg-white border-t border-gray-200 p-4 rounded-t-3xl shadow-lg flex items-center justify-between">
-        <a href="{{ route('admin.campaigns.index') }}" class="rounded-2xl border px-5 py-3 hover:bg-gray-50">{{ __('Cancel') }}</a>
-        <button class="rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white px-8 py-3 font-semibold">
-            {{ __('Create campaign') }}
+    <div class="sticky bottom-0 bg-white border-t border-ink-200 p-4 rounded-t-3xl shadow-lg flex items-center justify-between gap-2">
+        <a href="{{ route('admin.campaigns.index') }}" class="btn-ghost">{{ __('Cancel') }}</a>
+        <button class="btn-save">
+            <span aria-hidden="true">💾</span>
+            <span>{{ __('Create campaign') }}</span>
         </button>
     </div>
 </form>

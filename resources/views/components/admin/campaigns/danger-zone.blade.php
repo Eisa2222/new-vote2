@@ -12,9 +12,9 @@
             <form method="post" action="{{ route('admin.campaigns.destroy', $campaign) }}"
                   onsubmit="return confirm('{{ __('Permanently delete :t? This cannot be undone.', ['t' => $campaign->localized('title')]) }}')">
                 @csrf @method('DELETE')
-                <button type="submit"
-                        class="rounded-2xl bg-rose-600 hover:bg-rose-700 text-white px-6 py-3 font-bold shadow">
-                    🗑️ {{ __('Delete campaign') }}
+                <button type="submit" class="btn-delete">
+                    <span aria-hidden="true">🗑</span>
+                    <span>{{ __('Delete campaign') }}</span>
                 </button>
             </form>
         </div>

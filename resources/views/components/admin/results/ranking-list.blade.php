@@ -32,7 +32,7 @@
                     <div class="flex items-center justify-between gap-3 mb-2">
                         <div class="flex items-center gap-3 min-w-0">
                             <span class="w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold flex-shrink-0
-                                         {{ $item->is_winner ? 'bg-emerald-600 text-white' : 'bg-ink-100 text-ink-700' }}">
+                                         {{ $item->is_winner ? 'bg-brand-600 text-white' : 'bg-ink-100 text-ink-700' }}">
                                 {{ $item->rank }}
                             </span>
                             <div class="min-w-0">
@@ -42,7 +42,7 @@
                                 @endif
                             </div>
                             @if($item->is_winner)
-                                <span class="ms-1 px-2 py-0.5 rounded-full text-xs bg-emerald-600 text-white font-semibold whitespace-nowrap">
+                                <span class="ms-1 px-2 py-0.5 rounded-full text-xs bg-brand-600 text-white font-semibold whitespace-nowrap">
                                     ★ {{ __('Winner') }}
                                 </span>
                             @endif

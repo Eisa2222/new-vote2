@@ -22,11 +22,11 @@
                 <option value="active"   @selected(request('status') === 'active')>{{ __('Active') }}</option>
                 <option value="inactive" @selected(request('status') === 'inactive')>{{ __('Inactive') }}</option>
             </select>
-            <button class="rounded-2xl border border-gray-300 px-5 py-3 font-medium">{{ __('Filter') }}</button>
+            <button class="btn-ghost">{{ __('Filter') }}</button>
         </div>
-        <a href="/admin/clubs/create"
-           class="inline-flex items-center justify-center rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white px-5 py-3 font-semibold">
-            + {{ __('New Club') }}
+        <a href="{{ route('admin.clubs.create') }}" class="btn-save">
+            <span>+</span>
+            <span>{{ __('New Club') }}</span>
         </a>
     </form>
 

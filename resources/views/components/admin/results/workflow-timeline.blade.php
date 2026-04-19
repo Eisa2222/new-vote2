@@ -20,7 +20,7 @@
             <div class="flex-1">
                 <div class="flex items-center gap-2 md:gap-3">
                     <div class="w-10 h-10 md:w-12 md:h-12 rounded-full flex items-center justify-center font-bold flex-shrink-0
-                                {{ $item['done'] ? 'bg-emerald-600 text-white' : 'bg-slate-100 text-slate-400' }}">
+                                {{ $item['done'] ? 'bg-brand-600 text-white' : 'bg-slate-100 text-slate-400' }}">
                         {{ $item['done'] ? '✓' : $i + 1 }}
                     </div>
                     @if($i < count($steps) - 1)
