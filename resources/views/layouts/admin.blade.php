@@ -141,6 +141,11 @@
                                         </div>
                                     @endif
                                 </div>
+                                <a href="{{ route('profile.show') }}"
+                                   class="flex items-center gap-2 px-4 py-3 text-sm text-ink-700 hover:bg-ink-50 border-b border-ink-100">
+                                    <span aria-hidden="true">👤</span>
+                                    <span>{{ __('My profile') }}</span>
+                                </a>
                                 <div class="md:hidden border-b border-ink-100">
                                     <a href="/set-locale/{{ $locale === 'ar' ? 'en' : 'ar' }}"
                                        class="flex items-center gap-2 px-4 py-3 text-sm text-ink-700 hover:bg-ink-50">

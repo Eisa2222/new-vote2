@@ -29,6 +29,36 @@ return Application::configure(basePath: dirname(__DIR__))
                 ], 422);
             }
         });
+
+        // Foreign-key integrity violations on delete. MySQL (1451) and
+        // SQLite (FOREIGN KEY constraint failed) both surface as a
+        // QueryException. Instead of a 500 + stacktrace, bounce the
+        // user back with a friendly message explaining the record is
+        // in use elsewhere. Controllers can still opt into a more
+        // specific error via DomainException.
+        $exceptions->render(function (\Illuminate\Database\QueryException $e, \Illuminate\Http\Request $request) {
+            $sqlState = $e->errorInfo[0] ?? null;
+            $driverCode = $e->errorInfo[1] ?? null;
+            $msg        = (string) $e->getMessage();
+
+            $isFkViolation = $sqlState === '23000'
+                || $driverCode === 1451
+                || $driverCode === 1452
+                || str_contains($msg, 'FOREIGN KEY constraint failed')
+                || str_contains($msg, 'violates foreign key constraint');
+
+            if (! $isFkViolation) {
+                return null; // let the default handler render it
+            }
+
+            $friendly = __('This record cannot be deleted because it is linked to other data. Archive it or remove the linked items first.');
+
+            if ($request->expectsJson()) {
+                return response()->json(['message' => $friendly], 409);
+            }
+
+            return back()->withErrors(['delete' => $friendly]);
+        });
     })
     ->withSchedule(function ($schedule) {
         $schedule->command('campaigns:tick')->everyMinute();

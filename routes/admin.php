@@ -118,6 +118,16 @@ Route::middleware(['web', 'auth'])->prefix('admin')->name('admin.')->group(funct
         Route::get('/',                              [AdminUserController::class, 'index'])->name('index');
         Route::get('create',                         [AdminUserController::class, 'create'])->name('create');
         Route::post('/',                             [AdminUserController::class, 'store'])->name('store');
+        Route::post('bulk-delete',                   [AdminUserController::class, 'bulkDelete'])->name('bulkDelete');
+
+        // Archive (soft-deleted). MUST come before the {user} wildcard
+        // routes so "archive" isn't captured as a user id.
+        Route::get('archive',                        [AdminUserController::class, 'archive'])->name('archive');
+        Route::post('archive/bulk-restore',          [AdminUserController::class, 'bulkRestore'])->name('bulkRestore');
+        Route::post('archive/bulk-force',            [AdminUserController::class, 'bulkForceDelete'])->name('bulkForceDelete');
+        Route::post('archive/{id}/restore',          [AdminUserController::class, 'restore'])->name('restore');
+        Route::delete('archive/{id}/force',          [AdminUserController::class, 'forceDelete'])->name('forceDelete');
+
         Route::get('{user}/edit',                    [AdminUserController::class, 'edit'])->name('edit');
         Route::put('{user}',                         [AdminUserController::class, 'update'])->name('update');
         Route::post('{user}/toggle',                 [AdminUserController::class, 'toggle'])->name('toggle');

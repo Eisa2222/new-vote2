@@ -113,10 +113,15 @@
                             </button>
                         </div>
                     </div>
-                    <label class="flex items-center gap-2 text-sm text-ink-700">
-                        <input type="checkbox" name="remember" value="1" class="rounded border-ink-300 text-brand-600 focus:ring-brand-500">
-                        <span>{{ __('Remember me') }}</span>
-                    </label>
+                    <div class="flex items-center justify-between text-sm">
+                        <label class="flex items-center gap-2 text-ink-700">
+                            <input type="checkbox" name="remember" value="1" class="rounded border-ink-300 text-brand-600 focus:ring-brand-500">
+                            <span>{{ __('Remember me') }}</span>
+                        </label>
+                        <a href="{{ route('password.request') }}" class="text-brand-700 font-medium hover:underline">
+                            {{ __('Forgot password?') }}
+                        </a>
+                    </div>
                     <button class="w-full btn-save justify-center py-3.5 text-base">
                         {{ __('Sign in') }}
                     </button>

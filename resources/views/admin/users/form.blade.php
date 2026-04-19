@@ -23,14 +23,30 @@
 
         <div>
             <label class="block text-sm font-medium text-slate-700 mb-1">
-                {{ __('Password') }} @if($user->exists)<span class="text-slate-400 text-xs">({{ __('leave empty to keep current') }})</span>@endif
+                {{ __('Password') }}
+                @if($user->exists)
+                    <span class="text-slate-400 text-xs">({{ __('leave empty to keep current') }})</span>
+                @else
+                    <span class="text-slate-400 text-xs">({{ __('leave empty to send an invitation email') }})</span>
+                @endif
             </label>
-            <input type="password" name="password" class="w-full border rounded-lg px-3 py-2" @if(!$user->exists) required @endif>
+            <input type="password" name="password" class="w-full border rounded-lg px-3 py-2"
+                   autocomplete="new-password"
+                   placeholder="{{ !$user->exists ? __('Leave blank — we will email them a setup link') : '••••••••' }}">
             @error('password') <p class="text-red-600 text-sm mt-1">{{ $message }}</p> @enderror
+            @if(!$user->exists)
+                <p class="mt-1.5 text-xs text-ink-500">
+                    💌 {{ __('If you leave this blank, the user gets an invitation email with a one-time link to choose their own password.') }}
+                </p>
+            @endif
         </div>
 
         <div>
-            <label class="block text-sm font-medium text-slate-700 mb-2">{{ __('Roles') }}</label>
+            <label class="block text-sm font-medium text-slate-700 mb-2">
+                {{ __('Roles') }} <span class="text-rose-600">*</span>
+                <span class="text-slate-400 text-xs font-normal">({{ __('at least one required') }})</span>
+            </label>
+            @error('roles') <p class="text-rose-600 text-sm mb-2">{{ $message }}</p> @enderror
             @php
                 $roleLabels = [
                     'super_admin'      => __('Super Admin'),

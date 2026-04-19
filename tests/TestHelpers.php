@@ -13,14 +13,14 @@ use Spatie\Permission\Models\Role;
 function seedRolesAndPermissions(): void
 {
     foreach ([
-        'clubs.viewAny', 'clubs.create', 'clubs.update', 'clubs.delete',
-        'players.viewAny', 'players.create', 'players.update', 'players.delete',
-        'campaigns.viewAny', 'campaigns.create', 'campaigns.update',
+        'clubs.viewAny', 'clubs.view', 'clubs.create', 'clubs.update', 'clubs.delete', 'clubs.restore', 'clubs.forceDelete',
+        'players.viewAny', 'players.view', 'players.create', 'players.update', 'players.delete', 'players.restore', 'players.forceDelete',
+        'campaigns.viewAny', 'campaigns.view', 'campaigns.create', 'campaigns.update',
         'campaigns.publish', 'campaigns.close', 'campaigns.archive',
-        'campaigns.delete', 'campaigns.approve',
-        'results.view', 'results.calculate', 'results.approve',
+        'campaigns.delete', 'campaigns.restore', 'campaigns.forceDelete', 'campaigns.approve',
+        'results.viewAny', 'results.view', 'results.calculate', 'results.approve',
         'results.hide', 'results.announce',
-        'users.manage',
+        'users.manage', 'users.restore', 'users.forceDelete',
     ] as $p) {
         Permission::findOrCreate($p, 'web');
     }
