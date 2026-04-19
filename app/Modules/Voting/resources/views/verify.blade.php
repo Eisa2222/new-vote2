@@ -18,7 +18,7 @@
         <div class="text-center mb-6 text-white">
             <div
                 class="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-white/15 text-xl font-bold mb-4 backdrop-blur">
-                <img src="https://fpa.sa/public/images/setting/11-11-2517628728871480138163.png" alt="">
+                <img src="{{ asset('logo.png') }}" alt="">
             </div>
             <div class="text-xs uppercase tracking-[0.25em] text-accent-500">{{ __('Official Platform') }}</div>
             <h1 class="text-2xl md:text-3xl font-bold mt-2">{{ $campaign->localized('title') }}</h1>
