@@ -1,105 +1,140 @@
 @extends('layouts.admin')
 @section('content')
-<div class="flex items-center justify-between mb-6 flex-wrap gap-4">
-    <h1 class="text-2xl font-bold text-ink-900">{{ __('Users') }}</h1>
-    <div class="flex items-center gap-2">
-        <a href="{{ route('admin.users.archive') }}"
-           class="btn-ghost">
-            <span aria-hidden="true">🗃</span>
-            <span>{{ __('Archive') }}</span>
-        </a>
-        <a href="{{ route('admin.users.create') }}" class="btn-save">
-            <span class="text-xl">+</span>
-            <span>{{ __('New User') }}</span>
-        </a>
+    <div class="flex items-center justify-between mb-6 flex-wrap gap-4">
+        <div>
+            <h1 class="text-2xl font-bold text-ink-900">{{ __('Users') }}</h1>
+        </div>
+        <div class="flex items-center gap-2">
+            <a href="{{ route('admin.users.archive') }}"
+                class="inline-flex items-center gap-2 rounded-xl border border-ink-200 hover:bg-ink-50 text-ink-700 px-4 py-2 text-sm font-medium transition">
+                🗃 {{ __('Archive') }}
+            </a>
+            <a href="{{ route('admin.users.create') }}"
+                class="inline-flex items-center gap-2 rounded-xl bg-brand-600 hover:bg-brand-700 text-white px-4 py-2 text-sm font-semibold shadow-sm transition">
+                + {{ __('New User') }}
+            </a>
+        </div>
     </div>
-</div>
 
-{{-- Bulk-archive toolbar — visible only when at least one row is checked. --}}
-<x-admin.bulk-toolbar
-    :action="route('admin.users.bulkDelete')"
-    :confirm-template="__('Archive :n user(s)?')"
-    :label="__('Archive selected')"
-    color="rose" />
+    <x-admin.bulk-toolbar :action="route('admin.users.bulkDelete')" :confirm-template="__('Archive :n user(s)?')" :label="__('Archive selected')" color="rose" />
 
-<div class="card overflow-hidden p-0">
-    <table class="w-full text-sm">
-        <thead class="bg-ink-50 text-ink-500 text-xs uppercase">
-            <tr>
-                <th class="w-10 p-4">
-                    <input type="checkbox" class="bulk-select-all rounded border-ink-300 text-brand-600 focus:ring-brand-500">
-                </th>
-                <th class="text-start p-4">{{ __('Name') }}</th>
-                <th class="text-start p-4">{{ __('Email') }}</th>
-                <th class="text-start p-4">{{ __('Roles') }}</th>
-                <th class="text-start p-4">{{ __('Status') }}</th>
-                <th class="text-start p-4">{{ __('Actions') }}</th>
-            </tr>
-        </thead>
-        <tbody class="divide-y divide-ink-100">
-            @foreach($users as $u)
-                <tr class="hover:bg-ink-50">
-                    <td class="p-4">
-                        @if($u->id !== auth()->id())
-                            <input type="checkbox" class="bulk-check rounded border-ink-300 text-brand-600 focus:ring-brand-500"
-                                   value="{{ $u->id }}" aria-label="{{ __('Select row') }}">
-                        @endif
-                    </td>
-                    <td class="p-4 font-medium">{{ $u->name }}</td>
-                    <td class="p-4 text-ink-500">{{ $u->email }}</td>
-                    <td class="p-4">
-                        @php
-                            $roleLabels = [
-                                'super_admin'      => __('Super Admin'),
-                                'committee'        => __('Voting Committee'),
-                                'campaign_manager' => __('Campaign Manager'),
-                                'auditor'          => __('Auditor'),
-                            ];
-                        @endphp
-                        @foreach($u->roles as $r)
-                            <span class="badge badge-active">{{ $roleLabels[$r->name] ?? $r->name }}</span>
-                        @endforeach
-                    </td>
-                    <td class="p-4">
-                        @if(($u->status ?? 'active') === 'active')
-                            <span class="badge badge-active">{{ __('Active') }}</span>
-                        @else
-                            <span class="badge badge-inactive">{{ __('Inactive') }}</span>
-                        @endif
-                    </td>
-                    <td class="p-4">
-                        <div class="flex items-center gap-2 flex-wrap">
-                            <a href="{{ route('admin.users.edit', $u) }}"
-                               class="rounded-lg border border-ink-200 hover:bg-ink-50 px-3 py-1.5 text-xs font-medium">
-                                ✏️ {{ __('Edit') }}
-                            </a>
-                            @if($u->id !== auth()->id())
-                                <form method="post" action="{{ route('admin.users.toggle', $u) }}">
-                                    @csrf
-                                    <button class="rounded-lg border border-warning-500/50 text-warning-500 hover:bg-warning-500/10 px-3 py-1.5 text-xs font-medium">
-                                        @if(($u->status ?? 'active') === 'active')
-                                            ⏸ {{ __('Disable') }}
-                                        @else
-                                            ▶ {{ __('Enable') }}
-                                        @endif
-                                    </button>
-                                </form>
-                                <form method="post" action="{{ route('admin.users.destroy', $u) }}"
-                                      onsubmit="return confirm('{{ __('Archive this user? They can be restored from the archive later.') }}')">
-                                    @csrf @method('DELETE')
-                                    <button class="rounded-lg border border-danger-500/50 text-danger-600 hover:bg-danger-500/10 px-3 py-1.5 text-xs font-medium">
-                                        🗑 {{ __('Archive') }}
-                                    </button>
-                                </form>
-                            @else
-                                <span class="text-xs text-ink-500">{{ __('You') }}</span>
-                            @endif
-                        </div>
-                    </td>
+    <div class="bg-white border border-ink-200 rounded-2xl overflow-hidden">
+        <table class="w-full text-sm">
+            <thead>
+                <tr class="bg-ink-50 border-b border-ink-200">
+                    <th class="w-10 px-4 py-3">
+                        <input type="checkbox"
+                            class="bulk-select-all rounded border-ink-300 text-brand-600 focus:ring-brand-500">
+                    </th>
+                    <th class="text-start px-4 py-3 text-xs font-semibold text-ink-500 uppercase tracking-wide">
+                        {{ __('Name') }}</th>
+                    <th class="text-start px-4 py-3 text-xs font-semibold text-ink-500 uppercase tracking-wide">
+                        {{ __('Email') }}</th>
+                    <th class="text-start px-4 py-3 text-xs font-semibold text-ink-500 uppercase tracking-wide">
+                        {{ __('Roles') }}</th>
+                    <th class="text-start px-4 py-3 text-xs font-semibold text-ink-500 uppercase tracking-wide">
+                        {{ __('Status') }}</th>
+                    <th class="text-start px-4 py-3 text-xs font-semibold text-ink-500 uppercase tracking-wide">
+                        {{ __('Actions') }}</th>
                 </tr>
-            @endforeach
-        </tbody>
-    </table>
-</div>
-<div class="mt-4">{{ $users->links() }}</div>
+            </thead>
+            <tbody class="divide-y divide-ink-100">
+                @foreach ($users as $u)
+                    <tr class="hover:bg-ink-50 transition-colors">
+                        <td class="px-4 py-3">
+                            @if ($u->id !== auth()->id())
+                                <input type="checkbox"
+                                    class="bulk-check rounded border-ink-300 text-brand-600 focus:ring-brand-500"
+                                    value="{{ $u->id }}" aria-label="{{ __('Select row') }}">
+                            @endif
+                        </td>
+
+                        <td class="px-4 py-3">
+                            <div class="flex items-center gap-3">
+                                <div
+                                    class="w-8 h-8 rounded-full bg-brand-100 text-brand-700 flex items-center justify-center font-bold text-xs flex-shrink-0">
+                                    {{ mb_strtoupper(mb_substr($u->name, 0, 2)) }}
+                                </div>
+                                <span class="font-medium text-ink-900">{{ $u->name }}</span>
+                            </div>
+                        </td>
+
+                        <td class="px-4 py-3 text-ink-500">{{ $u->email }}</td>
+
+                        <td class="px-4 py-3">
+                            @php
+                                $roleLabels = [
+                                    'super_admin' => __('Super Admin'),
+                                    'committee' => __('Voting Committee'),
+                                    'campaign_manager' => __('Campaign Manager'),
+                                    'auditor' => __('Auditor'),
+                                ];
+                            @endphp
+                            <div class="flex flex-wrap gap-1">
+                                @foreach ($u->roles as $r)
+                                    <span
+                                        class="inline-flex items-center rounded-full bg-brand-50 text-brand-700 px-2.5 py-0.5 text-xs font-medium">
+                                        {{ $roleLabels[$r->name] ?? $r->name }}
+                                    </span>
+                                @endforeach
+                            </div>
+                        </td>
+
+                        <td class="px-4 py-3">
+                            @if (($u->status ?? 'active') === 'active')
+                                <span
+                                    class="inline-flex items-center gap-1 rounded-full bg-green-50 text-green-700 px-2.5 py-0.5 text-xs font-medium">
+                                    <span class="w-1.5 h-1.5 rounded-full bg-green-500"></span>
+                                    {{ __('Active') }}
+                                </span>
+                            @else
+                                <span
+                                    class="inline-flex items-center gap-1 rounded-full bg-ink-100 text-ink-500 px-2.5 py-0.5 text-xs font-medium">
+                                    <span class="w-1.5 h-1.5 rounded-full bg-ink-400"></span>
+                                    {{ __('Inactive') }}
+                                </span>
+                            @endif
+                        </td>
+
+                        <td class="px-4 py-3">
+                            @if ($u->id !== auth()->id())
+                                <div class="flex items-center gap-2">
+                                    <a href="{{ route('admin.users.edit', $u) }}"
+                                        class="inline-flex items-center gap-1 rounded-lg border border-ink-200 hover:bg-ink-50 px-3 py-1.5 text-xs font-medium text-ink-700 transition">
+                                        ✏️ {{ __('Edit') }}
+                                    </a>
+                                    <form method="post" action="{{ route('admin.users.toggle', $u) }}">
+                                        @csrf
+                                        <button
+                                            class="inline-flex items-center gap-1 rounded-lg border border-amber-200 hover:bg-amber-50 px-3 py-1.5 text-xs font-medium text-amber-700 transition">
+                                            @if (($u->status ?? 'active') === 'active')
+                                                ⏸ {{ __('Disable') }}
+                                            @else
+                                                ▶ {{ __('Enable') }}
+                                            @endif
+                                        </button>
+                                    </form>
+                                    <form method="post" action="{{ route('admin.users.destroy', $u) }}"
+                                        onsubmit="return confirm('{{ __('Archive this user? They can be restored from the archive later.') }}')">
+                                        @csrf @method('DELETE')
+                                        <button
+                                            class="inline-flex items-center gap-1 rounded-lg border border-rose-200 hover:bg-rose-50 px-3 py-1.5 text-xs font-medium text-rose-600 transition">
+                                            🗑 {{ __('Archive') }}
+                                        </button>
+                                    </form>
+                                </div>
+                            @else
+                                <span
+                                    class="inline-flex items-center rounded-full bg-ink-100 text-ink-500 px-2.5 py-0.5 text-xs">
+                                    {{ __('You') }}
+                                </span>
+                            @endif
+                        </td>
+                    </tr>
+                @endforeach
+            </tbody>
+        </table>
+    </div>
+
+    <div class="mt-4">{{ $users->links() }}</div>
 @endsection

@@ -38,7 +38,7 @@ final class AdminUserController extends Controller
     {
         $this->authorizeManage();
 
-        return view('admin.users.form', [
+        return view('admin.users.create', [
             'user'  => new User(),
             'roles' => Role::orderBy('name')->get(),
         ]);
@@ -62,7 +62,7 @@ final class AdminUserController extends Controller
     {
         $this->authorizeManage();
 
-        return view('admin.users.form', [
+        return view('admin.users.edit', [
             'user'  => $user->load('roles'),
             'roles' => Role::orderBy('name')->get(),
         ]);
@@ -115,7 +115,9 @@ final class AdminUserController extends Controller
     {
         $this->authorizeManage();
         $ids = $request->array('ids');
-        $archived = 0; $skipped = 0; $reasons = [];
+        $archived = 0;
+        $skipped = 0;
+        $reasons = [];
 
         foreach (User::whereIn('id', $ids)->get() as $user) {
             try {
@@ -123,7 +125,7 @@ final class AdminUserController extends Controller
                 $archived++;
             } catch (DomainException $e) {
                 $skipped++;
-                $reasons[] = $user->email.' — '.$e->getMessage();
+                $reasons[] = $user->email . ' — ' . $e->getMessage();
             }
         }
 
@@ -131,7 +133,7 @@ final class AdminUserController extends Controller
         $redirect = redirect()->route('admin.users.index')->with('success', $msg);
         if ($skipped > 0) {
             $redirect = $redirect->with('warning', __(':n skipped.', ['n' => $skipped]))
-                                 ->with('bulk_errors', array_slice($reasons, 0, 5));
+                ->with('bulk_errors', array_slice($reasons, 0, 5));
         }
         return $redirect;
     }
