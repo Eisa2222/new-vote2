@@ -229,4 +229,18 @@ final class AdminCampaignController extends Controller
             __('Only draft campaigns can be edited.'),
         );
     }
+
+    // ─── Soft-delete archive (trait) ─────────────────────────────
+    // The existing `archive()` above is the *lifecycle* action
+    // (Active → Archived status). The soft-delete archive reads
+    // `deleted_at`. To avoid a name clash, we expose the trait's
+    // list method as `archiveIndex`.
+
+    use \App\Http\Controllers\Admin\Concerns\ArchivesResource {
+        archive as archiveIndex;
+    }
+    protected function archiveModel(): string     { return \App\Modules\Campaigns\Models\Campaign::class; }
+    protected function archiveRouteName(): string { return 'admin.campaigns'; }
+    protected function archiveKey(): string       { return 'campaigns'; }
+    protected function archiveView(): string      { return 'admin.shared.archive-list'; }
 }

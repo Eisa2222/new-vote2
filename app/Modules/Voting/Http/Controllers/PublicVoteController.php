@@ -197,6 +197,20 @@ final class PublicVoteController extends Controller
         return $redirect;
     }
 
+    /**
+     * Voter clicks "Exit" on the verify / form / thanks screen.
+     * We drop the per-campaign voter session entry (so the browser
+     * isn't left authenticated) and send them back to the public
+     * campaigns list.
+     */
+    public function exit(string $token, CreateVoterSessionAction $session): RedirectResponse
+    {
+        $campaign = Campaign::where('public_token', $token)->firstOrFail();
+        $session->clear($campaign);
+        return redirect()->route('public.campaigns')
+            ->with('success', __('You have been signed out of voting.'));
+    }
+
     public function thanks(string $token): View
     {
         $campaign = Campaign::where('public_token', $token)->firstOrFail();

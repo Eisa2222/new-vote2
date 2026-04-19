@@ -18,4 +18,9 @@ Route::prefix('vote')->group(function () {
     Route::post('{token}/submit', [PublicVoteController::class, 'submit'])->middleware('throttle:20,1')->name('voting.submit');
 
     Route::get('{token}/thanks', [PublicVoteController::class, 'thanks'])->name('voting.thanks');
+
+    // Voter exit — clears the per-campaign voter session and sends
+    // the user back to the campaigns list. POST so it cannot be
+    // triggered by a prefetch or a GET link.
+    Route::post('{token}/exit', [PublicVoteController::class, 'exit'])->name('voting.exit');
 });

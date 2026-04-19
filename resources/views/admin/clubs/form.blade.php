@@ -87,6 +87,68 @@
     </form>
 
     @if($club->exists)
+        {{--
+          Club roster (current players) + inline "add player" shortcut.
+          Clicking "Add player" opens the new-player form with the club
+          pre-selected so admins don't have to re-pick from the dropdown.
+          This is the "add player from inside the club" workflow.
+        --}}
+        @php
+            $clubPlayers = $club->players()->orderBy('name_en')->limit(50)->get();
+        @endphp
+        <div class="form-wrap mt-6 card">
+            <div class="flex items-center justify-between mb-4 flex-wrap gap-3">
+                <div>
+                    <h2 class="text-xl font-bold">{{ __('Club roster') }}</h2>
+                    <p class="text-sm text-ink-500 mt-1">
+                        {{ __(':n player(s) registered', ['n' => $club->players()->count()]) }}
+                    </p>
+                </div>
+                <a href="{{ route('admin.players.create') }}?club_id={{ $club->id }}" class="btn-save">
+                    <span aria-hidden="true">+</span>
+                    <span>{{ __('Add player to this club') }}</span>
+                </a>
+            </div>
+
+            @if($clubPlayers->isEmpty())
+                <div class="text-center text-ink-400 py-10 border-2 border-dashed border-ink-200 rounded-2xl">
+                    {{ __('No players yet — add the first one.') }}
+                </div>
+            @else
+                <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
+                    @foreach($clubPlayers as $p)
+                        <a href="{{ route('admin.players.edit', $p) }}"
+                           class="flex items-center gap-3 rounded-xl border border-ink-200 p-3 hover:border-brand-400 hover:bg-brand-50/40 transition">
+                            @if($p->photo_path)
+                                <img src="{{ \Illuminate\Support\Facades\Storage::url($p->photo_path) }}"
+                                     class="w-10 h-10 rounded-lg object-cover" alt="">
+                            @else
+                                <div class="w-10 h-10 rounded-lg bg-ink-100 text-ink-500 flex items-center justify-center text-xs">🧍</div>
+                            @endif
+                            <div class="flex-1 min-w-0">
+                                <div class="font-semibold text-sm truncate">{{ $p->localized('name') }}</div>
+                                <div class="text-xs text-ink-500">
+                                    {{ $p->position?->label() }}
+                                    @if($p->jersey_number) · #{{ $p->jersey_number }} @endif
+                                </div>
+                            </div>
+                            @if($p->is_captain)
+                                <span class="text-amber-500" title="{{ __('Captain') }}">★</span>
+                            @endif
+                        </a>
+                    @endforeach
+                </div>
+                @if($club->players()->count() > 50)
+                    <div class="mt-4 text-center">
+                        <a href="{{ route('admin.players.index') }}?club_id={{ $club->id }}"
+                           class="text-sm text-brand-700 font-semibold hover:underline">
+                            {{ __('See all :n players →', ['n' => $club->players()->count()]) }}
+                        </a>
+                    </div>
+                @endif
+            @endif
+        </div>
+
         {{-- Delete form — MUST be outside the edit form (nested forms break _method). --}}
         <form method="post" action="/admin/clubs/{{ $club->id }}"
               onsubmit="return confirm('{{ __('Delete this club?') }}')"

@@ -23,10 +23,14 @@ use App\Http\Controllers\Admin\AdminRoleController;
 use App\Http\Controllers\Admin\AdminSettingsController;
 use App\Http\Controllers\Admin\AdminTeamOfSeasonController;
 use App\Http\Controllers\Admin\AdminUserController;
+use App\Http\Controllers\Admin\ArchiveHubController;
 use Illuminate\Support\Facades\Route;
 
 Route::middleware(['web', 'auth'])->prefix('admin')->name('admin.')->group(function () {
     Route::get('/', AdminLandingController::class)->name('landing');
+
+    // Archive hub — one screen with per-module counts + links.
+    Route::get('archive', ArchiveHubController::class)->name('archive');
 
     // Clubs
     Route::prefix('clubs')->name('clubs.')->group(function () {
@@ -36,6 +40,11 @@ Route::middleware(['web', 'auth'])->prefix('admin')->name('admin.')->group(funct
         Route::get('export',                  [AdminClubController::class, 'export'])->name('export');
         Route::get('export/template',         [AdminClubController::class, 'exportTemplate'])->name('export.template');
         Route::post('import',                 [AdminClubController::class, 'import'])->name('import');
+        // Archive routes BEFORE {club} wildcard (same ordering rule
+        // we used for users — "archive" must not be parsed as an id).
+        Route::get('archive',                 [AdminClubController::class, 'archive'])->name('archive');
+        Route::post('archive/{id}/restore',   [AdminClubController::class, 'restore'])->name('restore');
+        Route::delete('archive/{id}/force',   [AdminClubController::class, 'forceDelete'])->name('forceDelete');
         Route::get('{club}/edit',             [AdminClubController::class, 'edit'])->name('edit');
         Route::put('{club}',                  [AdminClubController::class, 'update'])->name('update');
         Route::post('{club}/toggle',          [AdminClubController::class, 'toggle'])->name('toggle');
@@ -50,6 +59,9 @@ Route::middleware(['web', 'auth'])->prefix('admin')->name('admin.')->group(funct
         Route::get('export',                  [AdminPlayerController::class, 'export'])->name('export');
         Route::get('export/template',         [AdminPlayerController::class, 'exportTemplate'])->name('export.template');
         Route::post('import',                 [AdminPlayerController::class, 'import'])->name('import');
+        Route::get('archive',                 [AdminPlayerController::class, 'archive'])->name('archive');
+        Route::post('archive/{id}/restore',   [AdminPlayerController::class, 'restore'])->name('restore');
+        Route::delete('archive/{id}/force',   [AdminPlayerController::class, 'forceDelete'])->name('forceDelete');
         Route::get('{player}/edit',           [AdminPlayerController::class, 'edit'])->name('edit');
         Route::put('{player}',                [AdminPlayerController::class, 'update'])->name('update');
         Route::delete('{player}',             [AdminPlayerController::class, 'destroy'])->name('destroy');
@@ -60,6 +72,10 @@ Route::middleware(['web', 'auth'])->prefix('admin')->name('admin.')->group(funct
         Route::get('/',                              [AdminCampaignController::class, 'index'])->name('index');
         Route::get('create',                         [AdminCampaignController::class, 'create'])->name('create');
         Route::post('/',                             [AdminCampaignController::class, 'store'])->name('store');
+        // Archive must come before the {campaign} wildcard.
+        Route::get('archive',                        [AdminCampaignController::class, 'archiveIndex'])->name('archive');
+        Route::post('archive/{id}/restore',          [AdminCampaignController::class, 'restore'])->name('restore');
+        Route::delete('archive/{id}/force',          [AdminCampaignController::class, 'forceDelete'])->name('forceDelete');
         Route::get('{campaign}',                     [AdminCampaignController::class, 'show'])->name('show');
         Route::delete('{campaign}',                  [AdminCampaignController::class, 'destroy'])->name('destroy');
         Route::get('{campaign}/edit',                [AdminCampaignController::class, 'edit'])->name('edit');

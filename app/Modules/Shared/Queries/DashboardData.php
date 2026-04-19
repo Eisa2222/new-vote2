@@ -43,12 +43,19 @@ final class DashboardData
                 'players'          => Player::count(),
                 'active_campaigns' => Campaign::where('status', CampaignStatus::Active->value)->count(),
             ],
-            'recent_campaigns' => Campaign::orderByDesc('id')->take(self::RECENT_CAMPAIGNS_LIMIT)->get(),
-            'ending_soon'      => Campaign::where('status', CampaignStatus::Active->value)
+            'recent_campaigns'    => Campaign::orderByDesc('id')->take(self::RECENT_CAMPAIGNS_LIMIT)->get(),
+            'ending_soon'         => Campaign::where('status', CampaignStatus::Active->value)
                 ->whereBetween('end_at', [now(), now()->addDays(self::ENDING_SOON_WINDOW_DAYS)])
                 ->count(),
-            'pending_approval' => CampaignResult::where('status', ResultStatus::Calculated->value)->count(),
-            'total_votes'      => Vote::count(),
+            'pending_approval'    => CampaignResult::where('status', ResultStatus::Calculated->value)->count(),
+            'total_votes'         => Vote::count(),
+
+            // Extra KPIs for the dashboard hero row.
+            'votes_today'         => Vote::whereDate('submitted_at', today())->count(),
+            'votes_last_7_days'   => Vote::where('submitted_at', '>=', now()->subDays(7))->count(),
+            'pending_campaigns'   => Campaign::where('status', CampaignStatus::PendingApproval->value)->count(),
+            'published_campaigns' => Campaign::where('status', CampaignStatus::Published->value)->count(),
+            'closed_campaigns'    => Campaign::where('status', CampaignStatus::Closed->value)->count(),
         ];
     }
 }

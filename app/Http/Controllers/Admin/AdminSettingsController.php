@@ -55,11 +55,37 @@ final class AdminSettingsController extends Controller
 
     public function updateGeneral(UpdateGeneralSettingsRequest $request, SettingsService $settings): RedirectResponse
     {
-        $settings->setMany($request->validated(), 'general');
+        $data = $request->validated();
+
+        // Separate the logo file/flags from the key-value settings.
+        $logoFile  = $request->file('platform_logo');
+        $clear     = (bool) ($data['platform_logo_clear'] ?? false);
+        unset($data['platform_logo'], $data['platform_logo_clear']);
+
+        if ($logoFile) {
+            // Store under public/branding/ so it's web-accessible via
+            // the storage symlink. Old file is deleted if any.
+            $this->deleteStoredLogo($settings);
+            $path = $logoFile->store('branding', 'public');
+            $settings->set('platform_logo_path', $path, 'general');
+        } elseif ($clear) {
+            $this->deleteStoredLogo($settings);
+            $settings->set('platform_logo_path', '', 'general');
+        }
+
+        $settings->setMany($data, 'general');
 
         return redirect()
             ->route('admin.settings.index')
             ->with('success', __('Settings saved.'));
+    }
+
+    private function deleteStoredLogo(SettingsService $settings): void
+    {
+        $old = (string) $settings->get('platform_logo_path', '');
+        if ($old && ! str_starts_with($old, 'http') && ! str_starts_with($old, 'data:')) {
+            \Illuminate\Support\Facades\Storage::disk('public')->delete($old);
+        }
     }
 
     // ─── Sports ────────────────────────────────────────────────

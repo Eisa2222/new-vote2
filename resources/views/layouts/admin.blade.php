@@ -14,6 +14,7 @@
         ['route' => 'admin.players.index',   'icon' => '🧍', 'label' => __('Players'),   'can' => (bool) $user?->can('players.viewAny')],
         ['route' => 'admin.campaigns.index', 'icon' => '🗳️', 'label' => __('Campaigns'), 'can' => (bool) $user?->can('campaigns.viewAny')],
         ['route' => 'admin.results.index',   'icon' => '🏆', 'label' => __('Results'),   'can' => (bool) $user?->can('results.view')],
+        ['route' => 'admin.archive',         'icon' => '🗃', 'label' => __('Archive'),   'can' => (bool) $user?->can('users.manage') || (bool) $user?->can('clubs.viewAny') || (bool) $user?->can('players.viewAny') || (bool) $user?->can('campaigns.viewAny')],
         ['route' => 'admin.settings.index',  'icon' => '⚙️', 'label' => __('Settings'),  'can' => (bool) $user?->can('users.manage')],
     ])->filter(fn ($item) => $item['can'])
       ->map(fn ($item) => $item + ['path' => route($item['route'])])
@@ -39,6 +40,7 @@
     <title>@yield('title', __('SFPA Voting'))</title>
     @include('partials.brand-head')
     <script defer src="https://unpkg.com/alpinejs@3.14.3/dist/cdn.min.js"></script>
+    <script defer src="{{ asset('js/datatable.js') }}"></script>
     <style>
         [x-cloak] { display: none !important; }
         /* TC011 — desktop sidebar collapse. Toggles via the header button. */
@@ -59,10 +61,10 @@
            data-dir="{{ $dir }}">
         <div class="px-6 py-6 border-b border-white/10">
             <div class="flex items-center gap-3">
-                <div class="w-11 h-11 rounded-xl bg-white/10 flex items-center justify-center text-base font-bold tracking-wide">FPA</div>
+                <x-brand.logo size="md" />
                 <div class="leading-tight">
-                    <div class="font-bold text-sm">{{ __('Saudi Football Players Association') }}</div>
-                    <div class="text-xs text-brand-200 mt-0.5">{{ __('SFPA Voting Admin') }}</div>
+                    <div class="font-bold text-sm">{{ \App\Modules\Shared\Support\Branding::name() }}</div>
+                    <div class="text-xs text-brand-200 mt-0.5">{{ __('Admin Panel') }}</div>
                 </div>
             </div>
         </div>

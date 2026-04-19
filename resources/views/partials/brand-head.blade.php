@@ -90,9 +90,20 @@
 
     /* --- Forms -----------------------------------------------------------
        .form-page  → full-width form body, max-width wide enough for 3-4
-                     columns on desktop but still centred on 4K screens. */
+                     columns on desktop but still centred on 4K screens.
+       .field-*    → shared input styling so every form feels the same;
+                     we apply these via Tailwind `@apply` so existing
+                     inline classes continue to work side-by-side.       */
     .form-page       { @apply w-full max-w-none; }
     .form-wrap       { @apply w-full max-w-6xl mx-auto; }
+    .field-label     { @apply block text-sm font-medium mb-1.5 text-ink-800; }
+    .field-help      { @apply mt-1 text-xs text-ink-500; }
+    .field-error     { @apply mt-1 text-xs text-rose-600; }
+    .field-input     { @apply w-full rounded-xl border border-ink-200 bg-white px-4 py-2.5 text-sm text-ink-900 placeholder:text-ink-400 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-brand-500 transition; }
+    .field-input:disabled, .field-input[readonly] { @apply bg-ink-50 text-ink-500; }
+    .field-textarea  { @apply w-full rounded-xl border border-ink-200 bg-white px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-brand-500 transition; }
+    .field-select    { @apply w-full rounded-xl border border-ink-200 bg-white px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-brand-500 transition; }
+    .field-checkbox  { @apply rounded border-ink-300 text-brand-600 focus:ring-brand-500; }
 
     /* --- Dropdown chevron -----------------------------------------------
        Native <select> gets a real caret icon (instead of OS default)

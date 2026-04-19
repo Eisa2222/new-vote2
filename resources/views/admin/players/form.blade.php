@@ -29,7 +29,9 @@
                 <select name="club_id" required class="w-full border rounded-lg px-3 py-2">
                     <option value="">—</option>
                     @foreach($clubs as $c)
-                        <option value="{{ $c->id }}" @selected(old('club_id', $player->club_id) == $c->id)>{{ $c->localized('name') }}</option>
+                        {{-- ?club_id=N from the "Add player to this club"
+                             shortcut on the club edit page preselects here. --}}
+                        <option value="{{ $c->id }}" @selected(old('club_id', $player->club_id ?? request('club_id')) == $c->id)>{{ $c->localized('name') }}</option>
                     @endforeach
                 </select>
                 @error('club_id') <p class="text-red-600 text-sm mt-1">{{ $message }}</p> @enderror

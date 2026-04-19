@@ -26,9 +26,9 @@
                         background-size: 22px 22px;"></div>
             <div class="relative">
                 <div class="flex items-center gap-3 mb-8">
-                    <div class="w-12 h-12 rounded-xl bg-white/15 flex items-center justify-center text-lg font-bold">FPA</div>
+                    <x-brand.logo size="lg" />
                     <div class="leading-tight">
-                        <div class="text-xs uppercase tracking-[0.25em] text-accent-500">SFPA VOTING</div>
+                        <div class="text-xs uppercase tracking-[0.25em] text-accent-500">{{ \App\Modules\Shared\Support\Branding::name() }}</div>
                         <div class="text-sm text-brand-100 mt-0.5">{{ __('Official Platform') }}</div>
                     </div>
                 </div>

@@ -44,8 +44,39 @@
                 <p class="text-sm text-ink-500 mt-1">{{ __('Platform-wide preferences and defaults.') }}</p>
             </div>
 
-            <form method="post" action="/admin/settings/general" class="space-y-5">
+            <form method="post" action="/admin/settings/general" enctype="multipart/form-data" class="space-y-5">
                 @csrf
+
+                {{-- Platform logo — appears in the sidebar, login page,
+                     voting screen and anywhere <x-brand.logo/> is used. --}}
+                @php
+                    $logoUrl = \App\Modules\Shared\Support\Branding::logoUrl();
+                @endphp
+                <div class="rounded-2xl border border-ink-200 p-4 bg-ink-50/40">
+                    <label class="block text-sm font-semibold mb-2">{{ __('Platform logo') }}</label>
+                    <div class="flex items-center gap-4 flex-wrap">
+                        <div class="w-20 h-20 rounded-2xl bg-white border border-ink-200 flex items-center justify-center overflow-hidden">
+                            @if($logoUrl)
+                                <img src="{{ $logoUrl }}" alt="{{ __('Current logo') }}" class="w-full h-full object-contain p-2">
+                            @else
+                                <span class="text-ink-400 text-xs">{{ __('No logo') }}</span>
+                            @endif
+                        </div>
+                        <div class="flex-1 min-w-[220px]">
+                            <input type="file" name="platform_logo" accept="image/png,image/jpeg,image/webp"
+                                   class="block w-full text-sm text-ink-700 file:me-3 file:rounded-lg file:border-0 file:bg-brand-600 file:text-white file:px-3 file:py-1.5 file:text-xs file:font-semibold hover:file:bg-brand-700">
+                            <p class="text-xs text-ink-500 mt-1">{{ __('PNG, JPEG or WEBP up to 2 MB. Replaces the default FPA wordmark everywhere.') }}</p>
+                            @if($logoUrl)
+                                <label class="mt-2 inline-flex items-center gap-2 text-xs text-rose-600">
+                                    <input type="checkbox" name="platform_logo_clear" value="1" class="rounded border-ink-300 text-rose-600">
+                                    {{ __('Remove current logo') }}
+                                </label>
+                            @endif
+                            @error('platform_logo') <p class="text-rose-600 text-xs mt-1">{{ $message }}</p> @enderror
+                        </div>
+                    </div>
+                </div>
+
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
                         <label class="block text-sm font-medium mb-1.5">{{ __('Application name') }}</label>

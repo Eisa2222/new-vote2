@@ -85,6 +85,20 @@
         </div>
     @endisset
 
+    {{-- Voter "exit" — ends the verified session and returns to the
+         public campaigns list. Posted via its own form so it lives
+         outside the main ballot form and doesn't collide with it. --}}
+    <form method="post" action="{{ route('voting.exit', $campaign->public_token) }}"
+          onsubmit="return confirm('{{ __('Exit voting? Your unsaved picks will be lost.') }}')"
+          class="flex justify-end">
+        @csrf
+        <button type="submit"
+                class="inline-flex items-center gap-2 rounded-xl border border-ink-200 hover:border-rose-400 hover:text-rose-600 bg-white text-ink-700 px-4 py-2 text-sm font-medium transition">
+            <span aria-hidden="true">↩</span>
+            <span>{{ __('Exit voting') }}</span>
+        </button>
+    </form>
+
     <form method="post" action="{{ route('voting.submit', $campaign->public_token) }}" id="voteForm" class="space-y-6">
         @csrf
 

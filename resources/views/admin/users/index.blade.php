@@ -18,21 +18,24 @@
 
     <x-admin.bulk-toolbar :action="route('admin.users.bulkDelete')" :confirm-template="__('Archive :n user(s)?')" :label="__('Archive selected')" color="rose" />
 
-    <div class="bg-white border border-ink-200 rounded-2xl overflow-hidden">
-        <table class="w-full text-sm">
+    <div data-datatable-scope class="bg-white border border-ink-200 rounded-2xl overflow-hidden">
+        <div class="p-4 border-b border-ink-100">
+            <x-admin.datatable-head :search-placeholder="__('Search by name or email...')" />
+        </div>
+        <table data-datatable class="w-full text-sm">
             <thead>
                 <tr class="bg-ink-50 border-b border-ink-200">
                     <th class="w-10 px-4 py-3">
                         <input type="checkbox"
                             class="bulk-select-all rounded border-ink-300 text-brand-600 focus:ring-brand-500">
                     </th>
-                    <th class="text-start px-4 py-3 text-xs font-semibold text-ink-500 uppercase tracking-wide">
+                    <th data-sort class="text-start px-4 py-3 text-xs font-semibold text-ink-500 uppercase tracking-wide">
                         {{ __('Name') }}</th>
-                    <th class="text-start px-4 py-3 text-xs font-semibold text-ink-500 uppercase tracking-wide">
+                    <th data-sort class="text-start px-4 py-3 text-xs font-semibold text-ink-500 uppercase tracking-wide">
                         {{ __('Email') }}</th>
                     <th class="text-start px-4 py-3 text-xs font-semibold text-ink-500 uppercase tracking-wide">
                         {{ __('Roles') }}</th>
-                    <th class="text-start px-4 py-3 text-xs font-semibold text-ink-500 uppercase tracking-wide">
+                    <th data-sort class="text-start px-4 py-3 text-xs font-semibold text-ink-500 uppercase tracking-wide">
                         {{ __('Status') }}</th>
                     <th class="text-start px-4 py-3 text-xs font-semibold text-ink-500 uppercase tracking-wide">
                         {{ __('Actions') }}</th>

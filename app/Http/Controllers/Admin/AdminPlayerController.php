@@ -126,4 +126,12 @@ final class AdminPlayerController extends Controller
         }
         return $redirect;
     }
+
+    // ─── Archive hooks (trait: ArchivesResource) ─────────────────
+
+    use \App\Http\Controllers\Admin\Concerns\ArchivesResource;
+    protected function archiveModel(): string     { return \App\Modules\Players\Models\Player::class; }
+    protected function archiveRouteName(): string { return 'admin.players'; }
+    protected function archiveKey(): string       { return 'players'; }
+    protected function archiveView(): string      { return 'admin.shared.archive-list'; }
 }

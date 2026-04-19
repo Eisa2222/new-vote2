@@ -129,4 +129,12 @@ final class AdminClubController extends Controller
         }
         return $redirect;
     }
+
+    // ─── Archive hooks (trait: ArchivesResource) ─────────────────
+
+    use \App\Http\Controllers\Admin\Concerns\ArchivesResource;
+    protected function archiveModel(): string     { return \App\Modules\Clubs\Models\Club::class; }
+    protected function archiveRouteName(): string { return 'admin.clubs'; }
+    protected function archiveKey(): string       { return 'clubs'; }
+    protected function archiveView(): string      { return 'admin.shared.archive-list'; }
 }

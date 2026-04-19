@@ -22,6 +22,11 @@ final class UpdateGeneralSettingsRequest extends FormRequest
             'default_campaign_days' => ['required', 'integer', 'min:1', 'max:365'],
             'committee_name_ar'     => ['required', 'string', 'max:120'],
             'committee_name_en'     => ['required', 'string', 'max:120'],
+            // Platform logo — appears on login, admin header, voting pages
+            // in place of the default "FPA" wordmark. Raster-only (SVG
+            // excluded for XSS reasons, same as club logos).
+            'platform_logo'         => ['nullable', 'image', 'mimes:png,jpg,jpeg,webp', 'max:2048'],
+            'platform_logo_clear'   => ['nullable', 'boolean'],
         ];
     }
 }

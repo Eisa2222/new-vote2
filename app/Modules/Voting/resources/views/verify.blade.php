@@ -16,11 +16,10 @@
 
     <div class="w-full max-w-md">
         <div class="text-center mb-6 text-white">
-            <div
-                class="inline-flex items-center justify-center w-16 h-14 rounded-2xl  text-xl font-bold mb-4 backdrop-blur">
-                <img src="{{ asset('logo.png') }}" alt="">
+            <div class="inline-flex justify-center mb-4">
+                <x-brand.logo size="lg" class="!bg-transparent" />
             </div>
-            <div class="text-xs uppercase tracking-[0.25em] text-accent-500">{{ __('Official Platform') }}</div>
+            <div class="text-xs uppercase tracking-[0.25em] text-accent-500">{{ \App\Modules\Shared\Support\Branding::name() }}</div>
             <h1 class="text-2xl md:text-3xl font-bold mt-2">{{ $campaign->localized('title') }}</h1>
             <p class="text-brand-100 text-sm mt-3">{{ __('Identity verification required to vote') }}</p>
         </div>
@@ -71,8 +70,16 @@
             </form>
         </div>
 
+        <div class="text-center mt-6">
+            <a href="{{ route('public.campaigns') }}"
+               class="inline-flex items-center gap-2 text-sm text-brand-100 hover:text-white">
+                <span aria-hidden="true">←</span>
+                <span>{{ __('Back to campaigns') }}</span>
+            </a>
+        </div>
+
         <div class="text-center mt-6 text-xs text-brand-200">
-            © {{ date('Y') }} {{ __('Saudi Football Players Association') }}
+            © {{ date('Y') }} {{ \App\Modules\Shared\Support\Branding::name() }}
         </div>
     </div>
 
