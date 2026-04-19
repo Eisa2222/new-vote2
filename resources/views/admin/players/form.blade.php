@@ -6,7 +6,7 @@
 
     <form method="post" enctype="multipart/form-data"
           action="{{ $player->exists ? '/admin/players/'.$player->id : '/admin/players' }}"
-          class="bg-white rounded-2xl shadow p-6 space-y-5 max-w-3xl">
+          class="bg-white rounded-2xl shadow p-6 md:p-8 space-y-5 form-wrap">
         @csrf
         @if($player->exists) @method('PUT') @endif
 
@@ -111,9 +111,12 @@
              edit submit into a delete. --}}
         <form method="post" action="/admin/players/{{ $player->id }}"
               onsubmit="return confirm('{{ __('Delete this player?') }}')"
-              class="max-w-3xl mt-4 flex justify-end">
+              class="form-wrap mt-4 flex justify-end">
             @csrf @method('DELETE')
-            <button type="submit" class="text-rose-600 hover:underline">{{ __('Delete') }}</button>
+            <button type="submit" class="btn-delete">
+                <span aria-hidden="true">🗑</span>
+                <span>{{ __('Delete') }}</span>
+            </button>
         </form>
     @endif
 @endsection

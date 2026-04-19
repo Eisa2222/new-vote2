@@ -80,7 +80,13 @@
         </nav>
     </aside>
 
-    <div class="flex-1 flex flex-col min-w-0">
+    {{--
+      Sticky-footer column: min-h-screen guarantees the column fills
+      the viewport even when the content is shorter than one screen,
+      so the footer always sits at the bottom (not in the middle of
+      a near-empty page).
+    --}}
+    <div class="flex-1 flex flex-col min-w-0 min-h-screen">
         <header class="bg-white border-b border-ink-200 px-4 md:px-8 py-3 sticky top-0 z-30">
             <div class="flex items-center gap-4 justify-between">
                 <div class="flex items-center gap-3 min-w-0">

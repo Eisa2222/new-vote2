@@ -6,6 +6,7 @@
 
 @section('content')
 @php
+    $dir = app()->getLocale() === 'ar' ? 'rtl' : 'ltr';
     // Data comes from AdminLandingController → DashboardData query object.
     // Presentation-only helpers (labels / classes / icons) stay here.
     $typeLabels = [
@@ -21,17 +22,20 @@
         'archived'  => 'bg-slate-100 text-slate-600',
     ];
 
+    // Each card now carries a `href` → admins can click a KPI and land
+    // straight on the relevant list, no extra navigation step.
     $cards = [
-        ['title' => __('Clubs'),            'value' => $counts['clubs'],            'icon' => '🏟️', 'color' => 'from-blue-500 to-cyan-500'],
-        ['title' => __('Sports'),           'value' => $counts['sports'],           'icon' => '🏆', 'color' => 'from-violet-500 to-purple-500'],
-        ['title' => __('Players'),          'value' => $counts['players'],          'icon' => '👥', 'color' => 'from-emerald-500 to-green-500'],
-        ['title' => __('Active campaigns'), 'value' => $counts['active_campaigns'], 'icon' => '🗳️', 'color' => 'from-amber-500 to-orange-500'],
+        ['title' => __('Clubs'),            'value' => $counts['clubs'],            'icon' => '🏟️', 'color' => 'from-blue-500 to-cyan-500',       'href' => route('admin.clubs.index')],
+        ['title' => __('Sports'),           'value' => $counts['sports'],           'icon' => '🏆', 'color' => 'from-violet-500 to-purple-500',  'href' => route('admin.settings.index')],
+        ['title' => __('Players'),          'value' => $counts['players'],          'icon' => '👥', 'color' => 'from-emerald-500 to-green-500',  'href' => route('admin.players.index')],
+        ['title' => __('Active campaigns'), 'value' => $counts['active_campaigns'], 'icon' => '🗳️', 'color' => 'from-amber-500 to-orange-500',   'href' => route('admin.campaigns.index').'?status=active'],
     ];
 @endphp
 
 <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-5">
     @foreach($cards as $card)
-        <div class="rounded-3xl bg-gradient-to-br {{ $card['color'] }} text-white p-6 shadow-lg">
+        <a href="{{ $card['href'] }}"
+           class="group rounded-3xl bg-gradient-to-br {{ $card['color'] }} text-white p-6 shadow-lg transition hover:shadow-xl hover:scale-[1.02] focus:outline-none focus:ring-2 focus:ring-white/60">
             <div class="flex items-start justify-between">
                 <div>
                     <div class="text-sm text-white/80">{{ $card['title'] }}</div>
@@ -39,7 +43,11 @@
                 </div>
                 <div class="text-3xl">{{ $card['icon'] }}</div>
             </div>
-        </div>
+            <div class="mt-4 text-xs text-white/80 inline-flex items-center gap-1 opacity-0 group-hover:opacity-100 transition">
+                {{ __('View details') }}
+                <span aria-hidden="true">{{ $dir === 'rtl' ? '←' : '→' }}</span>
+            </div>
+        </a>
     @endforeach
 </div>
 

@@ -13,7 +13,7 @@
     <span>{{ __('Edit') }}</span>
 </div>
 
-<form method="post" action="/admin/campaigns/{{ $campaign->id }}" class="space-y-6 max-w-4xl">
+<form method="post" action="/admin/campaigns/{{ $campaign->id }}" class="space-y-6 form-wrap">
     @csrf
     @method('PUT')
 
@@ -80,9 +80,12 @@
         <a href="/admin/campaigns/{{ $campaign->id }}/categories" class="font-semibold underline">{{ __('Manage categories & candidates') }}</a>.
     </div>
 
-    <div class="sticky bottom-0 bg-white border-t border-ink-200 p-4 rounded-t-3xl shadow-lg flex items-center justify-between">
+    <div class="sticky bottom-0 bg-white border-t border-ink-200 p-4 rounded-t-3xl shadow-lg flex items-center justify-between gap-2">
         <a href="/admin/campaigns/{{ $campaign->id }}" class="btn-ghost">{{ __('Cancel') }}</a>
-        <button class="btn-brand-lg">{{ __('Save changes') }}</button>
+        <button class="btn-save">
+            <span aria-hidden="true">💾</span>
+            <span>{{ __('Save changes') }}</span>
+        </button>
     </div>
 </form>
 @endsection

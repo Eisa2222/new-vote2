@@ -2,8 +2,10 @@
 @section('content')
     <h1 class="text-2xl font-bold mb-6 text-slate-800">{{ $user->exists ? __('Edit User') : __('New User') }}</h1>
 
+    {{-- Wider form: max-w-6xl fills modern laptop screens without becoming
+         uncomfortably wide on 4K displays. Use a two-column grid on md+. --}}
     <form method="post" action="{{ $user->exists ? '/admin/users/'.$user->id : '/admin/users' }}"
-          class="bg-white rounded-2xl shadow p-6 space-y-5 max-w-2xl">
+          class="bg-white rounded-2xl shadow p-6 md:p-8 space-y-5 form-wrap">
         @csrf
         @if($user->exists) @method('PUT') @endif
 
@@ -59,8 +61,11 @@
             </div>
         </div>
 
-        <div class="sticky bottom-0 bg-white pt-4 border-t flex gap-2">
-            <button class="btn-primary">{{ __('Save') }}</button>
+        <div class="sticky bottom-0 bg-white pt-4 border-t flex gap-2 items-center">
+            <button class="btn-save">
+                <span aria-hidden="true">💾</span>
+                <span>{{ __('Save') }}</span>
+            </button>
             <a href="/admin/users" class="btn-ghost">{{ __('Cancel') }}</a>
         </div>
     </form>

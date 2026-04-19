@@ -6,7 +6,7 @@
 
     <form method="post" enctype="multipart/form-data"
           action="{{ $club->exists ? '/admin/clubs/'.$club->id : '/admin/clubs' }}"
-          class="bg-white rounded-2xl shadow p-6 space-y-5 max-w-3xl">
+          class="bg-white rounded-2xl shadow p-6 md:p-8 space-y-5 form-wrap">
         @csrf
         @if($club->exists) @method('PUT') @endif
 
@@ -90,11 +90,11 @@
         {{-- Delete form — MUST be outside the edit form (nested forms break _method). --}}
         <form method="post" action="/admin/clubs/{{ $club->id }}"
               onsubmit="return confirm('{{ __('Delete this club?') }}')"
-              class="max-w-3xl mt-4 flex justify-end">
+              class="form-wrap mt-4 flex justify-end">
             @csrf @method('DELETE')
-            <button type="submit"
-                    class="rounded-2xl border-2 border-danger-500/50 text-danger-600 hover:bg-danger-500/10 px-6 py-3 font-semibold text-base">
-                🗑 {{ __('Delete') }}
+            <button type="submit" class="btn-delete">
+                <span aria-hidden="true">🗑</span>
+                <span>{{ __('Delete') }}</span>
             </button>
         </form>
     @endif

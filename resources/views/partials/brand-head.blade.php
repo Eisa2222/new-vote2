@@ -57,10 +57,28 @@
 </script>
 <style>
     body { font-family: '{{ app()->getLocale() === 'ar' ? 'Tajawal' : 'Inter' }}', system-ui, sans-serif; }
-    .btn-brand       { @apply bg-brand-600 hover:bg-brand-700 text-white rounded-xl px-5 py-2.5 font-semibold transition; }
-    .btn-brand-lg    { @apply bg-brand-600 hover:bg-brand-700 text-white rounded-2xl px-8 py-3.5 font-semibold text-lg shadow-brand transition; }
-    .btn-ghost       { @apply text-ink-700 border border-ink-200 hover:bg-ink-50 rounded-xl px-4 py-2 font-medium; }
-    .btn-danger      { @apply text-danger-600 border border-danger-500/40 hover:bg-danger-500/10 rounded-xl px-4 py-2 font-medium; }
+
+    /* --- Action buttons --------------------------------------------------
+       One visual language for the whole app:
+         • .btn-save    — primary green, confirms positive action
+         • .btn-edit    — amber/gold, reversible change
+         • .btn-delete  — red, destructive
+         • .btn-ghost   — neutral (Cancel, Back)
+         • .btn-primary — historical alias for .btn-save (old views)
+         • .btn-brand   / .btn-brand-lg — branded primary (existing CTAs)
+       Each button keeps consistent radius, padding and weight so the
+       whole admin feels one coherent system. -------------------------- */
+    .btn-save        { @apply inline-flex items-center gap-2 bg-brand-600 hover:bg-brand-700 active:bg-brand-800 text-white rounded-xl px-5 py-2.5 font-semibold shadow-sm transition; }
+    .btn-primary     { @apply inline-flex items-center gap-2 bg-brand-600 hover:bg-brand-700 active:bg-brand-800 text-white rounded-xl px-5 py-2.5 font-semibold shadow-sm transition; }
+    .btn-brand       { @apply inline-flex items-center gap-2 bg-brand-600 hover:bg-brand-700 text-white rounded-xl px-5 py-2.5 font-semibold transition; }
+    .btn-brand-lg    { @apply inline-flex items-center gap-2 bg-brand-600 hover:bg-brand-700 text-white rounded-2xl px-8 py-3.5 font-semibold text-lg shadow-brand transition; }
+    .btn-edit        { @apply inline-flex items-center gap-2 bg-amber-500 hover:bg-amber-600 active:bg-amber-700 text-white rounded-xl px-5 py-2.5 font-semibold shadow-sm transition; }
+    .btn-delete      { @apply inline-flex items-center gap-2 bg-rose-600 hover:bg-rose-700 active:bg-rose-800 text-white rounded-xl px-5 py-2.5 font-semibold shadow-sm transition; }
+    .btn-ghost       { @apply inline-flex items-center gap-2 text-ink-700 border border-ink-200 hover:bg-ink-50 rounded-xl px-4 py-2 font-medium transition; }
+    .btn-danger      { @apply inline-flex items-center gap-2 text-danger-600 border border-danger-500/40 hover:bg-danger-500/10 rounded-xl px-4 py-2 font-medium transition; }
+    .btn-icon        { @apply inline-flex items-center justify-center w-10 h-10 rounded-xl border border-ink-200 hover:bg-ink-50 transition; }
+
+    /* --- Cards / badges (existing) --- */
     .card            { @apply bg-white rounded-2xl border border-ink-200 shadow-sm p-6; }
     .badge           { @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold; }
     .badge-active    { @apply bg-brand-100 text-brand-700; }
@@ -69,4 +87,31 @@
     .badge-closed    { @apply bg-ink-100 text-ink-700; }
     .badge-archived  { @apply bg-ink-100 text-ink-500; }
     .badge-inactive  { @apply bg-ink-100 text-ink-500; }
+
+    /* --- Forms -----------------------------------------------------------
+       .form-page  → full-width form body, max-width wide enough for 3-4
+                     columns on desktop but still centred on 4K screens. */
+    .form-page       { @apply w-full max-w-none; }
+    .form-wrap       { @apply w-full max-w-6xl mx-auto; }
+
+    /* --- Dropdown chevron -----------------------------------------------
+       Native <select> gets a real caret icon (instead of OS default)
+       that respects LTR/RTL direction. Works everywhere the @tailwindcss/
+       forms plugin is loaded — which is our case via the CDN query. */
+    select:not([multiple]):not([size]) {
+        background-image: url("data:image/svg+xml;charset=UTF-8,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3E%3Cpath stroke='%23475569' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.75' d='M6 8l4 4 4-4'/%3E%3C/svg%3E");
+        background-repeat: no-repeat;
+        background-size: 18px 18px;
+        -webkit-appearance: none;
+        -moz-appearance: none;
+        appearance: none;
+    }
+    [dir="ltr"] select:not([multiple]):not([size]) {
+        background-position: right 12px center;
+        padding-right: 40px !important;
+    }
+    [dir="rtl"] select:not([multiple]):not([size]) {
+        background-position: left 12px center;
+        padding-left: 40px !important;
+    }
 </style>
