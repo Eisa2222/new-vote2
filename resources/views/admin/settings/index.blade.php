@@ -115,7 +115,10 @@
                                class="w-full rounded-xl border border-ink-200 px-4 py-2.5">
                     </div>
                 </div>
-                <button class="btn-brand">{{ __('Save changes') }}</button>
+                <button class="btn-save">
+                    <span aria-hidden="true">💾</span>
+                    <span>{{ __('Save changes') }}</span>
+                </button>
             </form>
         </div>
     </section>
@@ -143,7 +146,10 @@
                     <option value="active">{{ __('Active') }}</option>
                     <option value="inactive">{{ __('Inactive') }}</option>
                 </select>
-                <button class="btn-brand">+ {{ __('Add sport') }}</button>
+                <button class="btn-save">
+                    <span>+</span>
+                    <span>{{ __('Add sport') }}</span>
+                </button>
             </form>
 
             <table class="w-full text-sm">
@@ -177,7 +183,10 @@
                                 <form method="post" action="/admin/settings/sports/{{ $sport->id }}"
                                       onsubmit="return confirm('{{ __('Delete this sport?') }}')">
                                     @csrf @method('DELETE')
-                                    <button class="text-danger-600 text-xs hover:underline">{{ __('Delete') }}</button>
+                                    <button class="inline-flex items-center gap-1 rounded-lg border border-danger-500/50 text-danger-600 hover:bg-danger-500/10 px-3 py-1.5 text-xs font-medium transition">
+                                        <span aria-hidden="true">🗑</span>
+                                        <span>{{ __('Delete') }}</span>
+                                    </button>
                                 </form>
                             </td>
                         </tr>
@@ -214,7 +223,10 @@
                     <option value="active">{{ __('Active') }}</option>
                     <option value="inactive">{{ __('Inactive') }}</option>
                 </select>
-                <button class="btn-brand">+ {{ __('Add league') }}</button>
+                <button class="btn-save">
+                    <span>+</span>
+                    <span>{{ __('Add league') }}</span>
+                </button>
             </form>
 
             <table class="w-full text-sm">
@@ -245,7 +257,10 @@
                                 <form method="post" action="/admin/settings/leagues/{{ $l->id }}"
                                       onsubmit="return confirm('{{ __('Delete this league?') }}')">
                                     @csrf @method('DELETE')
-                                    <button class="text-danger-600 text-xs hover:underline">{{ __('Delete') }}</button>
+                                    <button class="inline-flex items-center gap-1 rounded-lg border border-danger-500/50 text-danger-600 hover:bg-danger-500/10 px-3 py-1.5 text-xs font-medium transition">
+                                        <span aria-hidden="true">🗑</span>
+                                        <span>{{ __('Delete') }}</span>
+                                    </button>
                                 </form>
                             </td>
                         </tr>
