@@ -41,7 +41,7 @@
                        class="w-full rounded-xl border border-ink-200 px-4 py-3 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-brand-500"
                        placeholder="example@domain.com">
             </div>
-            <button class="w-full btn-save justify-center py-3.5 text-base">
+            <button class="w-full rounded-xl bg-brand-600 hover:bg-brand-700 text-white py-3.5 font-semibold transition">
                 {{ __('Send reset link') }}
             </button>
         </form>
@@ -54,8 +54,6 @@
     </div>
 </main>
 
-<footer class="bg-white border-t border-ink-200 text-center text-xs text-ink-500 py-4 px-4">
-    © {{ date('Y') }} {{ __('Saudi Football Players Association') }}
-</footer>
+
 </body>
 </html>

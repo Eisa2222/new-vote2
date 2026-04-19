@@ -14,18 +14,7 @@ final class CreateUserAction
 {
     public function __construct(private readonly LogActivityAction $log) {}
 
-    /**
-     * Create a user.
-     *
-     * If `password` is present (direct admin creation), it is hashed and
-     * stored. If it is absent (invite flow), we store a random password —
-     * the user cannot sign in with it — and trigger the standard Laravel
-     * password-reset email so they set their own. Same broker as the
-     * public "forgot password" flow, so the UX is consistent.
-     *
-     * @param  array{name:string,email:string,password?:string|null,status?:string|null,roles?:string[]}  $data
-     * @return array{user: User, invited: bool}
-     */
+
     public function execute(array $data): array
     {
         $hasPassword = ! empty($data['password']);
@@ -34,11 +23,7 @@ final class CreateUserAction
             $user = User::create([
                 'name'     => $data['name'],
                 'email'    => $data['email'],
-                'password' => $hasPassword
-                    ? Hash::make($data['password'])
-                    // Unguessable placeholder; real password is set via the
-                    // invite email the caller sends after commit.
-                    : Hash::make(Str::random(48)),
+                'password' => $hasPassword? Hash::make($data['password']) : Hash::make(Str::random(48)),
                 'status'   => $data['status'] ?? 'active',
             ]);
             $user->syncRoles($data['roles'] ?? []);
