@@ -33,10 +33,21 @@ trait ArchivesResource
         return view($this->archiveView(), [
             'rows'   => $rows,
             'module' => $this->archiveKey(),
-            'backRoute' => $this->archiveRouteName().'.index',
+            'backRoute'    => $this->archiveRouteName().'.index',
             'restoreRoute' => $this->archiveRouteName().'.restore',
             'forceRoute'   => $this->archiveRouteName().'.forceDelete',
         ]);
+    }
+
+    /**
+     * Route name for the archive-list page. Defaults to
+     * `{routeName}.archive`, but consumers can override — campaigns
+     * use `.archiveList` because `.archive` is taken by the older
+     * lifecycle route (Active → Archived status transition).
+     */
+    protected function archiveListRouteName(): string
+    {
+        return $this->archiveRouteName().'.archive';
     }
 
     public function restore(int $id): RedirectResponse
@@ -45,7 +56,7 @@ trait ArchivesResource
         $model = $this->archiveModel();
         $row   = $model::onlyTrashed()->findOrFail($id);
         $row->restore();
-        return redirect()->route($this->archiveRouteName().'.archive')
+        return redirect()->route($this->archiveListRouteName())
             ->with('success', __(':label restored.', ['label' => __(ucfirst($this->archiveKey()))]));
     }
 
@@ -55,7 +66,7 @@ trait ArchivesResource
         $model = $this->archiveModel();
         $row   = $model::onlyTrashed()->findOrFail($id);
         $row->forceDelete();
-        return redirect()->route($this->archiveRouteName().'.archive')
+        return redirect()->route($this->archiveListRouteName())
             ->with('success', __(':label permanently deleted.', ['label' => __(ucfirst($this->archiveKey()))]));
     }
 

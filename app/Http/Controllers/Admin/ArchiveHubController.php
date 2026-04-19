@@ -62,7 +62,7 @@ final class ArchiveHubController extends Controller
                 'label'     => __('Campaigns'),
                 'icon'      => '🗳️',
                 'count'     => $this->trashedCount(Campaign::class),
-                'href'      => route('admin.campaigns.archive'),
+                'href'      => route('admin.campaigns.archiveList'),
                 'visible'   => (bool) $user?->can('campaigns.viewAny'),
                 'color'     => 'from-amber-500 to-orange-500',
             ],

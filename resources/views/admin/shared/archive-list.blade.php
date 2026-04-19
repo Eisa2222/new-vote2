@@ -1,7 +1,8 @@
 @extends('layouts.admin')
 
-@section('title', __('Archive — :label', ['label' => __(ucfirst($module))]))
-@section('page_title', __('Archive — :label', ['label' => __(ucfirst($module))]))
+@php($archiveLabel = __(ucfirst($module)))
+@section('title', __('Archive — :label', ['label' => $archiveLabel]))
+@section('page_title', __('Archive — :label', ['label' => $archiveLabel]))
 @section('page_description', __('Restore or permanently delete archived items.'))
 
 @section('content')

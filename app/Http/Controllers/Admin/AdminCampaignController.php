@@ -243,4 +243,7 @@ final class AdminCampaignController extends Controller
     protected function archiveRouteName(): string { return 'admin.campaigns'; }
     protected function archiveKey(): string       { return 'campaigns'; }
     protected function archiveView(): string      { return 'admin.shared.archive-list'; }
+    // `admin.campaigns.archive` already names the lifecycle POST, so
+    // our archive LIST route is registered as .archiveList.
+    protected function archiveListRouteName(): string { return 'admin.campaigns.archiveList'; }
 }

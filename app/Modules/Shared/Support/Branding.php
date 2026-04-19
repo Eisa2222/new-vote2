@@ -45,9 +45,19 @@ final class Branding
      */
     public static function initials(): string
     {
-        $name = self::name();
-        $parts = preg_split('/\s+/', trim($name)) ?: [];
+        $name  = trim(self::name());
+        $parts = preg_split('/\s+/', $name) ?: [];
         if (! $parts) return 'SFPA';
+
+        // If the first token is already an all-caps acronym (e.g. "SFPA"),
+        // return that as-is up to 4 chars — feels right for "SFPA Voting".
+        $first = $parts[0] ?? '';
+        if ($first !== '' && mb_strtoupper($first, 'UTF-8') === $first
+            && preg_match('/^[A-Z]{2,6}$/u', $first)) {
+            return mb_substr($first, 0, 4);
+        }
+
+        // Otherwise take the first letter of up to 3 words.
         $initials = '';
         foreach ($parts as $p) {
             if ($p === '') continue;

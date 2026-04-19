@@ -72,8 +72,10 @@ Route::middleware(['web', 'auth'])->prefix('admin')->name('admin.')->group(funct
         Route::get('/',                              [AdminCampaignController::class, 'index'])->name('index');
         Route::get('create',                         [AdminCampaignController::class, 'create'])->name('create');
         Route::post('/',                             [AdminCampaignController::class, 'store'])->name('store');
-        // Archive must come before the {campaign} wildcard.
-        Route::get('archive',                        [AdminCampaignController::class, 'archiveIndex'])->name('archive');
+        // Soft-delete archive index. Name it `archiveList` because
+        // `admin.campaigns.archive` is already taken by the existing
+        // lifecycle POST (Active → Archived status transition).
+        Route::get('archive',                        [AdminCampaignController::class, 'archiveIndex'])->name('archiveList');
         Route::post('archive/{id}/restore',          [AdminCampaignController::class, 'restore'])->name('restore');
         Route::delete('archive/{id}/force',          [AdminCampaignController::class, 'forceDelete'])->name('forceDelete');
         Route::get('{campaign}',                     [AdminCampaignController::class, 'show'])->name('show');
