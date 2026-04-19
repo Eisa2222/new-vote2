@@ -33,6 +33,10 @@
                     class="tab-btn pb-3 border-b-2 border-transparent font-semibold text-ink-500 hover:text-ink-900 whitespace-nowrap transition">
                 👥 {{ __('Committee') }}
             </button>
+            <button type="button" data-tab="mail"
+                    class="tab-btn pb-3 border-b-2 border-transparent font-semibold text-ink-500 hover:text-ink-900 whitespace-nowrap transition">
+                ✉️ {{ __('Mail (SMTP)') }}
+            </button>
         </nav>
     </div>
 
@@ -408,6 +412,125 @@
             <div class="mt-5 rounded-2xl bg-info-500/5 border border-info-500/30 text-info-500 p-4 text-sm">
                 ℹ️ {{ __('Campaign types are enum-backed because each type has a distinct submit/validate/result pipeline. A new type requires a corresponding backend implementation.') }}
             </div>
+        </div>
+    </section>
+
+    {{-- MAIL (SMTP) ------------------------------------------------ --}}
+    <section data-pane="mail" class="tab-pane hidden space-y-4">
+        <div class="card space-y-5">
+            <div>
+                <h2 class="text-xl font-bold">{{ __('Mail (SMTP)') }}</h2>
+                <p class="text-sm text-ink-500 mt-1">
+                    {{ __('Configure the outgoing SMTP server used for password-reset, user invites, and admin notifications.') }}
+                </p>
+            </div>
+
+            @if (session('warning'))
+                <div class="rounded-2xl bg-amber-50 border border-amber-200 text-amber-800 p-3 text-sm">
+                    ⚠️ {{ session('warning') }}
+                </div>
+            @endif
+
+            @if($errors->any())
+                <div class="rounded-2xl bg-danger-500/5 border border-danger-500/30 text-danger-600 p-3 text-sm space-y-1">
+                    @foreach($errors->all() as $e) <div>{{ $e }}</div> @endforeach
+                </div>
+            @endif
+
+            <form method="post" action="{{ route('admin.settings.mail.update') }}" class="grid grid-cols-1 md:grid-cols-2 gap-4"
+                  x-data="{ showPwd: false }">
+                @csrf
+
+                <div class="md:col-span-2 rounded-2xl bg-info-500/5 border border-info-500/30 p-4 text-sm text-info-500">
+                    {{ __('Current status') }}:
+                    @if($mailPasswordSet)
+                        ✓ {{ __('SMTP credentials are saved and encrypted.') }}
+                    @else
+                        ℹ️ {{ __('No SMTP server configured yet — emails currently use the :driver mailer from .env.', ['driver' => config('mail.default')]) }}
+                    @endif
+                </div>
+
+                <div>
+                    <label class="field-label">{{ __('SMTP host') }}</label>
+                    <input name="mail_host" value="{{ old('mail_host', $mailSettings['mail_host']) }}"
+                           placeholder="smtp.example.com" required class="field-input">
+                </div>
+
+                <div>
+                    <label class="field-label">{{ __('Port') }}</label>
+                    <input type="number" name="mail_port" value="{{ old('mail_port', $mailSettings['mail_port'] ?: '587') }}"
+                           min="1" max="65535" required class="field-input">
+                    <p class="field-help">{{ __('Typical: 587 (TLS), 465 (SSL), 25 (plaintext).') }}</p>
+                </div>
+
+                <div>
+                    <label class="field-label">{{ __('Username') }}</label>
+                    <input name="mail_username" value="{{ old('mail_username', $mailSettings['mail_username']) }}"
+                           autocomplete="off" class="field-input">
+                </div>
+
+                <div>
+                    <label class="field-label">
+                        {{ __('Password') }}
+                        @if($mailPasswordSet)
+                            <span class="text-ink-400 text-xs font-normal">({{ __('leave empty to keep current') }})</span>
+                        @endif
+                    </label>
+                    <div class="relative">
+                        <input name="mail_password" :type="showPwd ? 'text' : 'password'"
+                               autocomplete="new-password"
+                               placeholder="{{ $mailPasswordSet ? '••••••••' : '' }}"
+                               class="field-input {{ app()->getLocale() === 'ar' ? 'pl-12' : 'pr-12' }}">
+                        <button type="button" @click="showPwd = !showPwd"
+                                class="absolute inset-y-0 {{ app()->getLocale() === 'ar' ? 'left-0' : 'right-0' }} flex items-center px-3 text-ink-500 hover:text-brand-700">
+                            <span x-text="showPwd ? '🙈' : '👁'"></span>
+                        </button>
+                    </div>
+                </div>
+
+                <div>
+                    <label class="field-label">{{ __('Encryption') }}</label>
+                    <select name="mail_encryption" class="field-select">
+                        @foreach(['tls' => 'STARTTLS (587)', 'ssl' => 'SSL (465)', 'none' => __('None')] as $v => $l)
+                            <option value="{{ $v }}" @selected(old('mail_encryption', $mailSettings['mail_encryption'] ?: 'tls') === $v)>{{ $l }}</option>
+                        @endforeach
+                    </select>
+                </div>
+
+                <div>
+                    <label class="field-label">{{ __('From address') }}</label>
+                    <input type="email" name="mail_from_address" value="{{ old('mail_from_address', $mailSettings['mail_from_address']) }}"
+                           placeholder="no-reply@your-domain.sa" required class="field-input">
+                </div>
+
+                <div class="md:col-span-2">
+                    <label class="field-label">{{ __('From name') }}</label>
+                    <input name="mail_from_name" value="{{ old('mail_from_name', $mailSettings['mail_from_name']) }}"
+                           required class="field-input">
+                </div>
+
+                <div class="md:col-span-2 rounded-2xl border border-ink-200 bg-ink-50/40 p-4">
+                    <label class="field-label flex items-center gap-2">
+                        <span>🧪</span>
+                        <span>{{ __('Send a test email after saving (optional)') }}</span>
+                    </label>
+                    <input type="email" name="test_to" value="{{ old('test_to') }}"
+                           placeholder="you@example.com" class="field-input">
+                    <p class="field-help">
+                        {{ __('If provided, a confirmation email is sent to this address right after the settings are saved.') }}
+                    </p>
+                </div>
+
+                <div class="md:col-span-2 flex items-center gap-2">
+                    <button class="btn-save">
+                        <span aria-hidden="true">💾</span>
+                        <span>{{ __('Save mail settings') }}</span>
+                    </button>
+                    <span class="text-xs text-ink-500">
+                        🔒 {{ __('The password is stored encrypted using the application key.') }}
+                    </span>
+                </div>
+            </form>
         </div>
     </section>
 

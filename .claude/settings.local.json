@@ -89,7 +89,9 @@
       "Bash(/c/laragon/bin/php/php-8.3.30-Win32-vs16-x64/php.exe artisan *)",
       "Bash(php -r ' *)",
       "Bash(grep -rn 'localized\\('\\\\''title'\\\\''\\)\\\\|->status->label\\\\|$campaign->status' resources/views/admin/categories/)",
-      "Bash(php vendor/bin/pest --filter=InviteAndArchive)"
+      "Bash(php vendor/bin/pest --filter=InviteAndArchive)",
+      "Bash(php vendor/bin/pest --filter=MailSettingsTest)",
+      "Bash(php vendor/bin/pest --filter=\"test email\")"
     ]
   }
 }
