@@ -689,5 +689,16 @@
     "votes": "صوت",
     "votes each": "صوت لكل منهم",
     "within 48h": "خلال 48 ساعة",
-    "{1} :n user|[2,*] :n users": "{1} :n مستخدم|[2,*] :n مستخدمون"
+    "{1} :n user|[2,*] :n users": "{1} :n مستخدم|[2,*] :n مستخدمون",
+    "Password": "كلمة المرور",
+"leave empty to send an invitation email": "اتركها فارغة لإرسال بريد الدعوة",
+"Leave blank — we will email them a setup link": "اتركه فارغاً — سنرسل له رابط إعداد",
+"Toggle password visibility": "إظهار/إخفاء كلمة المرور",
+"Password requirements": "متطلبات كلمة المرور",
+"At least 8 characters": "8 أحرف على الأقل",
+"One uppercase letter (A-Z)": "حرف كبير واحد على الأقل (A-Z)",
+"One lowercase letter (a-z)": "حرف صغير واحد على الأقل (a-z)",
+"One number (0-9)": "رقم واحد على الأقل (0-9)",
+"One special character (!@#$%...)": "رمز خاص واحد على الأقل (!@#$%...)",
+"If you leave this blank, the user gets an invitation email with a one-time link to choose their own password.": "إذا تركتها فارغة، سيصل للمستخدم بريد إلكتروني برابط لاختيار كلمة مروره."
 }
