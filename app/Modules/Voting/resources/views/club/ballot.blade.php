@@ -16,10 +16,14 @@
                 'club_id'   => $clubId,
                 'club_name' => $club->localized('name'),
                 'players'   => $players->map(fn ($p) => [
-                    'id'     => $p->id,
-                    'name'   => $p->localized('name'),
-                    'jersey' => $p->jersey_number,
-                    'photo'  => $p->photo_path ? \Illuminate\Support\Facades\Storage::url($p->photo_path) : null,
+                    'id'       => $p->id,
+                    'name'     => $p->localized('name'),
+                    'jersey'   => $p->jersey_number,
+                    // Localized position label (e.g. "هجوم" / "Attack")
+                    // so the popup row can show name · position · #jersey
+                    // in one glance, matching the admin roster layout.
+                    'position' => $p->position?->label(),
+                    'photo'    => $p->photo_path ? \Illuminate\Support\Facades\Storage::url($p->photo_path) : null,
                 ])->values(),
             ];
         }
@@ -291,7 +295,12 @@
                                     </template>
                                     <div class="flex-1 min-w-0">
                                         <div class="font-semibold truncate" x-text="p.name"></div>
-                                        <div class="text-xs text-ink-500" x-show="p.jersey">#<span x-text="p.jersey"></span></div>
+                                        <div class="text-xs text-ink-500 flex items-center gap-2 mt-0.5 flex-wrap">
+                                            <span x-show="p.position"
+                                                  class="inline-flex items-center rounded-full bg-brand-50 text-brand-700 px-2 py-0.5 font-medium"
+                                                  x-text="p.position"></span>
+                                            <span x-show="p.jersey" class="font-mono">#<span x-text="p.jersey"></span></span>
+                                        </div>
                                     </div>
                                     <span x-show="isAlreadyPicked(p.id)" class="text-xs text-brand-700 font-semibold">✓ {{ __('picked') }}</span>
                                 </button>

@@ -25,15 +25,12 @@ final class SubmitCampaignForApprovalAction
             );
         }
 
-        // Guard: a campaign with zero categories can't be voted on — reject
-        // submission early with a friendly DomainException (which the
-        // controller renders as a flash error) instead of letting the
-        // committee approve it and then hit an empty-voting experience.
-        if ($campaign->categories()->count() === 0) {
-            throw new \DomainException(
-                __('Add at least one category and candidate before submitting for approval.'),
-            );
-        }
+        // No category guard any more: under the club-scoped flow an
+        // empty categories set is a valid shape — the ballot falls
+        // back to the three default awards (Best Saudi / Best Foreign
+        // / Team of the Season) sourced directly from the club rosters.
+        // Admins who want curated shortlists still add categories on
+        // the per-campaign Categories page, but it isn't required.
 
         $campaign->update([
             'status' => CampaignStatus::PendingApproval->value,
