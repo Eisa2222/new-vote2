@@ -30,13 +30,21 @@ final class SaveOptionalVoterProfileAction
     {
         $updates = [];
 
-        if (! empty($data['mobile_number'])) {
+        // H-2 guard — never *overwrite* an existing PII value.
+        //
+        // Without this, a voter could clobber their own correct
+        // admin-entered national_id / mobile / email with whatever
+        // string they typed, with no proof that the new value actually
+        // belongs to them. We only *fill in* missing fields; to change
+        // an existing value the admin must edit the row.
+
+        if (! empty($data['mobile_number']) && empty($player->mobile_number)) {
             $updates['mobile_number'] = IdentityNormalizer::normalizeMobile($data['mobile_number']);
         }
-        if (! empty($data['national_id'])) {
+        if (! empty($data['national_id']) && empty($player->national_id)) {
             $updates['national_id'] = IdentityNormalizer::normalizeNationalId($data['national_id']);
         }
-        if (! empty($data['email'])) {
+        if (! empty($data['email']) && empty($player->email)) {
             $updates['email'] = mb_strtolower(trim((string) $data['email']));
         }
 

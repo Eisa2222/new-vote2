@@ -83,6 +83,14 @@ final class ClubVotingController extends Controller
             return redirect()->route('voting.club.alreadyVoted', $token);
         }
 
+        // H-4 fix — session fixation. Rotate the session id before
+        // elevating the visitor from "anonymous" to "signed-in voter".
+        // Without this, a cookie planted by an attacker on the victim's
+        // browser (shared kiosk, non-HTTPS dev, sibling subdomain) would
+        // inherit the authenticated-voter state and let the attacker
+        // hijack the ballot.
+        $request->session()->regenerate();
+
         session(["club_voter:$token" => [
             'player_id'  => $player->id,
             'started_at' => now()->toIso8601String(),

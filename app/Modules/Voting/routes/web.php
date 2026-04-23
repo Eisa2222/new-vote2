@@ -12,7 +12,14 @@ Route::prefix('vote')->group(function () {
     //
     Route::get('{token}', [PublicVoteController::class, 'show'])->middleware('throttle:60,1')->name('voting.show');
 
-    Route::post('{token}/verify', [PublicVoteController::class, 'verify'])->middleware('throttle:10,1')->name('voting.verify');
+    // H-3 / M-5 — tighter throttle on the identity-enumeration oracle.
+    // The legacy verify endpoint accepts a national_id or mobile and
+    // returns pass/fail; each request is a yes/no bit of info on
+    // whether that NID/phone is a rostered SFPA player. 10/min was too
+    // loose for a dictionary attacker. 5 per 10 min + a soft SLA on
+    // retries is a better fit; the club-scoped flow is the preferred
+    // path anyway.
+    Route::post('{token}/verify', [PublicVoteController::class, 'verify'])->middleware('throttle:5,10')->name('voting.verify');
 
     Route::get('{token}/form', [PublicVoteController::class, 'form'])->middleware('throttle:60,1')->name('voting.form');
 

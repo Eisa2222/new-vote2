@@ -281,21 +281,30 @@
 @php
     // Pre-encode the reference data + any resubmitted (old()) categories
     // so the JS can rehydrate the form on validation failure.
-    $playersJson = $players->map(fn($p) => [
+    //
+    // H-5 hardening — the `JSON_HEX_*` flags stop a stored XSS where an
+    // admin-supplied player name containing `</script>` or `<!--` would
+    // break out of the surrounding <script type="application/json">
+    // block. With the flags, those characters are emitted as \u003c /
+    // \u0026 / \u0027 / \u0022 so the payload is always inert HTML.
+    $jsonFlags = JSON_UNESCAPED_UNICODE
+        | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT;
+
+    $playersJson = json_encode($players->map(fn($p) => [
         'id'       => $p->id,
         'name'     => $p->localized('name'),
         'club'     => $p->club?->localized('name'),
         'club_id'  => $p->club_id,
         'position' => $p->position?->value,
-    ])->values()->toJson(JSON_UNESCAPED_UNICODE);
+    ])->values(), $jsonFlags);
 
     $leagueClubsMap = isset($leagues)
-        ? $leagues->mapWithKeys(fn ($l) => [$l->id => $l->clubs->pluck('id')->all()])->toJson()
+        ? json_encode($leagues->mapWithKeys(fn ($l) => [$l->id => $l->clubs->pluck('id')->all()]), $jsonFlags)
         : '{}';
 
     // `old('categories')` is whatever the admin last typed; we feed it back
     // into the JS renderer so nothing is lost on a failed submit (TC014).
-    $oldCategoriesJson = json_encode(old('categories', []), JSON_UNESCAPED_UNICODE);
+    $oldCategoriesJson = json_encode(old('categories', []), $jsonFlags);
 @endphp
 
 <script id="playersData" type="application/json">{!! $playersJson !!}</script>

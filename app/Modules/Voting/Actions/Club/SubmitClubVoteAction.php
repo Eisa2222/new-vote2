@@ -65,12 +65,33 @@ final class SubmitClubVoteAction
         $this->rules->execute($row->campaign, $voter, $payload);
 
         return DB::transaction(function () use ($row, $voter, $payload, $request) {
+            // M-1 fix — re-fetch the CampaignClub under row lock so the
+            // max_voters check cannot be beaten by two simultaneous
+            // submits (both could otherwise pass the outer gate when
+            // count == max-1, landing the counter at max+1). The gate
+            // re-check below happens inside the same transaction, so
+            // any overrun by a concurrent write is caught here.
+            $locked = CampaignClub::whereKey($row->id)->lockForUpdate()->first();
+            if ($locked && $locked->isFull()) {
+                throw new VotingException(__('This club has reached the maximum number of voters.'));
+            }
+
+            // L-2 fix — hash the voter_identifier so `player_id` cannot
+            // be reconstructed from the votes table directly. The tuple
+            // still collides exactly once (dedup still works) but it no
+            // longer leaks on e.g. CSV exports.
+            $voterIdent = hash_hmac(
+                'sha256',
+                'club:'.$voter->id.':'.$row->campaign_id,
+                (string) config('app.key'),
+            );
+
             $vote = Vote::create([
                 'campaign_id'      => $row->campaign_id,
                 'player_id'        => $voter->id,
                 'club_id'          => $row->club_id,
                 'campaign_club_id' => $row->id,
-                'voter_identifier' => 'club:'.$voter->id.':'.$row->campaign_id, // bypass legacy nullable
+                'voter_identifier' => $voterIdent,
                 'submitted_at'     => now(),
                 'ip_address'       => $request?->ip(),
                 'user_agent'       => substr((string) $request?->userAgent(), 0, 512),
