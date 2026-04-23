@@ -166,16 +166,18 @@ final class ClubVotingController extends Controller
         }
 
         return view('voting::club.ballot', [
-            'row'         => $row,
-            'campaign'    => $row->campaign,
-            'club'        => $row->club,
-            'voter'       => $voter,
-            'saudi'       => $saudi,
-            'foreign'     => $foreign,
-            'tos'         => $tos,
-            'showSaudi'   => $showSaudi,
-            'showForeign' => $showForeign,
-            'showTos'     => $showTos,
+            'row'           => $row,
+            'campaign'      => $row->campaign,
+            'club'          => $row->club,
+            'voter'         => $voter,
+            'saudi'         => $saudi,
+            'foreign'       => $foreign,
+            'saudiByClub'   => $saudiByClub,
+            'foreignByClub' => $foreignByClub,
+            'tos'           => $tos,
+            'showSaudi'     => $showSaudi,
+            'showForeign'   => $showForeign,
+            'showTos'       => $showTos,
         ]);
     }
 
