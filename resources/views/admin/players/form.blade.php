@@ -137,22 +137,11 @@
             </label>
         </div>
 
-        <div class="grid grid-cols-2 gap-4">
-            <div>
-                <label class="block text-sm font-medium text-slate-700 mb-1">{{ __('National ID') }}</label>
-                <input name="national_id" value="{{ old('national_id', $player->national_id) }}"
-                       placeholder="1xxxxxxxxx"
-                       class="w-full border rounded-lg px-3 py-2">
-                @error('national_id') <p class="text-red-600 text-sm mt-1">{{ $message }}</p> @enderror
-            </div>
-            <div>
-                <label class="block text-sm font-medium text-slate-700 mb-1">{{ __('Mobile number') }}</label>
-                <input name="mobile_number" value="{{ old('mobile_number', $player->mobile_number) }}"
-                       placeholder="05xxxxxxxx"
-                       class="w-full border rounded-lg px-3 py-2">
-                @error('mobile_number') <p class="text-red-600 text-sm mt-1">{{ $message }}</p> @enderror
-            </div>
-        </div>
+        {{-- National ID + mobile number removed from the admin create
+             flow — they're voter-facing fields captured on the optional
+             profile page after a player casts a vote, not at admin
+             roster entry. The columns stay in the DB + request rules
+             so that post-vote capture keeps working. --}}
 
         <div>
             <label class="block text-sm font-medium text-slate-700 mb-1">{{ __('Photo') }}</label>
