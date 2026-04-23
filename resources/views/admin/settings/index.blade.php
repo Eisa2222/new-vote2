@@ -124,7 +124,6 @@
                     </div>
                 </div>
                 <button class="btn-save">
-                    <span aria-hidden="true">💾</span>
                     <span>{{ __('Save changes') }}</span>
                 </button>
             </form>
@@ -527,7 +526,6 @@
 
                 <div class="md:col-span-2 flex items-center gap-2">
                     <button class="btn-save">
-                        <span aria-hidden="true">💾</span>
                         <span>{{ __('Save mail settings') }}</span>
                     </button>
                     <span class="text-xs text-ink-500">
@@ -644,7 +642,6 @@
 
                 <div class="flex items-center gap-2">
                     <button class="btn-save">
-                        <span aria-hidden="true">💾</span>
                         <span>{{ __('Save SMS settings') }}</span>
                     </button>
                     <span class="text-xs text-ink-500">

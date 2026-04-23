@@ -188,7 +188,6 @@
     <div class="mt-6 bg-white border border-gray-200 p-4 rounded-3xl shadow-sm flex items-center justify-between gap-2">
         <a href="{{ route('admin.campaigns.index') }}" class="btn-ghost">{{ __('Cancel') }}</a>
         <button class="btn-save">
-            <span aria-hidden="true">💾</span>
             <span>{{ __('Create & add candidates') }}</span>
         </button>
     </div>

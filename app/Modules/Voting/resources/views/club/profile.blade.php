@@ -80,7 +80,6 @@
                         {{ __('Skip') }}
                     </a>
                     <button class="inline-flex items-center gap-2 rounded-xl bg-brand-600 hover:bg-brand-700 text-white px-5 py-2.5 text-sm font-semibold shadow-sm transition">
-                        <span aria-hidden="true">💾</span>
                         <span>{{ __('Save & finish') }}</span>
                     </button>
                 </div>

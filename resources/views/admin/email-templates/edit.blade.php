@@ -65,7 +65,6 @@
 
             <div class="flex items-center gap-2">
                 <button class="btn-save">
-                    <span aria-hidden="true">💾</span>
                     <span>{{ __('Save template') }}</span>
                 </button>
             </div>

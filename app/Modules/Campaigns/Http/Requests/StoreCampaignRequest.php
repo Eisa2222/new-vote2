@@ -17,9 +17,14 @@ final class StoreCampaignRequest extends FormRequest
     }
 
     /**
-     * Rules match the UI form shape: categories carry `player_ids[]` and
-     * `club_ids[]`. The controller calls toActionPayload() to get the
-     * shape the domain Action expects.
+     * Rules match the UI form shape. Categories are OPTIONAL — the
+     * new club-scoped create form no longer ships a Questions section;
+     * admins pick between:
+     *   • leave categories empty → voter ballot renders the 3 fixed
+     *     awards (Best Saudi / Best Foreign / TOS) with candidates
+     *     selected by nationality/position.
+     *   • attach voting_categories with `award_type` → those act as
+     *     curated shortlists per award on the ballot.
      */
     public function rules(): array
     {
@@ -33,15 +38,19 @@ final class StoreCampaignRequest extends FormRequest
             'start_at'                          => ['required', 'date'],
             'end_at'                            => ['required', 'date', 'after:start_at'],
             'max_voters'                        => ['nullable', 'integer', 'min:1'],
-            // Club-scoped voting rules (off-by-checkbox = false).
+            // Club-scoped voting rules (unchecked checkbox posts the
+            // paired hidden "0" → boolean cast on the Campaign model).
             'allow_self_vote'                   => ['nullable', 'boolean'],
             'allow_teammate_vote'               => ['nullable', 'boolean'],
 
-            'categories'                        => ['required', 'array', 'min:1'],
-            'categories.*.title_ar'             => ['required', 'string', 'max:180'],
-            'categories.*.title_en'             => ['required', 'string', 'max:180'],
-            'categories.*.position_slot'        => ['required', 'in:attack,midfield,defense,goalkeeper,any'],
-            'categories.*.required_picks'       => ['required', 'integer', 'min:1', 'max:11'],
+            // Categories OPTIONAL. When absent the CreateVotingCampaign
+            // action just creates the campaign without any questions.
+            'categories'                        => ['nullable', 'array'],
+            'categories.*.title_ar'             => ['required_with:categories', 'string', 'max:180'],
+            'categories.*.title_en'             => ['required_with:categories', 'string', 'max:180'],
+            'categories.*.position_slot'        => ['required_with:categories', 'in:attack,midfield,defense,goalkeeper,any'],
+            'categories.*.award_type'           => ['nullable', 'in:best_saudi,best_foreign,team_of_the_season'],
+            'categories.*.required_picks'       => ['required_with:categories', 'integer', 'min:1', 'max:11'],
             'categories.*.player_ids'           => ['array'],
             'categories.*.player_ids.*'         => ['integer', 'exists:players,id'],
             'categories.*.club_ids'             => ['array'],
@@ -51,15 +60,15 @@ final class StoreCampaignRequest extends FormRequest
 
     /**
      * Reshape the validated data into the `{category, candidates[]}`
-     * structure the CreateVotingCampaignAction expects. Keeps all
-     * "massage the request body" logic inside this FormRequest so
-     * the controller stays one-liner.
+     * structure the CreateVotingCampaignAction expects. Categories
+     * default to [] so downstream code never has to null-check.
      *
      * @return array<string,mixed>
      */
     public function toActionPayload(): array
     {
         $data = $this->validated();
+        $data['categories'] = $data['categories'] ?? [];
 
         foreach ($data['categories'] as &$category) {
             $candidates = [];

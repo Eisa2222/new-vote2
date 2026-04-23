@@ -36,7 +36,6 @@
             </div>
             <div class="md:col-span-2 flex items-center gap-3">
                 <button class="btn-save">
-                    <span aria-hidden="true">💾</span>
                     <span>{{ __('Save') }}</span>
                 </button>
                 @if($user->roles->isNotEmpty())

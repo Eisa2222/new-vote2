@@ -81,7 +81,7 @@
             </a>
             <button type="submit"
                     class="rounded-2xl bg-brand-600 hover:bg-brand-700 text-white px-8 py-3 font-semibold text-base shadow-brand">
-                💾 {{ __('Save') }}
+                {{ __('Save') }}
             </button>
         </div>
     </form>

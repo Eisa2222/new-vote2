@@ -83,7 +83,6 @@
     <div class="sticky bottom-0 bg-white border-t border-ink-200 p-4 rounded-t-3xl shadow-lg flex items-center justify-between gap-2">
         <a href="/admin/campaigns/{{ $campaign->id }}" class="btn-ghost">{{ __('Cancel') }}</a>
         <button class="btn-save">
-            <span aria-hidden="true">💾</span>
             <span>{{ __('Save changes') }}</span>
         </button>
     </div>

@@ -116,7 +116,7 @@
             </a>
             <button type="submit"
                     class="rounded-xl bg-brand-600 hover:bg-brand-700 text-white px-8 py-2.5 font-bold shadow-brand">
-                💾 {{ $isEditing ? __('Save changes') : __('Create role') }}
+                {{ $isEditing ? __('Save changes') : __('Create role') }}
             </button>
         </div>
     </div>

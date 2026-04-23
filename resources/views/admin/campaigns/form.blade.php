@@ -153,32 +153,30 @@
         </div>
     </div>
 
-    <div class="rounded-3xl border border-gray-200 bg-white p-6 shadow-sm space-y-4">
-        <div class="flex items-center justify-between">
-            <div>
-                <h2 class="text-xl font-bold">{{ __('Questions') }}</h2>
-                <p class="text-sm text-gray-500 mt-1">{{ __('Each question has its own list of answers (players). At least one question is required.') }}</p>
-            </div>
-            <div class="flex items-center gap-3">
-                <span id="autoSavedHint"
-                      class="text-xs text-emerald-700 opacity-0 transition-opacity duration-300"
-                      aria-live="polite">
-                    ✓ {{ __('Draft auto-saved') }}
-                </span>
-                <button type="button" id="addQuestionBtn" class="btn-save">
-                    <span>+</span>
-                    <span>{{ __('Add question') }}</span>
-                </button>
-            </div>
-        </div>
+    {{--
+      Questions section removed — the new club-scoped flow uses the
+      three fixed awards (Best Saudi / Best Foreign / Team of the
+      Season). Admins who want to shortlist nominees do that on the
+      per-campaign "Categories" page after creation, not here.
+    --}}
 
-        <div id="questionsContainer" class="space-y-4"></div>
+    {{-- ── Next-step hint + submit bar ───────────────────────── --}}
+    <div class="rounded-2xl bg-brand-50 border border-brand-200 p-4 text-sm text-brand-800 flex items-start gap-3">
+        <span class="text-xl leading-none">💡</span>
+        <div>
+            <div class="font-bold mb-0.5">{{ __('What happens next?') }}</div>
+            <p class="text-brand-700 leading-7">
+                {{ __('After you create the campaign, you will attach clubs and generate their voting links. Each club gets its own URL that voters use to pick their name and cast their vote.') }}
+            </p>
+        </div>
     </div>
 
     <div class="sticky bottom-0 bg-white border-t border-ink-200 p-4 rounded-t-3xl shadow-lg flex items-center justify-between gap-2">
-        <a href="{{ route('admin.campaigns.index') }}" class="btn-ghost">{{ __('Cancel') }}</a>
-        <button class="btn-save">
-            <span aria-hidden="true">💾</span>
+        <a href="{{ route('admin.campaigns.index') }}"
+           class="inline-flex items-center gap-2 rounded-xl border border-ink-200 hover:bg-ink-50 text-ink-700 px-4 py-2.5 text-sm font-medium transition">
+            {{ __('Cancel') }}
+        </a>
+        <button class="inline-flex items-center gap-2 rounded-xl bg-brand-600 hover:bg-brand-700 active:bg-brand-800 text-white px-6 py-2.5 text-sm font-semibold shadow-sm transition">
             <span>{{ __('Create campaign') }}</span>
         </button>
     </div>
@@ -283,11 +281,19 @@
 </template>
 
 <script>
-const allPlayers  = JSON.parse(document.getElementById('playersData').textContent);
-const leagueClubs = JSON.parse(document.getElementById('leagueClubs').textContent);
-const oldCats     = JSON.parse(document.getElementById('oldCategories').textContent) || [];
+// Reference data for the (now optional) question renderer. When the
+// Questions section is removed from the page — as it is on the new
+// club-scoped create form — these elements are null and every
+// function below short-circuits instead of throwing.
+const playersDataEl = document.getElementById('playersData');
+const leagueClubsEl = document.getElementById('leagueClubs');
+const oldCatsEl     = document.getElementById('oldCategories');
+const allPlayers  = playersDataEl ? JSON.parse(playersDataEl.textContent) : [];
+const leagueClubs = leagueClubsEl ? JSON.parse(leagueClubsEl.textContent) : {};
+const oldCats     = oldCatsEl ? (JSON.parse(oldCatsEl.textContent) || []) : [];
 const tpl         = document.getElementById('questionTemplate');
 const container   = document.getElementById('questionsContainer');
+const HAS_QUESTIONS_UI = !!(container && tpl);
 let qIndex        = 0;
 
 /* ── TC012 + TC013 — end_at must be strictly after start_at ───────
@@ -444,7 +450,10 @@ function addQuestion(prefill = null) {
     render();
 }
 
-document.getElementById('addQuestionBtn').addEventListener('click', () => addQuestion());
+// `addQuestionBtn` only exists when the Questions UI is rendered —
+// guard the listener so removing the section doesn't 500 the page.
+document.getElementById('addQuestionBtn')
+    ?.addEventListener('click', () => addQuestion());
 
 /* ── Bug 7 — Draft autosave ─────────────────────────────────────────
    Admins lose work when they navigate away before finishing a campaign
@@ -499,17 +508,21 @@ function saveDraft() {
 }
 
 /* Decide initial state: old() (server validation bounce) wins, then
-   localStorage draft, then a single empty question. */
-let initialCats = null;
-if (Array.isArray(oldCats) && oldCats.length > 0) {
-    initialCats = oldCats;
-} else {
-    initialCats = restoreDraft();
-}
-if (initialCats && initialCats.length > 0) {
-    initialCats.forEach(cat => addQuestion(cat));
-} else {
-    addQuestion();
+   localStorage draft, then a single empty question. Whole block is
+   gated on HAS_QUESTIONS_UI because the new club-scoped create form
+   doesn't render the Questions section at all. */
+if (HAS_QUESTIONS_UI) {
+    let initialCats = null;
+    if (Array.isArray(oldCats) && oldCats.length > 0) {
+        initialCats = oldCats;
+    } else {
+        initialCats = restoreDraft();
+    }
+    if (initialCats && initialCats.length > 0) {
+        initialCats.forEach(cat => addQuestion(cat));
+    } else {
+        addQuestion();
+    }
 }
 
 /* Debounced autosave on any input change in the whole form. */
