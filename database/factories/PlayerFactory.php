@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Database\Factories;
 
 use App\Modules\Clubs\Models\Club;
+use App\Modules\Players\Enums\NationalityType;
 use App\Modules\Players\Enums\PlayerPosition;
 use App\Modules\Players\Models\Player;
 use App\Modules\Shared\Enums\ActiveStatus;
@@ -26,6 +27,7 @@ final class PlayerFactory extends Factory
             'name_ar'       => 'لاعب '.fake()->firstNameMale(),
             'name_en'       => fake()->name('male'),
             'position'      => fake()->randomElement(PlayerPosition::cases()),
+            'nationality'   => fake()->randomElement(NationalityType::cases()),
             'is_captain'    => false,
             'jersey_number' => fake()->unique()->numberBetween(1, 99),
             'status'        => ActiveStatus::Active,

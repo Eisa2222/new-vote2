@@ -37,7 +37,11 @@ it('admin can store a campaign with one category', function () {
     expect($c->categories->first()->candidates->count())->toBe(2);
 });
 
-it('rejects campaign without categories', function () {
+it('accepts campaign without categories (falls back to default 3 awards)', function () {
+    // After the club-scoped voting refactor, a campaign with no
+    // voting_categories is valid: the ballot falls back to the
+    // standard 3 awards (Best Saudi / Best Foreign / TOS). The
+    // admin can still attach curated shortlists later.
     $this->actingAs(makeSuperAdmin())
         ->post('/admin/campaigns', [
             'title_ar' => 'x', 'title_en' => 'x',
@@ -45,7 +49,9 @@ it('rejects campaign without categories', function () {
             'start_at' => now()->addHour()->toDateTimeString(),
             'end_at'   => now()->addDays(7)->toDateTimeString(),
         ])
-        ->assertSessionHasErrors(['categories']);
+        ->assertRedirect();
+
+    expect(Campaign::count())->toBe(1);
 });
 
 it('rejects campaign with end before start', function () {

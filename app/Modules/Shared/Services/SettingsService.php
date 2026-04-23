@@ -19,8 +19,21 @@ final class SettingsService
     public function all(): array
     {
         return Cache::remember(self::CACHE_KEY, self::TTL,
-            fn () => Setting::pluck('value', 'key')->toArray(),
+            // Table may not exist yet during `migrate:fresh`, initial
+            // install, or test bootstrap before migrations run. Return
+            // an empty array so early boot code (e.g. MailConfig::apply)
+            // keeps .env defaults instead of crashing the request.
+            fn () => $this->pluckSafely(),
         );
+    }
+
+    private function pluckSafely(): array
+    {
+        try {
+            return Setting::pluck('value', 'key')->toArray();
+        } catch (\Throwable) {
+            return [];
+        }
     }
 
     public function get(string $key, mixed $default = null): mixed
