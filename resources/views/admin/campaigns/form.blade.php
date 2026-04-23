@@ -154,11 +154,107 @@
     </div>
 
     {{--
-      Questions section removed — the new club-scoped flow uses the
-      three fixed awards (Best Saudi / Best Foreign / Team of the
-      Season). Admins who want to shortlist nominees do that on the
-      per-campaign "Categories" page after creation, not here.
+      Awards / Categories picker.
+
+      The admin chooses which of the three fixed awards this campaign
+      runs. Each checked card posts as `categories[N][award_type]`
+      with a sensible default title + position_slot=any + required_picks=1,
+      so the ballot renders exactly those awards. Leaving all three
+      unchecked keeps the default behaviour (ballot falls back to
+      showing all three). Curated shortlists (picking specific nominees
+      per award) stay on the per-campaign Categories page after create.
     --}}
+    @php
+        $awards = [
+            [
+                'key'     => 'best_saudi',
+                'icon'    => '🏆',
+                'title_ar'=> 'أفضل لاعب سعودي',
+                'title_en'=> 'Best Saudi Player',
+                'title'   => __('Best Saudi Player'),
+                'help'    => __('Open the award to Saudi nationality candidates.'),
+                'accent'  => 'brand',
+            ],
+            [
+                'key'     => 'best_foreign',
+                'icon'    => '🌍',
+                'title_ar'=> 'أفضل لاعب أجنبي',
+                'title_en'=> 'Best Foreign Player',
+                'title'   => __('Best Foreign Player'),
+                'help'    => __('Open the award to non-Saudi nationality candidates.'),
+                'accent'  => 'amber',
+            ],
+            [
+                'key'     => 'team_of_the_season',
+                'icon'    => '⚽',
+                'title_ar'=> 'تشكيلة الموسم',
+                'title_en'=> 'Team of the Season',
+                'title'   => __('Team of the Season'),
+                'help'    => __('Voters build a 3-3-4-1 lineup from all clubs.'),
+                'accent'  => 'indigo',
+            ],
+        ];
+        // Preserve selection on validation replay: if old('categories')
+        // has a row with a matching award_type, check its card.
+        $oldAwards = collect(old('categories', []))->pluck('award_type')->filter()->all();
+    @endphp
+
+    <div class="rounded-3xl border border-gray-200 bg-white p-6 shadow-sm space-y-4">
+        <div class="flex items-start gap-3">
+            <span class="text-2xl">🗳️</span>
+            <div>
+                <h2 class="text-xl font-bold">{{ __('Awards shown on the ballot') }}</h2>
+                <p class="text-sm text-ink-500 mt-1">
+                    {{ __('Pick which awards voters see. Leave all unchecked to show the three defaults.') }}
+                </p>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+            @foreach($awards as $i => $award)
+                @php $checked = in_array($award['key'], $oldAwards, true); @endphp
+                <label class="relative flex flex-col gap-2 rounded-2xl border-2 border-ink-200 bg-white p-4 cursor-pointer transition
+                              hover:border-brand-300
+                              has-[:checked]:border-brand-500 has-[:checked]:bg-brand-50/40"
+                       x-data="{ on: @js($checked) }">
+                    <input type="checkbox"
+                           name="categories[{{ $i }}][award_type]"
+                           value="{{ $award['key'] }}"
+                           class="sr-only peer"
+                           x-model="on"
+                           @checked($checked)>
+                    {{-- Hidden companions so Laravel receives the required
+                         sibling fields whenever the card is checked.
+                         `:disabled="!on"` strips the whole row from the
+                         POST payload when the card is unchecked, so we
+                         don't create an empty category server-side. --}}
+                    <input type="hidden" name="categories[{{ $i }}][title_ar]"       value="{{ $award['title_ar'] }}"        :disabled="!on">
+                    <input type="hidden" name="categories[{{ $i }}][title_en]"       value="{{ $award['title_en'] }}"        :disabled="!on">
+                    <input type="hidden" name="categories[{{ $i }}][position_slot]"  value="any"                             :disabled="!on">
+                    <input type="hidden" name="categories[{{ $i }}][required_picks]" value="1"                               :disabled="!on">
+
+                    <div class="flex items-center gap-3">
+                        <div class="w-11 h-11 rounded-xl bg-ink-100 text-ink-500 flex items-center justify-center text-2xl flex-shrink-0"
+                             :class="on ? 'bg-brand-100 text-brand-700' : 'bg-ink-100 text-ink-500'">
+                            {{ $award['icon'] }}
+                        </div>
+                        <div class="flex-1 min-w-0">
+                            <div class="font-extrabold text-ink-900 leading-tight">{{ $award['title'] }}</div>
+                        </div>
+                        <span class="w-5 h-5 rounded-full border-2 flex items-center justify-center transition"
+                              :class="on ? 'border-brand-600 bg-brand-600' : 'border-ink-300'">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="w-3 h-3 text-white" viewBox="0 0 20 20" fill="currentColor"
+                                 :class="on ? 'opacity-100' : 'opacity-0'">
+                                <path fill-rule="evenodd" d="M16.7 5.3a1 1 0 010 1.4l-8 8a1 1 0 01-1.4 0l-4-4a1 1 0 011.4-1.4L8 12.6l7.3-7.3a1 1 0 011.4 0z" clip-rule="evenodd"/>
+                            </svg>
+                        </span>
+                    </div>
+                    <p class="text-xs text-ink-500 leading-5">{{ $award['help'] }}</p>
+                </label>
+            @endforeach
+        </div>
+        @error('categories') <p class="text-red-600 text-sm mt-1">{{ $message }}</p> @enderror
+    </div>
 
     {{-- ── Next-step hint + submit bar ───────────────────────── --}}
     <div class="rounded-2xl bg-brand-50 border border-brand-200 p-4 text-sm text-brand-800 flex items-start gap-3">
