@@ -43,19 +43,88 @@
         </div>
     @endif
 
-    <form method="post" action="{{ route('admin.campaigns.clubs.store', $campaign) }}" class="space-y-4">
-        @csrf
-        @php $attachedIds = $rows->pluck('club_id')->all(); @endphp
+    @php $attachedIds = $rows->pluck('club_id')->all(); @endphp
 
-        <div class="grid grid-cols-2 md:grid-cols-4 gap-2 max-h-60 overflow-y-auto p-3 rounded-xl border border-ink-200 bg-ink-50/40">
+    {{-- Alpine controller: `leagueFilter` is the currently-chosen
+         league id (or '') and decides which club cards show below.
+         `clubLeagues` is the (club_id → [league_id...]) map so a
+         club that plays in multiple leagues is visible under each. --}}
+    <form method="post" action="{{ route('admin.campaigns.clubs.store', $campaign) }}" class="space-y-4"
+          x-data='{
+              leagueFilter: "",
+              clubLeagues: @json($clubLeagues),
+              visible(clubId) {
+                  if (!this.leagueFilter) return true;
+                  const lids = this.clubLeagues[clubId] || [];
+                  return lids.map(String).includes(String(this.leagueFilter));
+              },
+              selectAllVisible() {
+                  document.querySelectorAll("input[data-club-check]")
+                      .forEach(cb => {
+                          const id = cb.value;
+                          if (this.visible(id)) cb.checked = true;
+                      });
+              },
+              clearVisible() {
+                  document.querySelectorAll("input[data-club-check]")
+                      .forEach(cb => {
+                          const id = cb.value;
+                          if (this.visible(id)) cb.checked = false;
+                      });
+              },
+          }'>
+        @csrf
+
+        {{-- League filter row — single wide select + bulk controls.
+             Narrows the grid below without reloading the page. --}}
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-3 items-end">
+            <div class="md:col-span-2">
+                <label class="block text-sm font-medium mb-1.5 text-ink-800 flex items-center gap-1.5">
+                    <span aria-hidden="true">🏆</span>
+                    <span>{{ __('Filter by league') }}</span>
+                </label>
+                <select x-model="leagueFilter"
+                        class="w-full rounded-xl border border-ink-200 bg-white px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-brand-500 transition">
+                    <option value="">— {{ __('All leagues') }} —</option>
+                    @foreach($leagues as $l)
+                        <option value="{{ $l->id }}">{{ app()->getLocale() === 'ar' ? $l->name_ar : $l->name_en }}</option>
+                    @endforeach
+                </select>
+                <p class="mt-1 text-xs text-ink-500">{{ __('Pick a league to narrow the list below, then tick the clubs you want.') }}</p>
+            </div>
+
+            <div class="flex items-center gap-2 justify-end">
+                <button type="button" @click="selectAllVisible()"
+                        class="inline-flex items-center gap-1.5 rounded-xl border border-brand-300 text-brand-700 bg-brand-50 hover:bg-brand-100 px-3 py-2 text-xs font-semibold transition">
+                    ✓ {{ __('Select visible') }}
+                </button>
+                <button type="button" @click="clearVisible()"
+                        class="inline-flex items-center gap-1.5 rounded-xl border border-ink-200 text-ink-700 hover:bg-ink-50 px-3 py-2 text-xs font-medium transition">
+                    ✕ {{ __('Clear visible') }}
+                </button>
+            </div>
+        </div>
+
+        {{-- Clubs grid.
+             `x-show="visible(...)"` means clubs filter in real time as
+             the league dropdown changes; nothing reloads. --}}
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-2 max-h-64 overflow-y-auto p-3 rounded-xl border border-ink-200 bg-ink-50/40">
             @foreach($allClubs as $c)
-                <label class="flex items-center gap-2 rounded-lg p-2 bg-white hover:bg-brand-50 border border-transparent hover:border-brand-200 cursor-pointer transition">
-                    <input type="checkbox" name="club_ids[]" value="{{ $c->id }}"
+                <label x-show="visible('{{ $c->id }}')"
+                       class="flex items-center gap-2 rounded-lg p-2 bg-white hover:bg-brand-50 border border-transparent hover:border-brand-200 cursor-pointer transition">
+                    <input type="checkbox" name="club_ids[]" value="{{ $c->id }}" data-club-check
                            class="rounded border-ink-300 text-brand-600 focus:ring-brand-500"
                            @checked(in_array($c->id, $attachedIds, true))>
                     <span class="text-sm text-ink-800 truncate">{{ $c->localized('name') }}</span>
                 </label>
             @endforeach
+
+            {{-- Empty state when the filter returns nothing --}}
+            <template x-if="leagueFilter && {{ $allClubs->filter(fn($c) => isset($clubLeagues[$c->id]))->count() }} > 0 && !document.querySelectorAll('input[data-club-check]').length">
+                <div class="col-span-full text-center text-ink-500 py-6 text-sm">
+                    {{ __('No clubs in this league.') }}
+                </div>
+            </template>
         </div>
 
         <div class="flex items-end gap-3 flex-wrap">
@@ -66,7 +135,7 @@
                        class="w-full rounded-xl border border-ink-200 bg-white px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-brand-500 transition">
                 <p class="mt-1 text-xs text-ink-500">{{ __('Only applied to newly-added clubs; existing rows keep their own value.') }}</p>
             </div>
-            <button class="inline-flex items-center gap-2 rounded-xl bg-brand-600 hover:bg-brand-700 text-white px-4 py-2.5 text-sm font-semibold shadow-sm transition">
+            <button class="inline-flex items-center gap-2 rounded-xl bg-brand-600 hover:bg-brand-700 text-white px-5 py-2.5 text-sm font-semibold shadow-sm transition">
                 <span aria-hidden="true">🔗</span>
                 <span>{{ __('Generate / update links') }}</span>
             </button>

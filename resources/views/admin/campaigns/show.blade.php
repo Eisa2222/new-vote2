@@ -37,13 +37,21 @@
 
     <x-admin.campaigns.stats-grid :campaign="$campaign" />
 
+    {{--
+      Explicit Tailwind utilities instead of the .btn-save / .btn-ghost
+      @apply component classes. The Tailwind Play CDN doesn't always
+      pick up @apply in a raw <style> block, which leaves these
+      buttons rendering as plain text links (user caught this in QA).
+    --}}
     <div class="flex items-center gap-2 mb-4 flex-wrap">
-        <a href="{{ route('admin.campaigns.clubs.index', $campaign) }}" class="btn-save">
+        <a href="{{ route('admin.campaigns.clubs.index', $campaign) }}"
+           class="inline-flex items-center gap-2 rounded-xl bg-brand-600 hover:bg-brand-700 active:bg-brand-800 text-white px-5 py-2.5 text-sm font-semibold shadow-sm transition">
             <span aria-hidden="true">🔗</span>
             <span>{{ __('Manage club voting links') }}</span>
         </a>
-        <a href="{{ route('admin.categories.index', $campaign) }}" class="btn-ghost">
-            <span>+</span>
+        <a href="{{ route('admin.categories.index', $campaign) }}"
+           class="inline-flex items-center gap-2 rounded-xl border border-ink-200 bg-white hover:bg-ink-50 text-ink-700 px-4 py-2.5 text-sm font-medium transition">
+            <span aria-hidden="true">+</span>
             <span>{{ __('Manage categories & candidates') }}</span>
         </a>
     </div>

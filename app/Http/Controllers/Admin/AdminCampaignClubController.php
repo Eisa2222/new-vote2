@@ -29,8 +29,21 @@ final class AdminCampaignClubController extends Controller
     {
         $this->authorize('update', $campaign);
 
+        // League list + per-club league pivot, so the admin can filter
+        // the attach-clubs grid by league and bulk-tick all clubs
+        // from a single league without hand-picking one by one.
+        $leagues = \App\Modules\Leagues\Models\League::orderBy('name_en')->get(['id', 'name_ar', 'name_en']);
+        $clubLeagues = \Illuminate\Support\Facades\DB::table('club_league')
+            ->select('club_id', 'league_id')
+            ->get()
+            ->groupBy('club_id')
+            ->map(fn ($g) => $g->pluck('league_id')->all())
+            ->toArray();
+
         return view('admin.campaign-clubs.index', [
-            'campaign' => $campaign,
+            'campaign'    => $campaign,
+            'leagues'     => $leagues,
+            'clubLeagues' => $clubLeagues,
             'rows'     => $campaign->campaignClubs()->with('club')->get(),
             'allClubs' => Club::orderBy('name_en')->get(),
         ]);

@@ -1,4 +1,12 @@
 {
+    "Manage club voting links": "إدارة روابط تصويت الأندية",
+    "Manage categories & candidates": "إدارة الفئات والمرشحين",
+    "Filter by league": "تصفية حسب الدوري",
+    "All leagues": "كل الدوريات",
+    "Pick a league to narrow the list below, then tick the clubs you want.": "اختر دوريًا لتضييق القائمة أدناه ثم حدّد الأندية التي تريدها.",
+    "Select visible": "تحديد الظاهر",
+    "Clear visible": "تفريغ الظاهر",
+    "No clubs in this league.": "لا توجد أندية في هذا الدوري.",
     "Club voting links": "روابط تصويت الأندية",
     "Each participating club gets its own voting link. Players enter through their club link, pick their name from the dropdown, and vote.": "كل نادٍ مشارك يحصل على رابط تصويت خاص به. يدخل اللاعبون من رابط ناديهم، يختارون أسماءهم من القائمة، ثم يصوّتون.",
     "Attach clubs": "ربط الأندية",

@@ -120,10 +120,12 @@ final class ClubVotingController extends Controller
             ]);
         }
 
-        // An award "exists" for this campaign when the admin has wired
-        // at least one voting_category to it via award_type. If none
-        // exist, we skip that whole section on the ballot — the spec:
-        // "لا تظهر الا اذا كان فيه سوال اذا مافي ماتظهر".
+        // Which awards does this campaign show?
+        //   • If the admin linked voting_categories to award_type →
+        //     show exactly those awards (shortlist mode).
+        //   • If nothing is linked → default to the three-award
+        //     standard ballot. Stops the voter seeing "voting not
+        //     available" just because no category was tagged.
         $configured = $row->campaign->categories()
             ->whereNotNull('award_type')
             ->where('is_active', true)
@@ -132,9 +134,13 @@ final class ClubVotingController extends Controller
             ->unique()
             ->all();
 
-        $showSaudi   = in_array(AwardType::BestSaudi->value,       $configured, true);
-        $showForeign = in_array(AwardType::BestForeign->value,     $configured, true);
-        $showTos     = in_array(AwardType::TeamOfTheSeason->value, $configured, true);
+        if (empty($configured)) {
+            $showSaudi = $showForeign = $showTos = true;
+        } else {
+            $showSaudi   = in_array(AwardType::BestSaudi->value,       $configured, true);
+            $showForeign = in_array(AwardType::BestForeign->value,     $configured, true);
+            $showTos     = in_array(AwardType::TeamOfTheSeason->value, $configured, true);
+        }
 
         $saudi   = $showSaudi   ? $candidates->execute($row->campaign, $voter, AwardType::BestSaudi)   : collect();
         $foreign = $showForeign ? $candidates->execute($row->campaign, $voter, AwardType::BestForeign) : collect();
@@ -146,18 +152,6 @@ final class ClubVotingController extends Controller
                     ->execute($row->campaign, $voter, AwardType::TeamOfTheSeason, $pos)
                     ->groupBy('club_id');
             }
-        }
-
-        // If the admin hasn't wired any award, there's nothing to vote
-        // on — render a clean "coming soon" screen instead of an
-        // empty ballot.
-        if (! $showSaudi && ! $showForeign && ! $showTos) {
-            return view('voting::club.unavailable', [
-                'campaign' => $row->campaign,
-                'club'     => $row->club,
-                'reason'   => __('The organisers have not set up any awards for this campaign yet.'),
-                'voter'    => $voter,
-            ]);
         }
 
         return view('voting::club.ballot', [
