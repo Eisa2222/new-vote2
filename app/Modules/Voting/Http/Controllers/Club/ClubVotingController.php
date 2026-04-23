@@ -142,8 +142,19 @@ final class ClubVotingController extends Controller
             $showTos     = in_array(AwardType::TeamOfTheSeason->value, $configured, true);
         }
 
-        $saudi   = $showSaudi   ? $candidates->execute($row->campaign, $voter, AwardType::BestSaudi)   : collect();
-        $foreign = $showForeign ? $candidates->execute($row->campaign, $voter, AwardType::BestForeign) : collect();
+        // Group candidates by club_id so the ballot's shared popup can
+        // render "clubs → players" for every award (Best Saudi, Best
+        // Foreign, and each TOS pitch slot) with a single data shape.
+        $saudiByClub   = $showSaudi
+            ? $candidates->execute($row->campaign, $voter, AwardType::BestSaudi)->groupBy('club_id')
+            : collect();
+        $foreignByClub = $showForeign
+            ? $candidates->execute($row->campaign, $voter, AwardType::BestForeign)->groupBy('club_id')
+            : collect();
+
+        // Flat fallbacks for legacy view code / counts.
+        $saudi   = $saudiByClub->flatten(1);
+        $foreign = $foreignByClub->flatten(1);
 
         $tos = [];
         if ($showTos) {
