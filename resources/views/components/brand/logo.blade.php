@@ -1,13 +1,25 @@
 @props([
-    'size'  => 'md',        // sm (28px) · md (44px) · lg (64px)
+    'size' => 'md', // sm (28px) · md (44px) · lg (64px)
     'class' => '',
     'showName' => false,
 ])
+{{-- @php
+    use App\Modules\Shared\Support\Branding;
+    $path = app(\App\Modules\Shared\Services\SettingsService::class)->get('platform_logo_path');
+    $url = $path ? asset('storage/' . $path) : null;
+    $initials = Branding::initials();
+    $dims = match ($size) {
+        'sm' => 'w-7 h-7 text-[11px]',
+        'lg' => 'w-16 h-16 text-xl',
+        default => 'w-11 h-11 text-base',
+    };
+@endphp --}}
+
 @php
     use App\Modules\Shared\Support\Branding;
-    $url      = Branding::logoUrl();
+    $url = Branding::logoUrl();
     $initials = Branding::initials();
-    $dims = match($size) {
+    $dims = match ($size) {
         'sm' => 'w-7 h-7 text-[11px]',
         'lg' => 'w-16 h-16 text-xl',
         default => 'w-11 h-11 text-base',
@@ -18,15 +30,16 @@
      branded square with the wordmark initials. Kept in one component
      so every header/layout renders identically. --}}
 <div {{ $attributes->merge(['class' => "inline-flex items-center gap-3 $class"]) }}>
-    @if($url)
+    @if ($url)
         <img src="{{ $url }}" alt="{{ Branding::name() }}"
-             class="{{ $dims }} rounded-xl object-contain bg-white/10 p-1">
+            class="{{ $dims }} rounded-xl object-contain bg-white/10 p-1">
     @else
-        <div class="{{ $dims }} rounded-xl bg-brand-700 text-white flex items-center justify-center font-bold tracking-wide">
+        <div
+            class="{{ $dims }} rounded-xl bg-brand-700 text-white flex items-center justify-center font-bold tracking-wide">
             {{ $initials }}
         </div>
     @endif
-    @if($showName)
+    @if ($showName)
         <span class="font-bold text-sm leading-tight">{{ Branding::name() }}</span>
     @endif
 </div>
