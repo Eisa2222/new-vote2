@@ -73,11 +73,14 @@ final class ClubVotingController extends Controller
         abort_unless($player && $player->club_id === $row->club_id, 422,
             __('The selected player does not belong to this club.'));
 
-        // Duplicate check — friendlier message than the unique index.
-        $already = \App\Modules\Voting\Models\Vote::where('campaign_id', $row->campaign_id)
-            ->where('player_id', $player->id)->exists();
-        if ($already) {
-            return back()->withErrors(['player_id' => __('You have already voted in this campaign.')]);
+        // If this player already submitted a vote in this campaign,
+        // don't even let them see the ballot again — send them to a
+        // dedicated "already voted" view. Previously the duplicate
+        // was only caught at submit time, so the ballot (with the
+        // full TOS pitch) was reachable and looked like the voter
+        // could vote a second time.
+        if ($this->hasAlreadyVoted($row->campaign_id, $player->id)) {
+            return redirect()->route('voting.club.alreadyVoted', $token);
         }
 
         session(["club_voter:$token" => [
@@ -95,6 +98,14 @@ final class ClubVotingController extends Controller
         $voter = $this->currentVoter($token, $row);
         if ($voter === null) {
             return redirect()->route('voting.club.show', $token);
+        }
+
+        // Second guardrail: if the session lingers but the underlying
+        // player has already voted (e.g. admin re-seeded, or the user
+        // opened two tabs), stop showing the ballot.
+        if ($this->hasAlreadyVoted($row->campaign_id, $voter->id)) {
+            session()->forget("club_voter:$token");
+            return redirect()->route('voting.club.alreadyVoted', $token);
         }
 
         try {
@@ -144,21 +155,40 @@ final class ClubVotingController extends Controller
         }
 
         // Drop the in-progress voter session, mark the submit so the
-        // profile page can fetch the same player.
+        // profile page can fetch the same player, and flash a picks
+        // snapshot so the success page can render a confirmation
+        // recap (individual awards + TOS pitch).
         session()->forget("club_voter:$token");
         session(["club_voter_done:$token" => $voter->id]);
 
-        return redirect()->route('voting.club.success', $token);
+        return redirect()->route('voting.club.success', $token)
+            ->with('submitted_picks', $request->validated());
     }
 
     // ─── GET success ───────────────────────────────────────────
     public function success(string $token): View
     {
-        $row = $this->loadRow($token);
+        $row   = $this->loadRow($token);
+        $picks = session('submitted_picks');
+
+        $resolved = null;
+        if (is_array($picks)) {
+            // Turn raw ids into a small, view-friendly object. Done
+            // here (not in the view) so Blade stays dumb.
+            $saudi   = Player::with('club')->find($picks['best_saudi_player_id']   ?? null);
+            $foreign = Player::with('club')->find($picks['best_foreign_player_id'] ?? null);
+            $lineup  = [];
+            foreach (($picks['lineup'] ?? []) as $slot => $ids) {
+                $lineup[$slot] = Player::with('club')->whereIn('id', $ids)->get();
+            }
+            $resolved = ['saudi' => $saudi, 'foreign' => $foreign, 'lineup' => $lineup];
+        }
+
         return view('voting::club.success', [
             'row'      => $row,
             'campaign' => $row->campaign,
             'club'     => $row->club,
+            'picks'    => $resolved,
         ]);
     }
 
@@ -197,7 +227,28 @@ final class ClubVotingController extends Controller
             ->with('success', __('Thank you! Your vote has been recorded.'));
     }
 
+    // ─── GET already voted ─────────────────────────────────────
+    // Dedicated "you cannot vote twice" view so the voter gets a clear
+    // explanation instead of a silent redirect or a confusing reopening
+    // of the ballot.
+    public function alreadyVoted(string $token): View
+    {
+        $row = $this->loadRow($token);
+        return view('voting::club.already-voted', [
+            'row'      => $row,
+            'campaign' => $row->campaign,
+            'club'     => $row->club,
+        ]);
+    }
+
     // ─── helpers ───────────────────────────────────────────────
+
+    private function hasAlreadyVoted(int $campaignId, int $playerId): bool
+    {
+        return \App\Modules\Voting\Models\Vote::where('campaign_id', $campaignId)
+            ->where('player_id', $playerId)
+            ->exists();
+    }
 
     private function loadRow(string $token): CampaignClub
     {

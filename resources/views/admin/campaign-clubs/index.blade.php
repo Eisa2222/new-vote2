@@ -41,13 +41,15 @@
             </div>
 
             <div class="flex items-end gap-3 flex-wrap">
-                <div class="flex-1 min-w-[200px]">
+                <div class="flex-1 min-w-[240px] max-w-sm">
                     <label class="field-label">{{ __('Max voters per club (optional)') }}</label>
-                    <input type="number" name="max_voters" min="1" placeholder="{{ __('Leave empty for unlimited') }}"
+                    <input type="number" name="max_voters" min="1"
+                           placeholder="{{ __('Leave empty for unlimited') }}"
                            class="field-input">
+                    <p class="field-help">{{ __('Only applied to newly-added clubs; existing rows keep their own value.') }}</p>
                 </div>
                 <button class="btn-save">
-                    <span aria-hidden="true">💾</span>
+                    <span aria-hidden="true">🔗</span>
                     <span>{{ __('Generate / update links') }}</span>
                 </button>
             </div>
@@ -76,11 +78,11 @@
                         <td class="p-4">
                             <div class="flex items-center gap-2">
                                 <input type="text" readonly value="{{ $row->publicUrl() }}"
-                                       class="font-mono text-xs rounded-lg border border-ink-200 bg-ink-50 px-2 py-1 min-w-0 flex-1"
-                                       onclick="this.select()">
-                                <button type="button"
-                                        onclick="navigator.clipboard.writeText('{{ $row->publicUrl() }}'); this.textContent='✓'"
-                                        class="rounded-lg border border-ink-200 hover:bg-ink-50 px-2 py-1 text-xs">
+                                       onclick="this.select()"
+                                       class="font-mono text-xs rounded-lg border border-ink-200 bg-ink-50 px-2.5 py-1.5 min-w-0 flex-1 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-brand-500">
+                                <button type="button" title="{{ __('Copy link') }}"
+                                        onclick="navigator.clipboard.writeText('{{ $row->publicUrl() }}'); this.textContent='✓'; setTimeout(() => this.textContent='📋', 1500);"
+                                        class="inline-flex items-center gap-1 rounded-lg border border-ink-200 hover:bg-ink-50 px-3 py-1.5 text-xs font-medium text-ink-700 transition">
                                     📋
                                 </button>
                             </div>
@@ -95,27 +97,35 @@
                         </td>
                         <td class="p-4">
                             <div class="flex items-center gap-2 justify-end">
+                                {{-- Inline max-voters edit — same 12-char input width
+                                     but styled like the rest of the row-action buttons
+                                     so the panel reads as one vocabulary. --}}
                                 <form method="post" action="{{ route('admin.campaigns.clubs.update', [$campaign, $row]) }}"
                                       class="flex items-center gap-1">
                                     @csrf @method('PATCH')
                                     <input type="number" name="max_voters" min="1" value="{{ $row->max_voters }}"
-                                           placeholder="∞" class="w-16 rounded-lg border border-ink-200 px-2 py-1 text-xs">
+                                           placeholder="∞"
+                                           class="w-20 rounded-lg border border-ink-200 px-2.5 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-brand-500"
+                                           title="{{ __('Max voters (blank = unlimited)') }}">
                                     <input type="hidden" name="is_active" value="{{ $row->is_active ? 1 : 0 }}">
-                                    <button class="rounded-lg border border-ink-200 hover:bg-ink-50 px-2 py-1 text-xs">
+                                    <button class="inline-flex items-center gap-1 rounded-lg border border-ink-200 hover:bg-ink-50 px-3 py-1.5 text-xs font-medium text-ink-700 transition"
+                                            title="{{ __('Save max voters') }}">
                                         💾
                                     </button>
                                 </form>
                                 <form method="post" action="{{ route('admin.campaigns.clubs.regenerate', [$campaign, $row]) }}"
                                       onsubmit="return confirm('{{ __('Generate a new token? The old link will stop working immediately.') }}')">
                                     @csrf
-                                    <button class="rounded-lg border border-amber-300 text-amber-700 hover:bg-amber-50 px-2 py-1 text-xs">
-                                        🔄 {{ __('New token') }}
+                                    <button class="inline-flex items-center gap-1 rounded-lg border border-amber-200 hover:bg-amber-50 px-3 py-1.5 text-xs font-medium text-amber-700 transition">
+                                        <span aria-hidden="true">🔄</span>
+                                        <span>{{ __('New token') }}</span>
                                     </button>
                                 </form>
                                 <form method="post" action="{{ route('admin.campaigns.clubs.destroy', [$campaign, $row]) }}"
                                       onsubmit="return confirm('{{ __('Remove this club from the campaign?') }}')">
                                     @csrf @method('DELETE')
-                                    <button class="rounded-lg border border-danger-500/50 text-danger-600 hover:bg-danger-500/10 px-2 py-1 text-xs">
+                                    <button class="inline-flex items-center gap-1 rounded-lg border border-rose-200 hover:bg-rose-50 px-3 py-1.5 text-xs font-medium text-rose-600 transition"
+                                            title="{{ __('Remove') }}">
                                         🗑
                                     </button>
                                 </form>

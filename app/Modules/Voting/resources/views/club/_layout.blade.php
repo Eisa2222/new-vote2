@@ -40,5 +40,14 @@
         </div>
     </footer>
     <style>[x-cloak]{display:none!important;}</style>
+
+    {{--
+      Per-page scripts land here via @push('scripts'). Without this
+      @stack, the ballot's clubBallot() Alpine factory never makes
+      it into the DOM and the console fills with
+          "clubBallot is not defined / total is not defined / ..."
+      as Alpine evaluates each x-data / x-text expression.
+    --}}
+    @stack('scripts')
 </body>
 </html>

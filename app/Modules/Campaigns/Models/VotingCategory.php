@@ -20,11 +20,16 @@ final class VotingCategory extends Model
         'category_type', 'position_slot',
         'required_picks', 'selection_min', 'selection_max',
         'is_active', 'display_order',
+        // Award hook — marks this category as the candidate pool for
+        // a specific award in the new club-scoped flow. If set, the
+        // voter ballot shows ONLY these candidates for that award.
+        'award_type',
     ];
 
     protected $casts = [
         'category_type' => CategoryType::class,
         'is_active'     => 'boolean',
+        'award_type'    => \App\Modules\Voting\Enums\AwardType::class,
     ];
 
     public function campaign(): BelongsTo

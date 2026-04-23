@@ -37,7 +37,9 @@
                 </select>
             </div>
 
-            <button class="btn-save w-full justify-center py-3" :disabled="!selected">
+            <button class="btn-save w-full justify-center py-3 text-base"
+                    :disabled="!selected"
+                    :class="!selected ? 'opacity-50 cursor-not-allowed' : ''">
                 <span aria-hidden="true">🗳</span>
                 <span>{{ __('Start voting') }}</span>
             </button>

@@ -76,27 +76,80 @@
             </div>
         </div>
 
-        {{-- New club-scoped voting flags ---------------------- --}}
-        <div class="mt-4 rounded-2xl bg-brand-50 border border-brand-200 p-4 space-y-3">
-            <div class="text-sm font-bold text-brand-900">{{ __('Voting rules') }}</div>
-            <label class="flex items-start gap-2 text-sm text-brand-900">
-                <input type="hidden" name="allow_self_vote" value="0">
-                <input type="checkbox" name="allow_self_vote" value="1" class="field-checkbox mt-0.5"
-                       @checked(old('allow_self_vote', true))>
-                <span>
-                    <strong>{{ __('Allow voting for self') }}</strong>
-                    <div class="text-xs text-brand-700/80">{{ __('If off, a voter cannot pick their own name in any award.') }}</div>
-                </span>
-            </label>
-            <label class="flex items-start gap-2 text-sm text-brand-900">
-                <input type="hidden" name="allow_teammate_vote" value="0">
-                <input type="checkbox" name="allow_teammate_vote" value="1" class="field-checkbox mt-0.5"
-                       @checked(old('allow_teammate_vote', true))>
-                <span>
-                    <strong>{{ __('Allow voting for teammates') }}</strong>
-                    <div class="text-xs text-brand-700/80">{{ __('If off, a voter cannot pick any player from their own club.') }}</div>
-                </span>
-            </label>
+        {{-- Club-scoped voting rules.
+             Redesigned as toggle-switch "cards" — one card per rule,
+             each with its own icon, title, help-text, and an iOS-style
+             switch that reflects its on/off state. Much clearer than
+             a tight checkbox list, especially on RTL. --}}
+        @php
+            $rules = [
+                [
+                    'name'    => 'allow_self_vote',
+                    'icon'    => '🙋',
+                    'title'   => __('Allow voting for self'),
+                    'help'    => __('If off, a voter cannot pick their own name in any award.'),
+                    'checked' => (bool) old('allow_self_vote', true),
+                ],
+                [
+                    'name'    => 'allow_teammate_vote',
+                    'icon'    => '🤝',
+                    'title'   => __('Allow voting for teammates'),
+                    'help'    => __('If off, a voter cannot pick any player from their own club.'),
+                    'checked' => (bool) old('allow_teammate_vote', true),
+                ],
+            ];
+        @endphp
+
+        <div class="mt-6">
+            <div class="flex items-center gap-2 mb-3">
+                <span class="text-xl">⚙️</span>
+                <h3 class="text-base font-bold text-ink-900">{{ __('Voting rules') }}</h3>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                @foreach($rules as $rule)
+                    {{-- The hidden "0" input ensures an unchecked switch
+                         still posts a value (default POST behaviour of
+                         checkbox is to send NOTHING — we want explicit
+                         "false"). The visible checkbox shares the same
+                         name and overrides when ticked. --}}
+                    <label class="relative flex items-start gap-3 rounded-2xl border-2 border-ink-200 bg-white p-4 cursor-pointer transition
+                                  hover:border-brand-300
+                                  has-[:checked]:border-brand-500 has-[:checked]:bg-brand-50/40"
+                           x-data="{ on: @js($rule['checked']) }">
+                        <input type="hidden" name="{{ $rule['name'] }}" value="0">
+                        <input type="checkbox" name="{{ $rule['name'] }}" value="1"
+                               class="sr-only peer"
+                               x-model="on"
+                               @checked($rule['checked'])>
+
+                        {{-- Icon bubble --}}
+                        <div class="w-10 h-10 rounded-xl bg-brand-100 text-brand-700 flex items-center justify-center text-xl flex-shrink-0"
+                             :class="on ? 'bg-brand-100 text-brand-700' : 'bg-ink-100 text-ink-500'">
+                            {{ $rule['icon'] }}
+                        </div>
+
+                        <div class="flex-1 min-w-0">
+                            <div class="font-bold text-ink-900 leading-tight">{{ $rule['title'] }}</div>
+                            <div class="text-xs text-ink-500 mt-1 leading-5">{{ $rule['help'] }}</div>
+                        </div>
+
+                        {{-- iOS-style toggle.
+                             Pure Tailwind (no component library) so the
+                             look is consistent whether JS is on or off. --}}
+                        <span class="relative inline-flex h-6 w-11 flex-shrink-0 rounded-full transition
+                                     border border-ink-200"
+                              :class="on ? 'bg-brand-600 border-brand-600' : 'bg-ink-200'">
+                            <span class="inline-block h-5 w-5 rounded-full bg-white shadow transition transform
+                                         {{ app()->getLocale() === 'ar' ? '-translate-x-0.5' : 'translate-x-0.5' }}
+                                         mt-[1px]"
+                                  :class="on
+                                      ? '{{ app()->getLocale() === 'ar' ? '-translate-x-[22px]' : 'translate-x-[22px]' }}'
+                                      : ''"></span>
+                        </span>
+                    </label>
+                @endforeach
+            </div>
         </div>
     </div>
 
@@ -173,14 +226,29 @@
                    class="rounded-xl border border-gray-300 px-3 py-2.5">
         </div>
 
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-3 mb-4">
-            <select name="POSITION_SLOT" class="rounded-xl border border-gray-300 px-3 py-2.5">
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-3 mb-4">
+            <select name="POSITION_SLOT" class="rounded-xl border border-gray-300 px-3 py-2.5"
+                    title="{{ __('Position slot') }}">
                 <option value="any">{{ __('Any position') }}</option>
                 <option value="attack">{{ __('Attack') }}</option>
                 <option value="midfield">{{ __('Midfield') }}</option>
                 <option value="defense">{{ __('Defense') }}</option>
                 <option value="goalkeeper">{{ __('Goalkeeper') }}</option>
             </select>
+
+            {{-- NEW: award selector.
+                 Tells the new club-scoped ballot to use this question's
+                 candidates as the shortlist for the chosen award. When
+                 left blank, the campaign falls back to the default
+                 "all Saudi / all Foreign / all by position" behaviour. --}}
+            <select name="AWARD_TYPE" class="rounded-xl border border-gray-300 px-3 py-2.5"
+                    title="{{ __('Feed this list into which award?') }}">
+                <option value="">— {{ __('No award link') }} —</option>
+                <option value="best_saudi">🏆 {{ __('Best Saudi Player') }}</option>
+                <option value="best_foreign">🌍 {{ __('Best Foreign Player') }}</option>
+                <option value="team_of_the_season">⚽ {{ __('Team of the Season') }}</option>
+            </select>
+
             <input type="number" name="REQUIRED_PICKS" min="1" max="11" value="1"
                    placeholder="{{ __('Required picks') }}" required
                    class="rounded-xl border border-gray-300 px-3 py-2.5">
@@ -273,10 +341,15 @@ function addQuestion(prefill = null) {
     const row = clone.querySelector('.question-row');
     row.querySelector('.q-number').textContent = '#' + (i + 1);
 
+    // The mapping below rewrites the `<template>` placeholder names
+    // (TITLE_AR, etc.) to the real `categories[i][...]` names when a
+    // new question is cloned. AWARD_TYPE is the new hook that links
+    // a question to one of the three fixed awards.
     const fieldMap = {
         TITLE_AR:       `categories[${i}][title_ar]`,
         TITLE_EN:       `categories[${i}][title_en]`,
         POSITION_SLOT:  `categories[${i}][position_slot]`,
+        AWARD_TYPE:     `categories[${i}][award_type]`,
         REQUIRED_PICKS: `categories[${i}][required_picks]`,
     };
     Object.entries(fieldMap).forEach(([tplName, realName]) => {
@@ -288,6 +361,7 @@ function addQuestion(prefill = null) {
         row.querySelector(`[name="${fieldMap.TITLE_AR}"]`).value       = prefill.title_ar       ?? '';
         row.querySelector(`[name="${fieldMap.TITLE_EN}"]`).value       = prefill.title_en       ?? '';
         row.querySelector(`[name="${fieldMap.POSITION_SLOT}"]`).value  = prefill.position_slot  ?? 'any';
+        row.querySelector(`[name="${fieldMap.AWARD_TYPE}"]`).value     = prefill.award_type     ?? '';
         row.querySelector(`[name="${fieldMap.REQUIRED_PICKS}"]`).value = prefill.required_picks ?? 1;
     }
 

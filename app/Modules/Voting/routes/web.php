@@ -42,6 +42,8 @@ Route::prefix('vote/club')->name('voting.club.')->group(function () {
         ->middleware('throttle:20,1')->name('start');
     Route::get('{token}/ballot',    [ClubVotingController::class, 'ballot'])
         ->middleware('throttle:60,1')->name('ballot');
+    Route::get('{token}/already-voted', [ClubVotingController::class, 'alreadyVoted'])
+        ->middleware('throttle:60,1')->name('alreadyVoted');
     Route::post('{token}/submit',   [ClubVotingController::class, 'submit'])
         ->middleware('throttle:10,1')->name('submit');
     Route::get('{token}/success',   [ClubVotingController::class, 'success'])

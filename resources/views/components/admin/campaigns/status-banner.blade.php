@@ -58,10 +58,18 @@
             </div>
 
             @can('campaigns.approve')
+                {{--
+                  Inline Tailwind classes instead of @apply-based
+                  component classes: the Tailwind Play CDN occasionally
+                  misses custom `.btn-*` under @apply, leaving the
+                  markup as plain text. The utility classes below are
+                  guaranteed to ship with the CDN bundle so the
+                  buttons always render properly.
+                --}}
                 <div class="flex gap-2 flex-wrap">
                     <form method="post" action="{{ route('admin.campaigns.approve', $campaign) }}">
                         @csrf
-                        <button class="btn-save">
+                        <button class="inline-flex items-center gap-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 text-white px-5 py-2.5 font-semibold shadow-sm transition">
                             <span aria-hidden="true">✓</span>
                             <span>{{ __('Approve') }}</span>
                         </button>
@@ -70,7 +78,7 @@
                           onsubmit="this.querySelector('[name=reason]').value = prompt('{{ __('Reason for rejection (optional):') }}') || ''">
                         @csrf
                         <input type="hidden" name="reason">
-                        <button class="btn-danger">
+                        <button class="inline-flex items-center gap-2 rounded-xl border-2 border-rose-400 text-rose-700 bg-white hover:bg-rose-50 active:bg-rose-100 px-5 py-2.5 font-semibold shadow-sm transition">
                             <span aria-hidden="true">✗</span>
                             <span>{{ __('Reject') }}</span>
                         </button>
