@@ -29,23 +29,23 @@
     {{-- ── Hero ──────────────────────────────────────────────── --}}
     <section class="rounded-3xl bg-gradient-to-br from-brand-800 via-brand-700 to-brand-500 text-white p-6 md:p-8 shadow-xl relative overflow-hidden">
         <div class="absolute inset-0 opacity-10" style="background-image: radial-gradient(circle at 20% 20%, white 1px, transparent 1px); background-size: 28px 28px;"></div>
-        <div class="relative flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-            <div>
-                <div class="text-xs uppercase tracking-[0.2em] text-white/70">{{ $campaign->localized('title') }}</div>
-                <h1 class="text-3xl md:text-4xl font-extrabold mt-1">{{ __('Your vote counts') }}</h1>
-                <p class="text-white/80 mt-2">
-                    {{ __('Hello') }} <strong>{{ $voter->localized('name') }}</strong>
-                    · <span class="text-white/80">{{ $club->localized('name') }}</span>
-                </p>
-            </div>
-            <div class="flex items-center gap-3 bg-white/10 backdrop-blur rounded-2xl px-4 py-3">
-                <div class="text-center">
-                    <div class="text-[10px] uppercase tracking-wider text-white/70">{{ __('Progress') }}</div>
-                    <div class="text-2xl font-extrabold tabular-nums">
-                        <span x-text="filledCount"></span><span class="text-white/60 text-lg">/13</span>
+        <div class="relative">
+            <div class="flex flex-col md:flex-row md:items-start md:justify-between gap-4 mb-4">
+                <div>
+                    <div class="text-xs uppercase tracking-[0.2em] text-white/70">{{ $campaign->localized('title') }}</div>
+                    <h1 class="text-3xl md:text-4xl font-extrabold mt-1">{{ __('Your vote counts') }}</h1>
+                </div>
+                <div class="flex items-center gap-3 bg-white/10 backdrop-blur rounded-2xl px-4 py-3">
+                    <div class="text-center">
+                        <div class="text-[10px] uppercase tracking-wider text-white/70">{{ __('Progress') }}</div>
+                        <div class="text-2xl font-extrabold tabular-nums">
+                            <span x-text="filledCount"></span><span class="text-white/60 text-lg">/<span x-text="totalSlots"></span></span>
+                        </div>
                     </div>
                 </div>
             </div>
+            {{-- Voter identity chip — glass variant for dark hero. --}}
+            @include('voting::club._partials.voter-card', ['voter' => $voter, 'club' => $club, 'variant' => 'glass'])
         </div>
     </section>
 
@@ -59,7 +59,9 @@
           @submit="onSubmit">
         @csrf
 
-        {{-- ── Section 1: Best Saudi ─────────────────────────── --}}
+        {{-- ── Section 1: Best Saudi — only if the admin linked a
+             voting_category with award_type=best_saudi ─────────── --}}
+        @if($showSaudi)
         <section class="card !p-0 overflow-hidden">
             <header class="p-5 md:p-6 flex items-center justify-between gap-3 border-b border-ink-100 bg-gradient-to-r from-brand-50 to-transparent">
                 <div class="flex items-center gap-3">
@@ -93,8 +95,10 @@
                 @endif
             </div>
         </section>
+        @endif
 
-        {{-- ── Section 2: Best Foreign ───────────────────────── --}}
+        {{-- ── Section 2: Best Foreign — only if configured ───── --}}
+        @if($showForeign)
         <section class="card !p-0 overflow-hidden">
             <header class="p-5 md:p-6 flex items-center justify-between gap-3 border-b border-ink-100 bg-gradient-to-r from-amber-50 to-transparent">
                 <div class="flex items-center gap-3">
@@ -129,8 +133,10 @@
                 @endif
             </div>
         </section>
+        @endif
 
-        {{-- ── Section 3: Team of the Season ─────────────────── --}}
+        {{-- ── Section 3: Team of the Season — only if configured --}}
+        @if($showTos)
         <section class="card !p-0 overflow-hidden">
             <header class="p-5 md:p-6 flex items-center justify-between gap-3 border-b border-ink-100 bg-gradient-to-r from-emerald-50 to-transparent">
                 <div class="flex items-center gap-3">
@@ -277,6 +283,7 @@
                 </div>
             </template>
         </section>
+        @endif
 
         {{-- ── Sticky submit bar ─────────────────────────────── --}}
         <div class="sticky bottom-0 inset-x-0 z-20 pt-4 pb-2 -mx-4 px-4 md:mx-0 md:px-0 bg-gradient-to-t from-white via-white/95 to-transparent">
@@ -284,18 +291,24 @@
                 <div class="text-sm">
                     <div class="font-bold text-ink-900" x-text="isReady ? '{{ __('Ready to submit') }}' : '{{ __('Complete all selections to submit') }}'"></div>
                     <div class="text-xs text-ink-500 mt-1 flex items-center gap-3 flex-wrap">
-                        <span class="flex items-center gap-1">
-                            <span :class="saudiPicked ? 'text-brand-700' : 'text-ink-400'" x-text="saudiPicked ? '✓' : '○'"></span>
-                            <span>{{ __('Saudi') }}</span>
-                        </span>
-                        <span class="flex items-center gap-1">
-                            <span :class="foreignPicked ? 'text-amber-600' : 'text-ink-400'" x-text="foreignPicked ? '✓' : '○'"></span>
-                            <span>{{ __('Foreign') }}</span>
-                        </span>
-                        <span class="flex items-center gap-1">
-                            <span :class="total === 11 ? 'text-emerald-700' : 'text-ink-400'" x-text="total === 11 ? '✓' : '○'"></span>
-                            <span>TOS (<span x-text="total"></span>/11)</span>
-                        </span>
+                        @if($showSaudi)
+                            <span class="flex items-center gap-1">
+                                <span :class="saudiPicked ? 'text-brand-700' : 'text-ink-400'" x-text="saudiPicked ? '✓' : '○'"></span>
+                                <span>{{ __('Saudi') }}</span>
+                            </span>
+                        @endif
+                        @if($showForeign)
+                            <span class="flex items-center gap-1">
+                                <span :class="foreignPicked ? 'text-amber-600' : 'text-ink-400'" x-text="foreignPicked ? '✓' : '○'"></span>
+                                <span>{{ __('Foreign') }}</span>
+                            </span>
+                        @endif
+                        @if($showTos)
+                            <span class="flex items-center gap-1">
+                                <span :class="total === 11 ? 'text-emerald-700' : 'text-ink-400'" x-text="total === 11 ? '✓' : '○'"></span>
+                                <span>TOS (<span x-text="total"></span>/11)</span>
+                            </span>
+                        @endif
                     </div>
                 </div>
                 <button type="submit"
@@ -315,6 +328,13 @@
 @push('scripts')
 <script>
 function clubBallot(tosData) {
+    // These flags reflect what the server rendered — isReady adapts
+    // to the awards actually present on the page.
+    const SHOW_SAUDI   = @json($showSaudi);
+    const SHOW_FOREIGN = @json($showForeign);
+    const SHOW_TOS     = @json($showTos);
+    const TOTAL_SLOTS  = (SHOW_SAUDI ? 1 : 0) + (SHOW_FOREIGN ? 1 : 0) + (SHOW_TOS ? 11 : 0);
+
     return {
         tosData,
         picks: { goalkeeper: [], defense: [], midfield: [], attack: [] },
@@ -340,10 +360,17 @@ function clubBallot(tosData) {
         get total() {
             return Object.values(this.picks).reduce((s, arr) => s + arr.filter(Boolean).length, 0);
         },
+        get totalSlots() { return TOTAL_SLOTS; },
         get filledCount() {
             return this.total + (this.saudiPicked ? 1 : 0) + (this.foreignPicked ? 1 : 0);
         },
-        get isReady() { return this.total === 11 && this.saudiPicked && this.foreignPicked; },
+        get isReady() {
+            // Only require the awards that are actually on the page.
+            if (SHOW_SAUDI   && !this.saudiPicked)   return false;
+            if (SHOW_FOREIGN && !this.foreignPicked) return false;
+            if (SHOW_TOS     && this.total !== 11)   return false;
+            return true;
+        },
         openSlot(slot, idx) {
             this.currentSlot = slot;
             this.currentIndex = idx;

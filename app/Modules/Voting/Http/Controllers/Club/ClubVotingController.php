@@ -112,30 +112,65 @@ final class ClubVotingController extends Controller
             app(ValidateClubVotingEntryAction::class)->execute($row);
         } catch (VotingException $e) {
             return view('voting::club.unavailable', [
-                'campaign' => $row->campaign, 'club' => $row->club, 'reason' => $e->getMessage(),
+                'campaign' => $row->campaign, 'club' => $row->club,
+                'reason'   => $e->getMessage(),
+                // Forward the voter so the unavailable screen can show
+                // their identity card — they stay "signed in".
+                'voter'    => $voter ?? null,
             ]);
         }
 
-        $saudi   = $candidates->execute($row->campaign, $voter, AwardType::BestSaudi);
-        $foreign = $candidates->execute($row->campaign, $voter, AwardType::BestForeign);
+        // An award "exists" for this campaign when the admin has wired
+        // at least one voting_category to it via award_type. If none
+        // exist, we skip that whole section on the ballot — the spec:
+        // "لا تظهر الا اذا كان فيه سوال اذا مافي ماتظهر".
+        $configured = $row->campaign->categories()
+            ->whereNotNull('award_type')
+            ->where('is_active', true)
+            ->pluck('award_type')
+            ->map(fn ($v) => $v instanceof AwardType ? $v->value : $v)
+            ->unique()
+            ->all();
 
-        // TOS candidates — grouped per position so the pitch popup
-        // can show "pick club → pick player".
+        $showSaudi   = in_array(AwardType::BestSaudi->value,       $configured, true);
+        $showForeign = in_array(AwardType::BestForeign->value,     $configured, true);
+        $showTos     = in_array(AwardType::TeamOfTheSeason->value, $configured, true);
+
+        $saudi   = $showSaudi   ? $candidates->execute($row->campaign, $voter, AwardType::BestSaudi)   : collect();
+        $foreign = $showForeign ? $candidates->execute($row->campaign, $voter, AwardType::BestForeign) : collect();
+
         $tos = [];
-        foreach (PlayerPosition::cases() as $pos) {
-            $tos[$pos->value] = $candidates
-                ->execute($row->campaign, $voter, AwardType::TeamOfTheSeason, $pos)
-                ->groupBy('club_id');
+        if ($showTos) {
+            foreach (PlayerPosition::cases() as $pos) {
+                $tos[$pos->value] = $candidates
+                    ->execute($row->campaign, $voter, AwardType::TeamOfTheSeason, $pos)
+                    ->groupBy('club_id');
+            }
+        }
+
+        // If the admin hasn't wired any award, there's nothing to vote
+        // on — render a clean "coming soon" screen instead of an
+        // empty ballot.
+        if (! $showSaudi && ! $showForeign && ! $showTos) {
+            return view('voting::club.unavailable', [
+                'campaign' => $row->campaign,
+                'club'     => $row->club,
+                'reason'   => __('The organisers have not set up any awards for this campaign yet.'),
+                'voter'    => $voter,
+            ]);
         }
 
         return view('voting::club.ballot', [
-            'row'      => $row,
-            'campaign' => $row->campaign,
-            'club'     => $row->club,
-            'voter'    => $voter,
-            'saudi'    => $saudi,
-            'foreign'  => $foreign,
-            'tos'      => $tos,
+            'row'         => $row,
+            'campaign'    => $row->campaign,
+            'club'        => $row->club,
+            'voter'       => $voter,
+            'saudi'       => $saudi,
+            'foreign'     => $foreign,
+            'tos'         => $tos,
+            'showSaudi'   => $showSaudi,
+            'showForeign' => $showForeign,
+            'showTos'     => $showTos,
         ]);
     }
 
