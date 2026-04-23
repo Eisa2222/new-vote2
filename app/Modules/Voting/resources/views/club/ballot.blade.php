@@ -39,23 +39,42 @@
     }
 @endphp
 
+@php $isAr = app()->getLocale() === 'ar'; @endphp
+
 <div x-data="clubBallot(@js($jsData))" x-cloak>
 
     {{-- ── Hero ──────────────────────────────────────────────── --}}
     <section class="rounded-3xl bg-gradient-to-br from-brand-800 via-brand-700 to-brand-500 text-white p-6 md:p-8 shadow-xl relative overflow-hidden">
         <div class="absolute inset-0 opacity-10" style="background-image: radial-gradient(circle at 20% 20%, white 1px, transparent 1px); background-size: 28px 28px;"></div>
         <div class="relative">
-            <div class="flex flex-col md:flex-row md:items-start md:justify-between gap-4 mb-4">
-                <div>
-                    <div class="text-xs uppercase tracking-[0.2em] text-white/70">{{ $campaign->localized('title') }}</div>
+            <div class="flex flex-col md:flex-row md:items-start md:justify-between gap-4 mb-5">
+                <div class="min-w-0">
+                    <div class="{{ $isAr ? 'text-xs font-semibold' : 'text-xs uppercase tracking-[0.2em]' }} text-white/70 truncate">
+                        {{ $campaign->localized('title') }}
+                    </div>
                     <h1 class="text-3xl md:text-4xl font-extrabold mt-1">{{ __('Your vote counts') }}</h1>
+                    <p class="text-white/80 text-sm mt-2 max-w-md leading-6">
+                        {{ __('Complete the questions below. You can change your picks before submitting.') }}
+                    </p>
                 </div>
-                <div class="flex items-center gap-3 bg-white/10 backdrop-blur rounded-2xl px-4 py-3">
-                    <div class="text-center">
-                        <div class="text-[10px] uppercase tracking-wider text-white/70">{{ __('Progress') }}</div>
-                        <div class="text-2xl font-extrabold tabular-nums">
-                            <span x-text="filledCount"></span><span class="text-white/60 text-lg">/<span x-text="totalSlots"></span></span>
+                {{-- Progress ring — more expressive than a plain ratio
+                     number; gives the voter visual reward as picks fill. --}}
+                <div class="flex items-center gap-3 bg-white/10 backdrop-blur rounded-2xl px-4 py-3 self-start">
+                    <div class="relative w-14 h-14 flex-shrink-0">
+                        <svg viewBox="0 0 44 44" class="w-14 h-14 -rotate-90">
+                            <circle cx="22" cy="22" r="18" fill="none" stroke="currentColor" stroke-width="4" class="text-white/20"/>
+                            <circle cx="22" cy="22" r="18" fill="none" stroke="currentColor" stroke-width="4"
+                                    stroke-linecap="round" class="text-white transition-all"
+                                    pathLength="100"
+                                    :stroke-dasharray="'100'"
+                                    :stroke-dashoffset="100 - Math.round((filledCount / totalSlots) * 100)"/>
+                        </svg>
+                        <div class="absolute inset-0 flex items-center justify-center text-xs font-extrabold tabular-nums">
+                            <span x-text="filledCount"></span><span class="text-white/60">/<span x-text="totalSlots"></span></span>
                         </div>
+                    </div>
+                    <div class="{{ $isAr ? 'text-xs font-semibold' : 'text-[10px] uppercase tracking-wider' }} text-white/80 leading-tight">
+                        {{ __('Progress') }}
                     </div>
                 </div>
             </div>
@@ -88,7 +107,7 @@
                     :class="picks.best_saudi[0] ? 'bg-brand-50/40' : 'hover:bg-ink-50'">
                 <div class="w-14 h-14 rounded-2xl bg-brand-600 text-white flex items-center justify-center text-2xl shadow-sm flex-shrink-0">🏆</div>
                 <div class="flex-1 min-w-0">
-                    <div class="text-[10px] uppercase tracking-widest text-ink-500 font-semibold">{{ __('Question 1 of :n', ['n' => ($showSaudi?1:0)+($showForeign?1:0)+($showTos?1:0)]) }}</div>
+                    <div class="{{ $isAr ? 'text-[11px] font-bold' : 'text-[10px] uppercase tracking-widest font-semibold' }} text-ink-500">{{ __('Question 1 of :n', ['n' => ($showSaudi?1:0)+($showForeign?1:0)+($showTos?1:0)]) }}</div>
                     <div class="text-lg md:text-xl font-extrabold text-ink-900">{{ __('Best Saudi Player') }}</div>
                     {{-- Empty state --}}
                     <template x-if="!picks.best_saudi[0]">
@@ -128,7 +147,7 @@
                     :class="picks.best_foreign[0] ? 'bg-amber-50/40' : 'hover:bg-ink-50'">
                 <div class="w-14 h-14 rounded-2xl bg-amber-500 text-white flex items-center justify-center text-2xl shadow-sm flex-shrink-0">🌍</div>
                 <div class="flex-1 min-w-0">
-                    <div class="text-[10px] uppercase tracking-widest text-ink-500 font-semibold">{{ __('Question :i of :n', ['i' => ($showSaudi?2:1), 'n' => ($showSaudi?1:0)+($showForeign?1:0)+($showTos?1:0)]) }}</div>
+                    <div class="{{ $isAr ? 'text-[11px] font-bold' : 'text-[10px] uppercase tracking-widest font-semibold' }} text-ink-500">{{ __('Question :i of :n', ['i' => ($showSaudi?2:1), 'n' => ($showSaudi?1:0)+($showForeign?1:0)+($showTos?1:0)]) }}</div>
                     <div class="text-lg md:text-xl font-extrabold text-ink-900">{{ __('Best Foreign Player') }}</div>
                     <template x-if="!picks.best_foreign[0]">
                         <div class="text-sm text-ink-500 mt-1">{{ __('Tap to pick a nominee — choose a club, then a player.') }}</div>
@@ -165,7 +184,7 @@
                 <div class="flex items-center gap-3">
                     <div class="w-11 h-11 rounded-xl bg-emerald-700 text-white flex items-center justify-center text-xl shadow-sm">⚽</div>
                     <div>
-                        <div class="text-[10px] uppercase tracking-widest text-ink-500 font-semibold">{{ __('Question :i of :n', ['i' => ($showSaudi?1:0)+($showForeign?1:0)+1, 'n' => ($showSaudi?1:0)+($showForeign?1:0)+($showTos?1:0)]) }}</div>
+                        <div class="{{ $isAr ? 'text-[11px] font-bold' : 'text-[10px] uppercase tracking-widest font-semibold' }} text-ink-500">{{ __('Question :i of :n', ['i' => ($showSaudi?1:0)+($showForeign?1:0)+1, 'n' => ($showSaudi?1:0)+($showForeign?1:0)+($showTos?1:0)]) }}</div>
                         <h2 class="text-lg font-extrabold text-ink-900 leading-tight">{{ __('Team of the Season') }}</h2>
                         <p class="text-xs text-ink-500 mt-0.5">{{ __('Tap a slot on the pitch to pick a player — 4-3-3 formation.') }}</p>
                     </div>
@@ -244,69 +263,116 @@
                  @keydown.escape.window="open = false">
                 <div class="absolute inset-0 bg-black/70 backdrop-blur-sm" @click="open = false"></div>
                 <div class="relative w-full max-w-2xl bg-white rounded-3xl shadow-2xl max-h-[90vh] flex flex-col overflow-hidden">
-                    <header class="p-5 text-white"
+                    <header class="p-5 md:p-6 text-white"
                             :class="headerGradient">
-                        <div class="flex items-center justify-between">
-                            <div>
-                                <div class="text-xs uppercase tracking-wider text-white/70">{{ __('Pick for') }}</div>
-                                <h3 class="text-xl font-extrabold" x-text="currentSlotLabel"></h3>
+                        <div class="flex items-start justify-between gap-3">
+                            <div class="min-w-0">
+                                <div class="{{ $isAr ? 'text-xs font-semibold' : 'text-xs uppercase tracking-wider' }} text-white/70">{{ __('Pick for') }}</div>
+                                <h3 class="text-xl md:text-2xl font-extrabold truncate mt-0.5" x-text="currentSlotLabel"></h3>
+                                {{-- Live step crumb: Clubs · Players --}}
+                                <div class="flex items-center gap-2 mt-2 text-[11px] text-white/80">
+                                    <span :class="!selectedClub ? 'font-bold text-white' : ''">① {{ __('Club') }}</span>
+                                    <span class="opacity-50">→</span>
+                                    <span :class="selectedClub ? 'font-bold text-white' : 'opacity-60'">② {{ __('Player') }}</span>
+                                </div>
                             </div>
-                            <button type="button" @click="open = false"
-                                    class="w-9 h-9 rounded-full bg-white/20 hover:bg-white/30 text-xl">&times;</button>
+                            <button type="button" @click="open = false" aria-label="{{ __('Close') }}"
+                                    class="w-9 h-9 rounded-full bg-white/20 hover:bg-white/30 text-xl leading-none flex items-center justify-center flex-shrink-0">&times;</button>
                         </div>
-                        <div class="mt-3" x-show="!selectedClub">
-                            <input type="text" x-model="clubQuery"
-                                   placeholder="{{ __('Search club...') }}"
-                                   class="w-full rounded-xl bg-white/10 border border-white/30 text-white placeholder:text-white/60 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-white/40">
+                        <div class="mt-4" x-show="!selectedClub">
+                            <div class="relative">
+                                <span class="absolute inset-y-0 start-0 flex items-center ps-3 text-white/70">🔍</span>
+                                <input type="text" x-model="clubQuery"
+                                       placeholder="{{ __('Search club...') }}"
+                                       class="w-full rounded-xl bg-white/10 border border-white/30 text-white placeholder:text-white/60 ps-10 pe-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-white/40">
+                            </div>
                         </div>
                         <div class="mt-3" x-show="selectedClub">
                             <button type="button" @click="selectedClub = null; clubQuery = ''"
-                                    class="text-xs text-white/90 hover:underline">← {{ __('Change club') }}</button>
+                                    class="inline-flex items-center gap-1.5 text-xs font-semibold rounded-lg bg-white/15 hover:bg-white/25 px-3 py-1.5">
+                                <span>{{ $isAr ? '→' : '←' }}</span>
+                                <span>{{ __('Change club') }}</span>
+                            </button>
                         </div>
                     </header>
 
-                    <div class="overflow-y-auto flex-1 p-4 bg-ink-50/40">
-                        {{-- Step 1 — clubs list --}}
-                        <div x-show="!selectedClub" class="grid grid-cols-1 md:grid-cols-2 gap-2">
+                    <div class="overflow-y-auto flex-1 p-4 md:p-5 bg-ink-50/40">
+                        {{-- Step 1 — clubs list. Two-column tiles on md+,
+                             each with a badge showing the nominees count. --}}
+                        <div x-show="!selectedClub" class="grid grid-cols-1 md:grid-cols-2 gap-2.5">
                             <template x-for="club in filteredClubs" :key="club.club_id">
                                 <button type="button" @click="selectedClub = club"
-                                        class="flex items-center justify-between rounded-xl border border-ink-200 bg-white hover:border-brand-400 hover:bg-brand-50 p-3 text-start transition">
-                                    <span class="font-semibold" x-text="club.club_name"></span>
-                                    <span class="text-xs text-ink-500" x-text="club.players.length + ' {{ __('players') }}'"></span>
+                                        class="flex items-center gap-3 rounded-2xl border-2 border-ink-200 bg-white hover:border-brand-400 hover:bg-brand-50 p-3.5 text-start transition group">
+                                    <div class="w-10 h-10 rounded-xl bg-brand-50 text-brand-700 flex items-center justify-center text-base font-extrabold flex-shrink-0 group-hover:bg-brand-100 transition"
+                                         x-text="(club.club_name || '?').trim().charAt(0)"></div>
+                                    <div class="flex-1 min-w-0">
+                                        <div class="font-bold text-ink-900 truncate" x-text="club.club_name"></div>
+                                        <div class="text-[11px] text-ink-500 mt-0.5">
+                                            <span x-text="club.players.length"></span> {{ __('players') }}
+                                        </div>
+                                    </div>
+                                    <span class="text-ink-400 group-hover:text-brand-600 transition">{{ $isAr ? '←' : '→' }}</span>
                                 </button>
                             </template>
                             <template x-if="filteredClubs.length === 0">
-                                <div class="col-span-full text-center text-ink-500 py-10">{{ __('No clubs match.') }}</div>
+                                <div class="col-span-full text-center text-ink-500 py-12">
+                                    <div class="text-4xl mb-2 opacity-40">🔍</div>
+                                    <div class="font-semibold">{{ __('No clubs match.') }}</div>
+                                </div>
                             </template>
                         </div>
 
-                        {{-- Step 2 — players from the chosen club --}}
+                        {{-- Step 2 — players from the chosen club.
+                             Balanced row: photo · name+meta · action chip.
+                             The meta row always shows jersey + position, so
+                             empty cards don't feel sparse like before. --}}
                         <div x-show="selectedClub" class="space-y-2">
                             <template x-for="p in selectedClub?.players || []" :key="p.id">
                                 <button type="button" @click="choose(p)"
-                                        class="w-full flex items-center gap-3 rounded-xl border border-ink-200 bg-white hover:border-brand-400 hover:bg-brand-50 p-3 text-start transition"
+                                        class="w-full flex items-center gap-3 rounded-2xl border-2 border-ink-200 bg-white hover:border-brand-400 hover:bg-brand-50 p-3 text-start transition"
                                         :class="isAlreadyPicked(p.id) ? 'opacity-40 cursor-not-allowed' : ''"
                                         :disabled="isAlreadyPicked(p.id)">
+                                    {{-- Avatar: photo or big initial badge --}}
                                     <template x-if="p.photo">
-                                        <img :src="p.photo" class="w-10 h-10 rounded-full object-cover border border-ink-200">
+                                        <img :src="p.photo" :alt="p.name"
+                                             class="w-12 h-12 rounded-xl object-cover border-2 border-ink-100 flex-shrink-0">
                                     </template>
                                     <template x-if="!p.photo">
-                                        <div class="w-10 h-10 rounded-full bg-ink-100 flex items-center justify-center text-lg">👤</div>
+                                        <div class="w-12 h-12 rounded-xl bg-brand-50 text-brand-700 flex items-center justify-center text-lg font-extrabold flex-shrink-0"
+                                             x-text="(p.name || '?').trim().charAt(0)"></div>
                                     </template>
+
+                                    {{-- Name + meta row --}}
                                     <div class="flex-1 min-w-0">
-                                        <div class="font-semibold truncate" x-text="p.name"></div>
-                                        <div class="text-xs text-ink-500 flex items-center gap-2 mt-0.5 flex-wrap">
-                                            <span x-show="p.position"
-                                                  class="inline-flex items-center rounded-full bg-brand-50 text-brand-700 px-2 py-0.5 font-medium"
-                                                  x-text="p.position"></span>
-                                            <span x-show="p.jersey" class="font-mono">#<span x-text="p.jersey"></span></span>
+                                        <div class="font-bold text-ink-900 truncate" x-text="p.name"></div>
+                                        <div class="flex items-center gap-2 mt-1 flex-wrap">
+                                            <template x-if="p.position">
+                                                <span class="inline-flex items-center rounded-full bg-brand-50 text-brand-700 px-2 py-0.5 text-[11px] font-semibold"
+                                                      x-text="p.position"></span>
+                                            </template>
+                                            <template x-if="p.jersey">
+                                                <span class="inline-flex items-center rounded-full bg-ink-100 text-ink-700 px-2 py-0.5 text-[11px] font-mono font-bold">
+                                                    #<span x-text="p.jersey"></span>
+                                                </span>
+                                            </template>
                                         </div>
                                     </div>
-                                    <span x-show="isAlreadyPicked(p.id)" class="text-xs text-brand-700 font-semibold">✓ {{ __('picked') }}</span>
+
+                                    {{-- Right-side action chip --}}
+                                    <span class="flex-shrink-0 text-[11px] font-bold rounded-full px-3 py-1.5 transition"
+                                          :class="isAlreadyPicked(p.id)
+                                              ? 'bg-brand-100 text-brand-700'
+                                              : 'bg-ink-100 text-ink-600 group-hover:bg-brand-600 group-hover:text-white'">
+                                        <span x-show="isAlreadyPicked(p.id)">✓ {{ __('picked') }}</span>
+                                        <span x-show="!isAlreadyPicked(p.id)">{{ __('Choose') }}</span>
+                                    </span>
                                 </button>
                             </template>
                             <template x-if="(selectedClub?.players || []).length === 0">
-                                <div class="text-center text-ink-500 py-10">{{ __('No eligible players in this club.') }}</div>
+                                <div class="text-center text-ink-500 py-12">
+                                    <div class="text-4xl mb-2 opacity-40">👥</div>
+                                    <div class="font-semibold">{{ __('No eligible players in this club.') }}</div>
+                                </div>
                             </template>
                         </div>
                     </div>

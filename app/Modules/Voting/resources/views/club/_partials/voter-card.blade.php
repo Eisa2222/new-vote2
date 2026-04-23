@@ -1,24 +1,28 @@
 @props(['voter', 'club' => null, 'variant' => 'solid'])
 
-{{-- Voter identity card — shown on ballot/unavailable/success so the
-     voter always sees "this is you". Two variants:
-       • solid — white card, used inside a light page
-       • glass — translucent, used on top of the brand-colour hero
+{{-- Voter identity card.
 
-     Data surfaced:
-       • photo (or fallback avatar with first initial)
-       • localized name
-       • club name
-       • jersey number (when set)
-       • position (localized label)
-       • nationality badge (saudi / foreign)
+     Design-pass notes (2026-04):
+       • Arabic no longer gets `uppercase` + wide letter-spacing — those
+         are Latin typographic conventions and make small Arabic labels
+         look broken ("المصوّت" rendered as stretched glyphs).
+       • Flag chip replaced by a coloured badge with a Saudi / globe
+         glyph. Windows often renders 🇸🇦 as the fallback "SA" regional
+         indicators; this avoids the ugly fallback entirely.
+       • Tighter three-row hierarchy: role label · name · meta-pills.
 --}}
 @php
-    $photo = $voter?->photo_path
-        ? \Illuminate\Support\Facades\Storage::url($voter->photo_path)
-        : null;
+    $photo    = $voter?->photo_path ? \Illuminate\Support\Facades\Storage::url($voter->photo_path) : null;
     $clubName = $club?->localized('name') ?? $voter?->club?->localized('name');
     $isGlass  = $variant === 'glass';
+    $isAr     = app()->getLocale() === 'ar';
+    // Latin-only typographic tweak — disabled in Arabic.
+    $eyebrow  = $isAr
+        ? 'text-[11px] font-semibold'
+        : 'text-[10px] uppercase tracking-[0.2em] font-semibold';
+    $pillBase = $isAr
+        ? 'text-[11px] font-bold'
+        : 'text-[10px] uppercase tracking-wider font-bold';
 @endphp
 
 <div class="relative rounded-2xl overflow-hidden border
@@ -39,7 +43,7 @@
         @endif
 
         <div class="flex-1 min-w-0">
-            <div class="text-[10px] uppercase tracking-[0.2em] {{ $isGlass ? 'text-white/70' : 'text-ink-500' }}">
+            <div class="{{ $eyebrow }} {{ $isGlass ? 'text-white/70' : 'text-ink-500' }}">
                 {{ __('Voter') }}
             </div>
             <div class="font-extrabold text-lg md:text-xl leading-tight truncate mt-0.5">
@@ -48,31 +52,42 @@
             <div class="text-sm mt-1 truncate {{ $isGlass ? 'text-white/80' : 'text-ink-500' }}">
                 {{ $clubName }}
                 @if($voter?->jersey_number)
-                    · <span class="font-mono font-bold">#{{ $voter->jersey_number }}</span>
+                    <span class="mx-1 opacity-60">·</span>
+                    <span class="font-mono font-bold">#{{ $voter->jersey_number }}</span>
                 @endif
             </div>
 
-            {{-- Pills row — position + nationality --}}
+            {{-- Meta pills — position + nationality + captain star. Each
+                 pill is self-contained and wraps on narrow screens. --}}
             <div class="flex items-center gap-1.5 mt-2 flex-wrap">
                 @if($voter?->position)
-                    <span class="inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider
+                    <span class="inline-flex items-center rounded-full px-2.5 py-0.5 {{ $pillBase }}
                                  {{ $isGlass ? 'bg-white/20 text-white' : 'bg-ink-100 text-ink-700' }}">
                         {{ $voter->position->label() }}
                     </span>
                 @endif
                 @if($voter?->nationality)
-                    <span class="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider
+                    @php
+                        $isSaudi = $voter->nationality->value === 'saudi';
+                    @endphp
+                    <span class="inline-flex items-center gap-1.5 rounded-full ps-1.5 pe-2.5 py-0.5 {{ $pillBase }}
                                  {{ $isGlass
-                                    ? ($voter->nationality->value === 'saudi' ? 'bg-emerald-500/30 text-white' : 'bg-amber-500/30 text-white')
-                                    : ($voter->nationality->value === 'saudi' ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700') }}">
-                        <span aria-hidden="true">{{ $voter->nationality->value === 'saudi' ? '🇸🇦' : '🌍' }}</span>
+                                    ? ($isSaudi ? 'bg-emerald-500/30 text-white' : 'bg-amber-500/30 text-white')
+                                    : ($isSaudi ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800') }}">
+                        {{-- Own flag/globe chip — avoids Windows' ugly
+                             "SA" regional-indicator fallback. --}}
+                        <span class="inline-flex w-3.5 h-3.5 rounded-full items-center justify-center text-[9px]
+                                     {{ $isSaudi ? 'bg-emerald-600 text-white' : 'bg-amber-600 text-white' }}">
+                            {{ $isSaudi ? '★' : '✈' }}
+                        </span>
                         <span>{{ $voter->nationality->label() }}</span>
                     </span>
                 @endif
                 @if($voter?->is_captain)
-                    <span class="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider
-                                 {{ $isGlass ? 'bg-yellow-400/30 text-white' : 'bg-amber-100 text-amber-700' }}">
-                        ⭐ {{ __('Captain') }}
+                    <span class="inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 {{ $pillBase }}
+                                 {{ $isGlass ? 'bg-yellow-400/30 text-white' : 'bg-amber-100 text-amber-800' }}">
+                        <span aria-hidden="true">⭐</span>
+                        <span>{{ __('Captain') }}</span>
                     </span>
                 @endif
             </div>
