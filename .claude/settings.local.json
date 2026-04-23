@@ -93,7 +93,8 @@
       "Bash(php vendor/bin/pest --filter=MailSettingsTest)",
       "Bash(php vendor/bin/pest --filter=\"test email\")",
       "Bash(php vendor/bin/pest --filter=EmailTemplates)",
-      "Bash(php vendor/bin/pest --filter=SmsSettingsTest)"
+      "Bash(php vendor/bin/pest --filter=SmsSettingsTest)",
+      "Bash(curl -s -o /dev/null -w \"retry: HTTP %{http_code}\\\\n\" --max-time 8 http://127.0.0.1:8000/up)"
     ]
   }
 }

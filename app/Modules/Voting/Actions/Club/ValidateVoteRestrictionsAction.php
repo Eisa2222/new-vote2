@@ -1,0 +1,114 @@
+<?php
+
+declare(strict_types=1);
+
+namespace App\Modules\Voting\Actions\Club;
+
+use App\Modules\Campaigns\Models\Campaign;
+use App\Modules\Players\Enums\NationalityType;
+use App\Modules\Players\Enums\PlayerPosition;
+use App\Modules\Players\Models\Player;
+use App\Modules\Voting\Enums\AwardType;
+use App\Modules\Voting\Exceptions\VotingException;
+use App\Modules\Voting\Support\Formation;
+
+/**
+ * Server-side re-check of every business rule that the form *already*
+ * enforces on the client. Never trust the browser.
+ *
+ * Inputs:
+ *   $payload structure:
+ *     [
+ *       'best_saudi_player_id'   => 17,
+ *       'best_foreign_player_id' => 42,
+ *       'lineup' => [
+ *         'goalkeeper' => [91],
+ *         'defense'    => [12, 13, 14, 15],
+ *         'midfield'   => [21, 22, 23],
+ *         'attack'     => [31, 32, 33],
+ *       ],
+ *     ]
+ *
+ * Throws VotingException with a human message on the first violation.
+ */
+final class ValidateVoteRestrictionsAction
+{
+    public function execute(Campaign $campaign, Player $voter, array $payload): void
+    {
+        // ── 1. Individual awards. PHP enums cannot be array keys, so
+        // use a plain array of tuples instead of `enum => meta`.
+        $awards = [
+            [AwardType::BestSaudi,   'best_saudi_player_id',   NationalityType::Saudi],
+            [AwardType::BestForeign, 'best_foreign_player_id', NationalityType::Foreign],
+        ];
+        foreach ($awards as [$award, $key, $expectedNationality]) {
+            $id = $payload[$key] ?? null;
+            if (! $id) {
+                throw new VotingException(__(':award is required.', ['award' => $award->label()]));
+            }
+            $pick = Player::find($id);
+            if (! $pick || $pick->status->value !== 'active') {
+                throw new VotingException(__('One of your picks is not available.'));
+            }
+            if ($pick->nationality !== $expectedNationality) {
+                throw new VotingException(__(':award must be a :type player.', [
+                    'award' => $award->label(),
+                    'type'  => $expectedNationality->label(),
+                ]));
+            }
+            $this->enforceSelfAndTeammate($campaign, $voter, $pick, $award);
+        }
+
+        // ── 2. Team of the Season — validated via dedicated helper
+        $lineup = $payload['lineup'] ?? null;
+        if (! is_array($lineup)) {
+            throw new VotingException(__('Team of the Season lineup is required.'));
+        }
+        $this->validateLineup($campaign, $voter, $lineup);
+    }
+
+    private function enforceSelfAndTeammate(Campaign $campaign, Player $voter, Player $pick, AwardType $award): void
+    {
+        if (! $campaign->allow_self_vote && $pick->id === $voter->id) {
+            throw new VotingException(__('You cannot vote for yourself.'));
+        }
+        if (! $campaign->allow_teammate_vote && $pick->club_id === $voter->club_id && $pick->id !== $voter->id) {
+            throw new VotingException(__('You cannot vote for a teammate.'));
+        }
+    }
+
+    private function validateLineup(Campaign $campaign, Player $voter, array $lineup): void
+    {
+        $expected = Formation::slots();
+        $allIds   = [];
+
+        foreach ($expected as $slot => $required) {
+            $ids = $lineup[$slot] ?? [];
+            if (! is_array($ids) || count($ids) !== $required) {
+                throw new VotingException(__(':slot requires exactly :n player(s).', [
+                    'slot' => __(ucfirst($slot)),
+                    'n'    => $required,
+                ]));
+            }
+
+            foreach ($ids as $pid) {
+                $p = Player::find($pid);
+                if (! $p || $p->status->value !== 'active') {
+                    throw new VotingException(__('One of your picks is not available.'));
+                }
+                if ($p->position !== PlayerPosition::from($slot)) {
+                    throw new VotingException(__(':name is not a :slot.', [
+                        'name' => $p->localized('name'),
+                        'slot' => __(ucfirst($slot)),
+                    ]));
+                }
+                $this->enforceSelfAndTeammate($campaign, $voter, $p, AwardType::TeamOfTheSeason);
+                $allIds[] = $p->id;
+            }
+        }
+
+        if (count($allIds) !== count(array_unique($allIds))) {
+            throw new VotingException(__('A player cannot appear in more than one line.'));
+        }
+    }
+}

@@ -13,6 +13,7 @@ declare(strict_types=1);
 | Loaded by routes/web.php.
 */
 
+use App\Http\Controllers\Admin\AdminCampaignClubController;
 use App\Http\Controllers\Admin\AdminCampaignController;
 use App\Http\Controllers\Admin\AdminCategoryController;
 use App\Http\Controllers\Admin\AdminClubController;
@@ -91,6 +92,13 @@ Route::middleware(['web', 'auth'])->prefix('admin')->name('admin.')->group(funct
         Route::post('{campaign}/activate',           [AdminCampaignController::class, 'activate'])->name('activate');
         Route::post('{campaign}/close',              [AdminCampaignController::class, 'close'])->name('close');
         Route::post('{campaign}/archive',            [AdminCampaignController::class, 'archive'])->name('archive');
+
+        // Per-campaign club participation (the new club-scoped flow).
+        Route::get('{campaign}/clubs',                         [AdminCampaignClubController::class, 'index'])->name('clubs.index');
+        Route::post('{campaign}/clubs',                        [AdminCampaignClubController::class, 'store'])->name('clubs.store');
+        Route::patch('{campaign}/clubs/{row}',                 [AdminCampaignClubController::class, 'update'])->name('clubs.update');
+        Route::post('{campaign}/clubs/{row}/regenerate',       [AdminCampaignClubController::class, 'regenerate'])->name('clubs.regenerate');
+        Route::delete('{campaign}/clubs/{row}',                [AdminCampaignClubController::class, 'destroy'])->name('clubs.destroy');
     });
 
     // Campaign categories & candidates (legacy non-TOS paths)

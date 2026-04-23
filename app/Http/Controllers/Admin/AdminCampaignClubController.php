@@ -1,0 +1,101 @@
+<?php
+
+declare(strict_types=1);
+
+namespace App\Http\Controllers\Admin;
+
+use App\Http\Controllers\Controller;
+use App\Modules\Campaigns\Models\Campaign;
+use App\Modules\Clubs\Models\Club;
+use App\Modules\Voting\Actions\Club\GenerateCampaignClubLinksAction;
+use App\Modules\Voting\Models\CampaignClub;
+use Illuminate\Contracts\View\View;
+use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
+
+/**
+ * Admin panel for managing which clubs participate in a campaign —
+ * the source of the new flow's "one link per club" feature.
+ *
+ *   GET    /admin/campaigns/{campaign}/clubs
+ *   POST   /admin/campaigns/{campaign}/clubs                  (attach)
+ *   PATCH  /admin/campaigns/{campaign}/clubs/{row}            (edit max/active)
+ *   POST   /admin/campaigns/{campaign}/clubs/{row}/regenerate (new token)
+ *   DELETE /admin/campaigns/{campaign}/clubs/{row}
+ */
+final class AdminCampaignClubController extends Controller
+{
+    public function index(Campaign $campaign): View
+    {
+        $this->authorize('update', $campaign);
+
+        return view('admin.campaign-clubs.index', [
+            'campaign' => $campaign,
+            'rows'     => $campaign->campaignClubs()->with('club')->get(),
+            'allClubs' => Club::orderBy('name_en')->get(),
+        ]);
+    }
+
+    public function store(Request $request, Campaign $campaign, GenerateCampaignClubLinksAction $action): RedirectResponse
+    {
+        $this->authorize('update', $campaign);
+
+        $data = $request->validate([
+            'club_ids'    => ['required', 'array', 'min:1'],
+            'club_ids.*'  => ['integer', 'exists:clubs,id'],
+            'max_voters'  => ['nullable', 'integer', 'min:1'],
+        ]);
+
+        // Merge with existing rows — never shrinks the list by accident
+        $existing = $campaign->campaignClubs()->pluck('club_id')->all();
+        $merged   = array_values(array_unique(array_merge($existing, $data['club_ids'])));
+
+        $action->execute($campaign, $merged, $data['max_voters'] ?? null);
+
+        return back()->with('success', __('Club links generated.'));
+    }
+
+    public function update(Request $request, Campaign $campaign, CampaignClub $row): RedirectResponse
+    {
+        $this->authorize('update', $campaign);
+        abort_unless($row->campaign_id === $campaign->id, 404);
+
+        $data = $request->validate([
+            'max_voters' => ['nullable', 'integer', 'min:1'],
+            'is_active'  => ['nullable', 'boolean'],
+        ]);
+        $row->update([
+            'max_voters' => $data['max_voters'] ?? null,
+            'is_active'  => (bool) ($data['is_active'] ?? false),
+        ]);
+
+        return back()->with('success', __('Club link updated.'));
+    }
+
+    public function regenerate(Campaign $campaign, CampaignClub $row): RedirectResponse
+    {
+        $this->authorize('update', $campaign);
+        abort_unless($row->campaign_id === $campaign->id, 404);
+
+        // Rotating the token invalidates every previously-shared URL
+        // for this club — useful if a link leaks publicly.
+        $row->update(['voting_link_token' => CampaignClub::generateUniqueToken()]);
+        return back()->with('success', __('A new voting link has been generated.'));
+    }
+
+    public function destroy(Campaign $campaign, CampaignClub $row): RedirectResponse
+    {
+        $this->authorize('update', $campaign);
+        abort_unless($row->campaign_id === $campaign->id, 404);
+
+        // Soft-disable instead of delete when votes already reference
+        // the row. The global FK handler turns a constraint error into
+        // a friendly flash, but this is clearer UX.
+        if ($campaign->votes()->where('campaign_club_id', $row->id)->exists()) {
+            $row->update(['is_active' => false]);
+            return back()->with('success', __('Club link disabled (votes already recorded).'));
+        }
+        $row->delete();
+        return back()->with('success', __('Club link removed.'));
+    }
+}

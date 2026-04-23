@@ -37,8 +37,12 @@
 
     <x-admin.campaigns.stats-grid :campaign="$campaign" />
 
-    <div class="flex items-center gap-2 mb-4">
-        <a href="{{ route('admin.categories.index', $campaign) }}" class="btn-save">
+    <div class="flex items-center gap-2 mb-4 flex-wrap">
+        <a href="{{ route('admin.campaigns.clubs.index', $campaign) }}" class="btn-save">
+            <span aria-hidden="true">🔗</span>
+            <span>{{ __('Manage club voting links') }}</span>
+        </a>
+        <a href="{{ route('admin.categories.index', $campaign) }}" class="btn-ghost">
             <span>+</span>
             <span>{{ __('Manage categories & candidates') }}</span>
         </a>

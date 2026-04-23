@@ -26,6 +26,8 @@ final class UpdateCampaignRequest extends FormRequest
             'start_at'       => ['sometimes', 'date'],
             'end_at'         => ['sometimes', 'date', 'after:start_at'],
             'max_voters'     => ['nullable', 'integer', 'min:1'],
+            'allow_self_vote'     => ['nullable', 'boolean'],
+            'allow_teammate_vote' => ['nullable', 'boolean'],
         ];
     }
 }

@@ -22,8 +22,11 @@ return new class extends Migration {
         Schema::create('vote_items', function (Blueprint $t) {
             $t->id();
             $t->foreignId('vote_id')->constrained()->cascadeOnDelete();
-            $t->foreignId('voting_category_id')->constrained()->cascadeOnDelete();
-            $t->foreignId('candidate_id')->constrained('voting_category_candidates')->cascadeOnDelete();
+            // Nullable — the new club-scoped flow uses award_type +
+            // candidate_player_id instead. Legacy /vote/{token} flow
+            // still populates these.
+            $t->foreignId('voting_category_id')->nullable()->constrained()->cascadeOnDelete();
+            $t->foreignId('candidate_id')->nullable()->constrained('voting_category_candidates')->cascadeOnDelete();
             $t->timestamps();
 
             $t->index(['voting_category_id', 'candidate_id']);

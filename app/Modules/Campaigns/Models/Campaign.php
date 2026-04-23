@@ -23,6 +23,8 @@ final class Campaign extends Model
         'status', 'results_visibility', 'created_by',
         'committee_approved_at', 'committee_approved_by',
         'committee_rejected_at', 'committee_rejected_by', 'committee_rejection_note',
+        // New club-scoped voting flags.
+        'allow_self_vote', 'allow_teammate_vote',
     ];
 
     protected $casts = [
@@ -33,6 +35,8 @@ final class Campaign extends Model
         'end_at'                => 'datetime',
         'committee_approved_at' => 'datetime',
         'committee_rejected_at' => 'datetime',
+        'allow_self_vote'       => 'boolean',
+        'allow_teammate_vote'   => 'boolean',
     ];
 
     protected static function booted(): void
@@ -50,6 +54,15 @@ final class Campaign extends Model
     public function categories(): HasMany
     {
         return $this->hasMany(VotingCategory::class)->orderBy('display_order');
+    }
+
+    /**
+     * Per-club participation rows for the new club-scoped voting flow.
+     * Each row owns its own token and max_voters cap.
+     */
+    public function campaignClubs(): HasMany
+    {
+        return $this->hasMany(\App\Modules\Voting\Models\CampaignClub::class);
     }
 
     public function votes(): HasMany

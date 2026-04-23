@@ -75,6 +75,29 @@
                        class="w-full rounded-2xl border border-gray-300 px-4 py-3">
             </div>
         </div>
+
+        {{-- New club-scoped voting flags ---------------------- --}}
+        <div class="mt-4 rounded-2xl bg-brand-50 border border-brand-200 p-4 space-y-3">
+            <div class="text-sm font-bold text-brand-900">{{ __('Voting rules') }}</div>
+            <label class="flex items-start gap-2 text-sm text-brand-900">
+                <input type="hidden" name="allow_self_vote" value="0">
+                <input type="checkbox" name="allow_self_vote" value="1" class="field-checkbox mt-0.5"
+                       @checked(old('allow_self_vote', true))>
+                <span>
+                    <strong>{{ __('Allow voting for self') }}</strong>
+                    <div class="text-xs text-brand-700/80">{{ __('If off, a voter cannot pick their own name in any award.') }}</div>
+                </span>
+            </label>
+            <label class="flex items-start gap-2 text-sm text-brand-900">
+                <input type="hidden" name="allow_teammate_vote" value="0">
+                <input type="checkbox" name="allow_teammate_vote" value="1" class="field-checkbox mt-0.5"
+                       @checked(old('allow_teammate_vote', true))>
+                <span>
+                    <strong>{{ __('Allow voting for teammates') }}</strong>
+                    <div class="text-xs text-brand-700/80">{{ __('If off, a voter cannot pick any player from their own club.') }}</div>
+                </span>
+            </label>
+        </div>
     </div>
 
     <div class="rounded-3xl border border-gray-200 bg-white p-6 shadow-sm space-y-4">

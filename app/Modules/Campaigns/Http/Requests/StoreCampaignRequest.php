@@ -33,6 +33,9 @@ final class StoreCampaignRequest extends FormRequest
             'start_at'                          => ['required', 'date'],
             'end_at'                            => ['required', 'date', 'after:start_at'],
             'max_voters'                        => ['nullable', 'integer', 'min:1'],
+            // Club-scoped voting rules (off-by-checkbox = false).
+            'allow_self_vote'                   => ['nullable', 'boolean'],
+            'allow_teammate_vote'               => ['nullable', 'boolean'],
 
             'categories'                        => ['required', 'array', 'min:1'],
             'categories.*.title_ar'             => ['required', 'string', 'max:180'],
