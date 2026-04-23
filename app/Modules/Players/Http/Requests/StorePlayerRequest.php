@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Modules\Players\Http\Requests;
 
+use App\Modules\Players\Enums\NationalityType;
 use App\Modules\Players\Enums\PlayerPosition;
 use App\Modules\Players\Models\Player;
 use App\Modules\Shared\Enums\ActiveStatus;
@@ -35,6 +36,10 @@ final class StorePlayerRequest extends FormRequest
             'name_en'       => ['required', 'string', 'max:120', $sameClubRule('name_en')],
             'photo'         => ['nullable', 'image', 'mimes:png,jpg,jpeg,webp', 'max:4096'],
             'position'      => ['required', new Enum(PlayerPosition::class)],
+            // Nationality drives Best-Saudi / Best-Foreign candidate
+            // filtering in the voter ballot. Required on create so
+            // every new player lands in one of the two pools.
+            'nationality'   => ['required', new Enum(NationalityType::class)],
             'is_captain'    => ['boolean'],
             'jersey_number' => [
                 'nullable', 'integer', 'min:1', 'max:999',

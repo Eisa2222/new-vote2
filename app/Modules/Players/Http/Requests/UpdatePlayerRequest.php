@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Modules\Players\Http\Requests;
 
+use App\Modules\Players\Enums\NationalityType;
 use App\Modules\Players\Enums\PlayerPosition;
 use App\Modules\Shared\Enums\ActiveStatus;
 use Illuminate\Foundation\Http\FormRequest;
@@ -37,6 +38,9 @@ final class UpdatePlayerRequest extends FormRequest
             'name_en'       => ['sometimes', 'required', 'string', 'max:120', $sameClubRule('name_en')],
             'photo'         => ['nullable', 'image', 'mimes:png,jpg,jpeg,webp', 'max:4096'],
             'position'      => ['sometimes', new Enum(PlayerPosition::class)],
+            // Nationality is optional on update (keeps existing value
+            // when the form omits it) but validated when present.
+            'nationality'   => ['sometimes', new Enum(NationalityType::class)],
             'is_captain'    => ['boolean'],
             'jersey_number' => [
                 'nullable', 'integer', 'min:1', 'max:999',
