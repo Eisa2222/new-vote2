@@ -230,7 +230,7 @@
                                  (72px wide, 84px tall) regardless of how
                                  wide the pitch gets. Wraps on narrow
                                  screens so 4 attackers never squish. --}}
-                            <div class="flex items-center justify-center gap-2 flex-wrap">
+                            <div class="flex items-center justify-center gap-4 md:gap-5 flex-wrap">
                                 @for($i = 0; $i < $count; $i++)
                                     <button type="button" @click="openSlot('tos_{{ $slot }}', {{ $i }})"
                                             class="relative rounded-2xl bg-white/10 hover:bg-white/20 backdrop-blur border-2 border-dashed border-white/30 p-2.5 text-center transition w-[92px] h-[108px] flex flex-col items-center justify-center text-white overflow-hidden group">
