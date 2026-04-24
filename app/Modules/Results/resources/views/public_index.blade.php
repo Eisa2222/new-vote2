@@ -83,9 +83,12 @@
                     $individualWinners = $winners->filter(fn ($w) =>
                         optional($w->category?->award_type)->value !== 'team_of_the_season'
                     )->values();
+                    // Keep TOS winners sorted by rank so the avatar
+                    // strip on the index tile matches the vote tally
+                    // order (rank 1 = most votes, first face shown).
                     $tosWinners = $winners->filter(fn ($w) =>
                         optional($w->category?->award_type)->value === 'team_of_the_season'
-                    );
+                    )->sortBy('rank')->values();
 
                     // The card header badge still cares about the
                     // campaign-type label; TOS stays TOS even if the

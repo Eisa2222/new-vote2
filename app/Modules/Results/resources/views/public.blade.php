@@ -15,8 +15,14 @@
     $tosWinners        = $winners->filter(fn ($w) => optional($w->category?->award_type)->value === 'team_of_the_season');
 
     // Group TOS winners by position slot so the pitch renderer can
-    // drop each winner onto its proper line.
-    $tosByPosition = $tosWinners->groupBy(fn ($w) => $w->category?->position_slot ?? 'any');
+    // drop each winner onto its proper line. Within each position
+    // we sort by rank ascending — rank 1 (most votes) appears
+    // first — so the announcement mirrors how the voters ranked
+    // them (the tally already applied the deterministic tie-breaker).
+    $tosByPosition = $tosWinners
+        ->sortBy([['rank', 'asc']])
+        ->groupBy(fn ($w) => $w->category?->position_slot ?? 'any')
+        ->map(fn ($group) => $group->sortBy('rank')->values());
 
     $slotMeta = [
         'attack'     => ['icon' => '⚡', 'label' => __('Attack'),     'color' => 'from-rose-500 to-rose-600'],
