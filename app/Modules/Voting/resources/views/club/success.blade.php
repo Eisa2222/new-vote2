@@ -71,41 +71,73 @@
                 @endforeach
             </div>
 
-            {{-- Team of the Season pitch recap --}}
+            {{-- Team of the Season pitch recap.
+                 Mirrors the ballot's pitch exactly: emerald gradient
+                 background, horizontal field lines, half-line + center
+                 circle, compact 72x96 / 92x108 tiles with per-position
+                 gradients, photo bubble, club name under player name.
+                 Kept read-only (no empty/+ state) since this is the
+                 "confirmation recap". --}}
             @if (!empty($picks['lineup']))
+                @php $isAr = app()->getLocale() === 'ar'; @endphp
                 <div class="card space-y-4">
                     <div class="flex items-center gap-2">
                         <span class="text-2xl">⚽</span>
                         <h2 class="text-lg font-bold">{{ __('Your Team of the Season') }}</h2>
                     </div>
 
-                    <div class="rounded-3xl bg-gradient-to-b from-brand-700 to-brand-900 p-6 relative overflow-hidden">
-                        <div class="absolute inset-0 opacity-10"
-                            style="background: repeating-linear-gradient(180deg, #fff 0 2px, transparent 2px 60px);"></div>
+                    <div class="rounded-3xl bg-gradient-to-b from-emerald-700 to-emerald-900 px-3 py-5 md:py-6 relative overflow-hidden">
+                        {{-- Field stripes (repeating horizontal lines) --}}
+                        <div class="absolute inset-0 opacity-15"
+                             style="background: repeating-linear-gradient(180deg, #fff 0 2px, transparent 2px 60px);"></div>
+                        {{-- Half-line + center circle --}}
+                        <div class="absolute inset-0 pointer-events-none">
+                            <div class="absolute inset-x-0 top-1/2 border-t-2 border-white/20"></div>
+                            <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-16 h-16 rounded-full border-2 border-white/20"></div>
+                        </div>
 
                         @php
                             $slotMeta = [
-                                'attack' => ['icon' => '⚡', 'label' => __('Attack')],
-                                'midfield' => ['icon' => '⚙️', 'label' => __('Midfield')],
-                                'defense' => ['icon' => '🛡', 'label' => __('Defense')],
-                                'goalkeeper' => ['icon' => '🧤', 'label' => __('Goalkeeper')],
+                                'attack'     => ['icon' => '⚡', 'label' => __('Attack'),     'color' => 'from-rose-500 to-rose-600'],
+                                'midfield'   => ['icon' => '⚙️', 'label' => __('Midfield'),   'color' => 'from-emerald-500 to-emerald-600'],
+                                'defense'    => ['icon' => '🛡', 'label' => __('Defense'),    'color' => 'from-blue-500 to-blue-600'],
+                                'goalkeeper' => ['icon' => '🧤', 'label' => __('Goalkeeper'), 'color' => 'from-amber-500 to-amber-600'],
                             ];
                         @endphp
+
                         @foreach (['attack', 'midfield', 'defense', 'goalkeeper'] as $slot)
                             @php $players = $picks['lineup'][$slot] ?? collect(); @endphp
-                            <div class="relative mb-3 last:mb-0">
-                                <div
-                                    class="text-[11px] font-bold uppercase tracking-wider text-white/80 mb-2 flex items-center gap-1">
+                            @if($players->isEmpty()) @continue @endif
+                            <div class="relative mb-4 last:mb-0">
+                                <div class="mb-2 flex items-center justify-center gap-1
+                                            {{ $isAr ? 'text-[11px] font-bold' : 'text-[10px] uppercase tracking-widest font-bold' }}
+                                            text-white/80">
                                     <span>{{ $slotMeta[$slot]['icon'] }}</span>
                                     <span>{{ $slotMeta[$slot]['label'] }}</span>
+                                    <span class="text-white/50">— {{ count($players) }}</span>
                                 </div>
-                                <div class="grid gap-2"
-                                    style="grid-template-columns: repeat({{ count($players) }}, minmax(0, 1fr));">
+
+                                <div class="flex items-center justify-center gap-2 sm:gap-4 md:gap-5 flex-wrap">
                                     @foreach ($players as $p)
-                                        <div
-                                            class="rounded-xl bg-white/10 backdrop-blur border border-white/30 p-3 text-center text-white">
-                                            <div class="font-bold text-xs truncate">{{ $p->localized('name') }}</div>
-                                            <div class="text-[10px] text-white/80 truncate">{{ $p->club?->localized('name') }}
+                                        @php
+                                            $photo = $p->photo_path
+                                                ? \Illuminate\Support\Facades\Storage::url($p->photo_path)
+                                                : null;
+                                        @endphp
+                                        <div class="relative rounded-2xl p-2 sm:p-2.5 text-center w-[72px] h-[96px] sm:w-[92px] sm:h-[108px] flex flex-col items-center justify-center text-white overflow-hidden shadow-md">
+                                            {{-- Per-position gradient fill (matches ballot). --}}
+                                            <div class="absolute inset-0 bg-gradient-to-br {{ $slotMeta[$slot]['color'] }} opacity-90"></div>
+                                            <div class="relative flex flex-col items-center">
+                                                @if($photo)
+                                                    <img src="{{ $photo }}" alt="{{ $p->localized('name') }}"
+                                                         class="w-11 h-11 rounded-full object-cover border-2 border-white shadow">
+                                                @else
+                                                    <div class="w-11 h-11 rounded-full bg-white/25 flex items-center justify-center text-base font-extrabold">
+                                                        {{ mb_strtoupper(mb_substr($p->localized('name') ?? '?', 0, 1)) }}
+                                                    </div>
+                                                @endif
+                                                <div class="font-bold text-[11px] truncate max-w-[80px] mt-1.5">{{ $p->localized('name') }}</div>
+                                                <div class="text-[9px] text-white/85 truncate max-w-[80px]">{{ $p->club?->localized('name') }}</div>
                                             </div>
                                         </div>
                                     @endforeach
