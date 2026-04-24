@@ -50,53 +50,61 @@
 
         {{--
           Nationality — visual two-card picker.
-          Drives voter-ballot filtering on the Best Saudi / Best
-          Foreign awards. Required on create, preserved on update.
+          Previously the active/inactive classes were baked server-side
+          from $currentNationality, so clicking the "other" card did
+          flip the radio but the coloured border / checkmark didn't
+          move — it looked broken. Alpine now drives the visual state
+          off `pick` so the UI follows the click live. The radio still
+          carries the value for form submission.
         --}}
         @php
             $currentNationality = old('nationality', $player->nationality?->value ?? 'saudi');
         @endphp
-        <div>
+        <div x-data="{ pick: @js($currentNationality) }">
             <label class="block text-sm font-medium text-slate-700 mb-2">
                 {{ __('Nationality') }} <span class="text-rose-600">*</span>
             </label>
             <div class="grid grid-cols-2 gap-3">
-                <label class="relative flex items-center gap-3 rounded-2xl border-2 p-4 cursor-pointer transition
-                              {{ $currentNationality === 'saudi'
+                {{-- Saudi card --}}
+                <label class="relative flex items-center gap-3 rounded-2xl border-2 p-4 cursor-pointer transition"
+                       :class="pick === 'saudi'
                                  ? 'border-brand-500 bg-brand-50'
-                                 : 'border-ink-200 bg-white hover:border-brand-300' }}">
+                                 : 'border-ink-200 bg-white hover:border-brand-300'">
                     <input type="radio" name="nationality" value="saudi" required
-                           class="sr-only peer"
-                           @checked($currentNationality === 'saudi')>
-                    <div class="w-12 h-12 rounded-xl bg-brand-100 text-brand-700 flex items-center justify-center text-2xl flex-shrink-0">🇸🇦</div>
+                           class="sr-only"
+                           x-model="pick">
+                    <div class="w-12 h-12 rounded-xl bg-brand-100 text-brand-700 flex items-center justify-center text-lg font-extrabold flex-shrink-0">SA</div>
                     <div class="flex-1 min-w-0">
                         <div class="font-extrabold text-ink-900">{{ __('Saudi') }}</div>
                         <div class="text-xs text-ink-500">{{ __('Eligible for Best Saudi Player award.') }}</div>
                     </div>
-                    <span class="w-5 h-5 rounded-full border-2 flex items-center justify-center transition
-                                 {{ $currentNationality === 'saudi' ? 'border-brand-600 bg-brand-600' : 'border-ink-300' }}">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="w-3 h-3 text-white {{ $currentNationality === 'saudi' ? 'opacity-100' : 'opacity-0' }}"
+                    <span class="w-5 h-5 rounded-full border-2 flex items-center justify-center transition"
+                          :class="pick === 'saudi' ? 'border-brand-600 bg-brand-600' : 'border-ink-300'">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="w-3 h-3 text-white transition"
+                             :class="pick === 'saudi' ? 'opacity-100' : 'opacity-0'"
                              viewBox="0 0 20 20" fill="currentColor">
                             <path fill-rule="evenodd" d="M16.7 5.3a1 1 0 010 1.4l-8 8a1 1 0 01-1.4 0l-4-4a1 1 0 011.4-1.4L8 12.6l7.3-7.3a1 1 0 011.4 0z" clip-rule="evenodd"/>
                         </svg>
                     </span>
                 </label>
 
-                <label class="relative flex items-center gap-3 rounded-2xl border-2 p-4 cursor-pointer transition
-                              {{ $currentNationality === 'foreign'
+                {{-- Non-Saudi card --}}
+                <label class="relative flex items-center gap-3 rounded-2xl border-2 p-4 cursor-pointer transition"
+                       :class="pick === 'foreign'
                                  ? 'border-amber-500 bg-amber-50'
-                                 : 'border-ink-200 bg-white hover:border-amber-300' }}">
+                                 : 'border-ink-200 bg-white hover:border-amber-300'">
                     <input type="radio" name="nationality" value="foreign" required
-                           class="sr-only peer"
-                           @checked($currentNationality === 'foreign')>
-                    <div class="w-12 h-12 rounded-xl bg-amber-100 text-amber-700 flex items-center justify-center text-2xl flex-shrink-0">🌍</div>
+                           class="sr-only"
+                           x-model="pick">
+                    <div class="w-12 h-12 rounded-xl bg-amber-100 text-amber-700 flex items-center justify-center text-xl flex-shrink-0">✈</div>
                     <div class="flex-1 min-w-0">
                         <div class="font-extrabold text-ink-900">{{ __('Non-Saudi') }}</div>
                         <div class="text-xs text-ink-500">{{ __('Eligible for Best Foreign Player award.') }}</div>
                     </div>
-                    <span class="w-5 h-5 rounded-full border-2 flex items-center justify-center transition
-                                 {{ $currentNationality === 'foreign' ? 'border-amber-500 bg-amber-500' : 'border-ink-300' }}">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="w-3 h-3 text-white {{ $currentNationality === 'foreign' ? 'opacity-100' : 'opacity-0' }}"
+                    <span class="w-5 h-5 rounded-full border-2 flex items-center justify-center transition"
+                          :class="pick === 'foreign' ? 'border-amber-500 bg-amber-500' : 'border-ink-300'">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="w-3 h-3 text-white transition"
+                             :class="pick === 'foreign' ? 'opacity-100' : 'opacity-0'"
                              viewBox="0 0 20 20" fill="currentColor">
                             <path fill-rule="evenodd" d="M16.7 5.3a1 1 0 010 1.4l-8 8a1 1 0 01-1.4 0l-4-4a1 1 0 011.4-1.4L8 12.6l7.3-7.3a1 1 0 011.4 0z" clip-rule="evenodd"/>
                         </svg>
