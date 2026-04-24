@@ -195,12 +195,19 @@
                 </span>
             </header>
 
-            <div class="p-5 md:p-6">
-                <div class="rounded-3xl bg-gradient-to-b from-emerald-700 to-emerald-900 p-5 md:p-8 relative overflow-hidden">
+            <div class="p-4 md:p-5">
+                {{--
+                  Pitch redesign: slot tiles no longer stretch to fill
+                  the pitch width — that made each tile as tall as a
+                  banner. Now the grid is centered with a fixed per-tile
+                  width (~72-80px), so all 11 tiles feel like actual
+                  player badges, and the pitch is just the backdrop.
+                --}}
+                <div class="rounded-3xl bg-gradient-to-b from-emerald-700 to-emerald-900 px-3 py-5 md:py-6 relative overflow-hidden">
                     <div class="absolute inset-0 opacity-15" style="background: repeating-linear-gradient(180deg, #fff 0 2px, transparent 2px 60px);"></div>
                     <div class="absolute inset-0 pointer-events-none">
                         <div class="absolute inset-x-0 top-1/2 border-t-2 border-white/20"></div>
-                        <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-20 h-20 rounded-full border-2 border-white/20"></div>
+                        <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-16 h-16 rounded-full border-2 border-white/20"></div>
                     </div>
 
                     @foreach(['attack','midfield','defense','goalkeeper'] as $slot)
@@ -213,35 +220,38 @@
                                 'goalkeeper' => ['icon' => '🧤', 'label' => __('Goalkeeper'), 'color' => 'from-amber-500 to-amber-600'],
                             ][$slot];
                         @endphp
-                        <div class="relative mb-3 last:mb-0">
-                            <div class="text-[10px] font-bold uppercase tracking-widest text-white/80 mb-2 flex items-center gap-1">
+                        <div class="relative mb-4 last:mb-0">
+                            <div class="text-[10px] font-bold uppercase tracking-widest text-white/80 mb-2 flex items-center gap-1 justify-center">
                                 <span>{{ $meta['icon'] }}</span>
                                 <span>{{ $meta['label'] }}</span>
                                 <span class="text-white/50">— {{ $count }}</span>
                             </div>
-                            <div class="grid gap-2" style="grid-template-columns: repeat({{ $count }}, minmax(0,1fr));">
+                            {{-- Centered row; each tile is compact
+                                 (72px wide, 84px tall) regardless of how
+                                 wide the pitch gets. Wraps on narrow
+                                 screens so 4 attackers never squish. --}}
+                            <div class="flex items-center justify-center gap-2 flex-wrap">
                                 @for($i = 0; $i < $count; $i++)
                                     <button type="button" @click="openSlot('tos_{{ $slot }}', {{ $i }})"
-                                            class="relative rounded-xl bg-white/10 hover:bg-white/20 backdrop-blur border-2 border-dashed border-white/30 p-3 text-center transition min-h-[92px] flex flex-col items-center justify-center text-white overflow-hidden group">
+                                            class="relative rounded-xl bg-white/10 hover:bg-white/20 backdrop-blur border-2 border-dashed border-white/30 p-2 text-center transition w-[72px] h-[84px] flex flex-col items-center justify-center text-white overflow-hidden group">
                                         <template x-if="picks['tos_{{ $slot }}'][{{ $i }}]">
-                                            <div class="relative w-full">
-                                                <div class="absolute inset-0 bg-gradient-to-br {{ $meta['color'] }} opacity-90 -m-3 rounded-xl"></div>
-                                                <div class="relative">
+                                            <div class="relative w-full h-full flex flex-col items-center justify-center">
+                                                <div class="absolute inset-0 bg-gradient-to-br {{ $meta['color'] }} opacity-90 -m-2 rounded-xl"></div>
+                                                <div class="relative flex flex-col items-center">
                                                     <template x-if="picks['tos_{{ $slot }}'][{{ $i }}]?.photo">
-                                                        <img :src="picks['tos_{{ $slot }}'][{{ $i }}]?.photo" class="w-10 h-10 rounded-full mx-auto object-cover border-2 border-white">
+                                                        <img :src="picks['tos_{{ $slot }}'][{{ $i }}]?.photo" class="w-8 h-8 rounded-full object-cover border-2 border-white">
                                                     </template>
                                                     <template x-if="!picks['tos_{{ $slot }}'][{{ $i }}]?.photo">
-                                                        <div class="w-10 h-10 rounded-full mx-auto bg-white/20 flex items-center justify-center text-base mt-0.5">👤</div>
+                                                        <div class="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center text-sm">👤</div>
                                                     </template>
-                                                    <div class="font-bold text-[11px] truncate mt-1.5" x-text="picks['tos_{{ $slot }}'][{{ $i }}]?.name"></div>
-                                                    <div class="text-[9px] text-white/80 truncate" x-text="picks['tos_{{ $slot }}'][{{ $i }}]?.club_name"></div>
+                                                    <div class="font-bold text-[10px] truncate max-w-[64px] mt-1" x-text="picks['tos_{{ $slot }}'][{{ $i }}]?.name"></div>
                                                 </div>
                                             </div>
                                         </template>
                                         <template x-if="!picks['tos_{{ $slot }}'][{{ $i }}]">
                                             <div class="text-white/70 group-hover:text-white group-hover:scale-110 transition">
-                                                <div class="text-2xl leading-none">＋</div>
-                                                <div class="text-[9px] uppercase tracking-wider mt-1">{{ __('Add') }}</div>
+                                                <div class="text-xl leading-none">＋</div>
+                                                <div class="text-[9px] uppercase tracking-wider mt-0.5">{{ __('Add') }}</div>
                                             </div>
                                         </template>
                                     </button>
