@@ -72,7 +72,7 @@
 
         {{-- When the committee has announced the results publicly,
              also expose the public URL so admins can share it. --}}
-        @if(optional($campaign->results_visibility ?? null)->value === 'announced' || (string)($campaign->results_visibility ?? '') === 'announced')
+        @if(optional($campaign->results_visibility)->value === 'announced')
             <a href="{{ route('public.results', $campaign->public_token) }}" target="_blank"
                class="inline-flex items-center gap-2 rounded-xl border border-emerald-300 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 px-4 py-2.5 text-sm font-medium transition">
                 <span aria-hidden="true">📣</span>
