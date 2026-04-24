@@ -86,18 +86,23 @@ final class ClubVotingController extends Controller
             return redirect()->route('voting.club.alreadyVoted', $token);
         }
 
-        // H-4 fix — session fixation. Rotate the session id before
-        // elevating the visitor from "anonymous" to "signed-in voter".
-        // Without this, a cookie planted by an attacker on the victim's
-        // browser (shared kiosk, non-HTTPS dev, sibling subdomain) would
-        // inherit the authenticated-voter state and let the attacker
-        // hijack the ballot.
-        $request->session()->regenerate();
-
+        // H-4 fix — session fixation. Write the voter state FIRST,
+        // THEN rotate the session id (migrate:true is the default and
+        // preserves data). Doing it in this order is important: if we
+        // regenerate first and the session save on the next line races
+        // with the outgoing Set-Cookie header under some drivers, the
+        // club_voter:{token} write can land on the old session id and
+        // disappear — which shows up for the voter as "ballot takes the
+        // vote, submit loops back to the entry page".
         session(["club_voter:$token" => [
             'player_id'  => $player->id,
             'started_at' => now()->toIso8601String(),
         ]]);
+        session()->save();
+
+        // Only regenerate the ID (not the token), and only after the
+        // voter payload is persisted. migrate:true means data follows.
+        $request->session()->migrate(true);
 
         return redirect()->route('voting.club.ballot', $token);
     }

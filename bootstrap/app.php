@@ -31,6 +31,21 @@ return Application::configure(basePath: dirname(__DIR__))
                 ], 419);
             }
 
+            // Voter flow — any 419 here would otherwise dump the voter
+            // back onto the same ballot with stale form values via
+            // withInput(), making it look like the "submit" button
+            // refreshes the page without doing anything. Send them to
+            // the entry page so the start() flow re-issues a clean
+            // session + CSRF token.
+            if ($request->is('vote/club/*')) {
+                $token = explode('/', $request->path())[2] ?? null;
+                return $token
+                    ? redirect()->route('voting.club.show', $token)
+                        ->with('warning', __('Your session has expired. Please try again.'))
+                    : redirect('/')
+                        ->with('warning', __('Your session has expired. Please try again.'));
+            }
+
             $redirectTo = $request->is('login') || $request->is('*/login')
                 ? route('login')
                 : (url()->previous() ?: '/');
