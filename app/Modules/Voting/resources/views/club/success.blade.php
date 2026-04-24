@@ -12,6 +12,27 @@
         </p>
     </div>
 
+    {{-- Results announced? Show a big, friendly link so the voter
+         can tap straight to the public winners page. Previously
+         the success screen had no way back to the announcement. --}}
+    @if(optional($campaign->results_visibility)->value === 'announced')
+        <a href="{{ route('public.results', $campaign->public_token) }}"
+           class="block rounded-3xl bg-gradient-to-br from-emerald-600 via-emerald-700 to-emerald-800 text-white p-5 md:p-6 shadow-lg hover:shadow-xl transition group">
+            <div class="flex items-center gap-4">
+                <div class="w-14 h-14 rounded-2xl bg-white/20 backdrop-blur flex items-center justify-center text-3xl flex-shrink-0">
+                    🏆
+                </div>
+                <div class="flex-1 min-w-0">
+                    <div class="text-[11px] font-semibold uppercase tracking-wider text-white/70">{{ __('Results announced') }}</div>
+                    <div class="text-lg md:text-xl font-extrabold mt-0.5">{{ __('See the winners') }}</div>
+                </div>
+                <span class="opacity-70 group-hover:opacity-100 group-hover:translate-x-1 rtl:group-hover:-translate-x-1 transition text-xl">
+                    →
+                </span>
+            </div>
+        </a>
+    @endif
+
     @isset($picks)
         {{-- ── Picks recap — shown once, the first time the user
              lands on success after submit. `with(...)` puts it in the

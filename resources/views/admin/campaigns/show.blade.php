@@ -55,6 +55,31 @@
             <span aria-hidden="true">🔗</span>
             <span>{{ __('Manage club voting links') }}</span>
         </a>
+
+        {{-- Results shortcut — surfaced on every campaign from "active"
+             onward. Admin can land straight on the calculate/approve/
+             announce dashboard without hunting through the side nav. --}}
+        @php
+            $showResults = in_array($campaign->status->value, ['active', 'closed', 'archived'], true);
+        @endphp
+        @if($showResults)
+            <a href="{{ route('admin.results.show', $campaign) }}"
+               class="inline-flex items-center gap-2 rounded-xl border border-ink-200 bg-white hover:bg-ink-50 text-ink-700 px-4 py-2.5 text-sm font-medium transition">
+                <span aria-hidden="true">🏆</span>
+                <span>{{ __('View results') }}</span>
+            </a>
+        @endif
+
+        {{-- When the committee has announced the results publicly,
+             also expose the public URL so admins can share it. --}}
+        @if(optional($campaign->results_visibility ?? null)->value === 'announced' || (string)($campaign->results_visibility ?? '') === 'announced')
+            <a href="{{ route('public.results', $campaign->public_token) }}" target="_blank"
+               class="inline-flex items-center gap-2 rounded-xl border border-emerald-300 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 px-4 py-2.5 text-sm font-medium transition">
+                <span aria-hidden="true">📣</span>
+                <span>{{ __('Public results page') }}</span>
+                <span class="opacity-60">↗</span>
+            </a>
+        @endif
     </div>
 
     <x-admin.campaigns.danger-zone :campaign="$campaign" />

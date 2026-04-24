@@ -25,14 +25,29 @@
         </div>
     </div>
 
-    {{-- Info stripe — explains what happens next in warm brand tones --}}
-    <div class="rounded-2xl border border-brand-200 bg-brand-50 p-5 text-sm text-brand-800 flex items-start gap-3">
-        <span class="text-xl leading-none">📢</span>
-        <div>
-            <div class="font-bold mb-1">{{ __('What happens next?') }}</div>
-            <p class="text-brand-700 leading-7">{{ __('Results will be announced by the committee once the campaign ends.') }}</p>
+    {{-- When results are already public, skip the "wait for the
+         committee" stripe and show a direct link to them instead. --}}
+    @if(optional($campaign->results_visibility)->value === 'announced')
+        <a href="{{ route('public.results', $campaign->public_token) }}"
+           class="block rounded-2xl bg-gradient-to-br from-emerald-600 via-emerald-700 to-emerald-800 text-white p-5 shadow-md hover:shadow-lg transition group">
+            <div class="flex items-center gap-3">
+                <div class="w-12 h-12 rounded-xl bg-white/20 backdrop-blur flex items-center justify-center text-2xl flex-shrink-0">🏆</div>
+                <div class="flex-1 min-w-0">
+                    <div class="text-[11px] font-semibold uppercase tracking-wider text-white/70">{{ __('Results announced') }}</div>
+                    <div class="text-lg font-extrabold mt-0.5">{{ __('See the winners') }}</div>
+                </div>
+                <span class="opacity-70 group-hover:opacity-100 group-hover:translate-x-1 rtl:group-hover:-translate-x-1 transition text-xl">→</span>
+            </div>
+        </a>
+    @else
+        <div class="rounded-2xl border border-brand-200 bg-brand-50 p-5 text-sm text-brand-800 flex items-start gap-3">
+            <span class="text-xl leading-none">📢</span>
+            <div>
+                <div class="font-bold mb-1">{{ __('What happens next?') }}</div>
+                <p class="text-brand-700 leading-7">{{ __('Results will be announced by the committee once the campaign ends.') }}</p>
+            </div>
         </div>
-    </div>
+    @endif
 
     {{-- Voters arrive here from a deep club link; the "campaigns
          list" fallback is unfamiliar so the primary CTA is just
