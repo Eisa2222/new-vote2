@@ -233,25 +233,25 @@
                             <div class="flex items-center justify-center gap-2 flex-wrap">
                                 @for($i = 0; $i < $count; $i++)
                                     <button type="button" @click="openSlot('tos_{{ $slot }}', {{ $i }})"
-                                            class="relative rounded-xl bg-white/10 hover:bg-white/20 backdrop-blur border-2 border-dashed border-white/30 p-2 text-center transition w-[72px] h-[84px] flex flex-col items-center justify-center text-white overflow-hidden group">
+                                            class="relative rounded-2xl bg-white/10 hover:bg-white/20 backdrop-blur border-2 border-dashed border-white/30 p-2.5 text-center transition w-[92px] h-[108px] flex flex-col items-center justify-center text-white overflow-hidden group">
                                         <template x-if="picks['tos_{{ $slot }}'][{{ $i }}]">
                                             <div class="relative w-full h-full flex flex-col items-center justify-center">
-                                                <div class="absolute inset-0 bg-gradient-to-br {{ $meta['color'] }} opacity-90 -m-2 rounded-xl"></div>
+                                                <div class="absolute inset-0 bg-gradient-to-br {{ $meta['color'] }} opacity-90 -m-2.5 rounded-2xl"></div>
                                                 <div class="relative flex flex-col items-center">
                                                     <template x-if="picks['tos_{{ $slot }}'][{{ $i }}]?.photo">
-                                                        <img :src="picks['tos_{{ $slot }}'][{{ $i }}]?.photo" class="w-8 h-8 rounded-full object-cover border-2 border-white">
+                                                        <img :src="picks['tos_{{ $slot }}'][{{ $i }}]?.photo" class="w-11 h-11 rounded-full object-cover border-2 border-white shadow">
                                                     </template>
                                                     <template x-if="!picks['tos_{{ $slot }}'][{{ $i }}]?.photo">
-                                                        <div class="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center text-sm">👤</div>
+                                                        <div class="w-11 h-11 rounded-full bg-white/25 flex items-center justify-center text-base">👤</div>
                                                     </template>
-                                                    <div class="font-bold text-[10px] truncate max-w-[64px] mt-1" x-text="picks['tos_{{ $slot }}'][{{ $i }}]?.name"></div>
+                                                    <div class="font-bold text-[11px] truncate max-w-[80px] mt-1.5" x-text="picks['tos_{{ $slot }}'][{{ $i }}]?.name"></div>
                                                 </div>
                                             </div>
                                         </template>
                                         <template x-if="!picks['tos_{{ $slot }}'][{{ $i }}]">
                                             <div class="text-white/70 group-hover:text-white group-hover:scale-110 transition">
-                                                <div class="text-xl leading-none">＋</div>
-                                                <div class="text-[9px] uppercase tracking-wider mt-0.5">{{ __('Add') }}</div>
+                                                <div class="text-2xl leading-none">＋</div>
+                                                <div class="text-[10px] uppercase tracking-wider mt-1">{{ __('Add') }}</div>
                                             </div>
                                         </template>
                                     </button>
