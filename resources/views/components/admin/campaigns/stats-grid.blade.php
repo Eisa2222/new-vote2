@@ -1,91 +1,92 @@
 @props(['campaign'])
 
 @php
-    // Pull a handful of aggregates in one pass so the view stays
-    // dumb. These are admin-only and campaigns are small (< a few
-    // dozen clubs), so the extra queries are fine.
-    $clubRows = $campaign->campaignClubs()->with('club')->get();
-    $attachedClubs = $clubRows->count();
-    $activeClubs = $clubRows->where('is_active', true)->count();
-    $totalVotes = (int) $campaign->votes_count;
+    // Pull the aggregates needed by the view in a single pass.
+    $clubRows       = $campaign->campaignClubs()->with('club')->get();
+    $attachedClubs  = $clubRows->count();
+    $activeClubs    = $clubRows->where('is_active', true)->count();
+    $totalVotes     = (int) $campaign->votes_count;
 
-    // Per-club quota is the new source of truth (campaign-level
-    // max_voters was removed). Sum across attached clubs; if any
-    // row is unlimited, treat the total cap as unlimited.
-    $anyUnlimited = $clubRows->contains(fn($r) => $r->max_voters === null);
-    $totalCap = $anyUnlimited ? null : (int) $clubRows->sum('max_voters');
+    // Per-club quota is the source of truth. Sum across attached clubs;
+    // any unlimited row means the combined cap is unlimited too.
+    $anyUnlimited = $clubRows->contains(fn ($r) => $r->max_voters === null);
+    $totalCap     = $anyUnlimited ? null : (int) $clubRows->sum('max_voters');
 
-    $progressPct = $totalCap && $totalCap > 0 ? min(100, (int) round(($totalVotes / $totalCap) * 100)) : null;
+    // "Eligible roster" = active players across attached clubs. This is
+    // the theoretical max voter base (one vote per player, per campaign)
+    // and the denominator we actually want for turnout — not the admin-set
+    // cap, which is usually a hard-limit safety net.
+    $eligiblePlayers = $attachedClubs > 0
+        ? \App\Modules\Players\Models\Player::active()
+            ->whereIn('club_id', $clubRows->pluck('club_id'))
+            ->count()
+        : 0;
 
-    // Eligible roster: active players across attached clubs = the
-    // theoretical maximum voter base for this campaign.
-    $eligiblePlayers =
-        $attachedClubs > 0
-            ? \App\Modules\Players\Models\Player::active()->whereIn('club_id', $clubRows->pluck('club_id'))->count()
-            : 0;
+    $turnoutPct = $eligiblePlayers > 0
+        ? min(100, (int) round(($totalVotes / $eligiblePlayers) * 100))
+        : 0;
 
-    $participation = $eligiblePlayers > 0 ? (int) round(($totalVotes / $eligiblePlayers) * 100) : 0;
-
-    // Time status — "ends in X days", "ended N days ago", "starts in X"
-    $now = now();
-    $timeLabel = null;
-    $timeHint = null;
+    // Countdown target: pre-start → start_at; during live → end_at;
+    // ended → null.
+    $now        = now();
+    $phase      = 'idle';       // pre | live | ended
+    $countdown  = null;         // ISO string the JS counts down to
+    $phaseLabel = __('Starts');
     if ($campaign->start_at > $now) {
-        $timeLabel = $campaign->start_at->diffForHumans($now, ['syntax' => \Carbon\CarbonInterface::DIFF_ABSOLUTE]);
-        $timeHint = __('Starts in');
+        $phase      = 'pre';
+        $countdown  = $campaign->start_at->toIso8601String();
+        $phaseLabel = __('Starts');
     } elseif ($campaign->end_at >= $now) {
-        $timeLabel = $campaign->end_at->diffForHumans($now, ['syntax' => \Carbon\CarbonInterface::DIFF_ABSOLUTE]);
-        $timeHint = __('Ends in');
+        $phase      = 'live';
+        $countdown  = $campaign->end_at->toIso8601String();
+        $phaseLabel = __('Ends in');
     } else {
-        $timeLabel = $campaign->end_at->diffForHumans($now, ['syntax' => \Carbon\CarbonInterface::DIFF_ABSOLUTE]);
-        $timeHint = __('Ended');
+        $phase      = 'ended';
+        $phaseLabel = __('Already ended');
     }
 @endphp
 
 <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
 
-    {{-- 1. Votes with progress bar (tracks the summed per-club caps) --}}
-    <div
-        class="relative bg-gradient-to-br from-emerald-600 to-emerald-800 text-white rounded-2xl p-5 shadow-lg overflow-hidden">
+    {{-- 1. Votes —————— hero card with turnout progress. ───────────── --}}
+    <div class="relative bg-gradient-to-br from-emerald-600 to-emerald-800 text-white rounded-2xl p-5 shadow-lg overflow-hidden">
         <div class="absolute -top-6 -end-6 text-7xl opacity-10">🗳</div>
         <div class="relative">
-            <div class="text-[11px] font-semibold uppercase tracking-wider text-white/75">{{ __('Votes') }}</div>
-            <div class="text-3xl font-extrabold tabular-nums mt-1" data-live-votes>{{ $totalVotes }}</div>
-            @if ($progressPct !== null)
-                <div class="mt-3 h-1.5 rounded-full bg-white/20 overflow-hidden">
+            <div class="text-[11px] font-semibold uppercase tracking-wider text-white/75">
+                {{ __('Total votes received') }}
+            </div>
+            <div class="text-4xl font-black tabular-nums mt-1 leading-none" data-live-votes>
+                {{ number_format($totalVotes) }}
+            </div>
+
+            {{-- Denominator chip — shows exact counts so the admin sees
+                 "X of Y eligible" instead of a bare percentage. --}}
+            <div class="mt-3 text-[11px] text-white/85 tabular-nums">
+                @if($eligiblePlayers > 0)
+                    {{ number_format($totalVotes) }} / {{ number_format($eligiblePlayers) }}
+                    {{ __('players') }}
+                    <span class="text-white/55 mx-1">·</span>
+                    <strong class="text-white">{{ $turnoutPct }}%</strong>
+                    {{ __('Turnout') }}
+                @else
+                    {{ __('No eligible players yet') }}
+                @endif
+            </div>
+
+            @if($eligiblePlayers > 0)
+                <div class="mt-2 h-1.5 rounded-full bg-white/20 overflow-hidden">
                     <div data-live-bar class="h-full bg-white rounded-full transition-all"
-                        style="width: {{ $progressPct }}%"></div>
+                         style="width: {{ $turnoutPct }}%"></div>
                 </div>
-                <div class="text-[11px] text-white/80 mt-1.5 tabular-nums">
-                    {{ $progressPct }}% {{ __('of total cap') }}
-                    <span class="text-white/60">({{ number_format($totalCap) }})</span>
-                </div>
-            @else
-                <div class="text-[11px] text-white/80 mt-3">∞ {{ __('unlimited') }}</div>
             @endif
         </div>
     </div>
 
-    {{-- 2. Participation: voters / eligible players --}}
-    <div class="bg-white border border-ink-200 rounded-2xl p-5 shadow-sm">
-        <div class="flex items-center justify-between">
-            <div class="text-[11px] font-semibold uppercase tracking-wider text-ink-500">{{ __('Participation') }}</div>
-            <div class="w-8 h-8 rounded-xl bg-brand-50 text-brand-700 flex items-center justify-center text-base">👥
-            </div>
-        </div>
-        <div class="text-3xl font-extrabold tabular-nums text-ink-900 mt-1">{{ $participation }}<span
-                class="text-lg text-ink-400">%</span></div>
-        <div class="text-xs text-ink-500 mt-1.5 tabular-nums">
-            {{ number_format($totalVotes) }} / {{ number_format($eligiblePlayers) }} {{ __('players') }}
-        </div>
-    </div>
-
-    {{-- 3. Clubs attached vs active --}}
+    {{-- 2. Clubs — attached vs active, with crisp ratio + microcopy. --}}
     <div class="bg-white border border-ink-200 rounded-2xl p-5 shadow-sm">
         <div class="flex items-center justify-between">
             <div class="text-[11px] font-semibold uppercase tracking-wider text-ink-500">{{ __('Clubs') }}</div>
-            <div class="w-8 h-8 rounded-xl bg-amber-50 text-amber-700 flex items-center justify-center text-base">🏟
-            </div>
+            <div class="w-8 h-8 rounded-xl bg-amber-50 text-amber-700 flex items-center justify-center text-base">🏟</div>
         </div>
         <div class="text-3xl font-extrabold tabular-nums text-ink-900 mt-1">
             {{ $activeClubs }}<span class="text-ink-400 text-lg">/{{ $attachedClubs }}</span>
@@ -93,16 +94,128 @@
         <div class="text-xs text-ink-500 mt-1.5">{{ __('active of attached') }}</div>
     </div>
 
-    {{-- 4. Time status — live "ends in X" / "ended N ago" --}}
+    {{-- 3. Quota — combined cap or ∞ when any row is unlimited. ───── --}}
     <div class="bg-white border border-ink-200 rounded-2xl p-5 shadow-sm">
         <div class="flex items-center justify-between">
-            <div class="text-[11px] font-semibold uppercase tracking-wider text-ink-500">{{ $timeHint }}</div>
-            <div class="w-8 h-8 rounded-xl bg-indigo-50 text-indigo-700 flex items-center justify-center text-base">⏱
+            <div class="text-[11px] font-semibold uppercase tracking-wider text-ink-500">{{ __('Max voters') }}</div>
+            <div class="w-8 h-8 rounded-xl bg-brand-50 text-brand-700 flex items-center justify-center text-base">👥</div>
+        </div>
+        <div class="text-3xl font-extrabold tabular-nums text-ink-900 mt-1">
+            {{ $totalCap !== null ? number_format($totalCap) : '∞' }}
+        </div>
+        <div class="text-xs text-ink-500 mt-1.5">
+            {{ $totalCap !== null ? __('combined across all clubs') : __('unlimited') }}
+        </div>
+    </div>
+
+    {{--
+      4. Live countdown — js ticks once a second so the value is always
+      accurate. Falls back to the raw Y-m-d pair on browsers without JS.
+    --}}
+    <div class="bg-white border border-indigo-200 rounded-2xl p-5 shadow-sm relative overflow-hidden"
+         x-data="campaignCountdown({
+             phase: @js($phase),
+             target: @js($countdown),
+             labels: {
+                 days: @js(__('days')),
+                 hours: @js(__('hours')),
+                 mins: @js(__('mins')),
+                 secs: @js(__('secs')),
+                 ended: @js(__('Already ended')),
+             }
+         })"
+         x-init="tick(); const h = setInterval(() => tick(), 1000);
+                 document.addEventListener('livewire:navigating', () => clearInterval(h));">
+        <div class="flex items-center justify-between">
+            <div class="text-[11px] font-semibold uppercase tracking-wider text-ink-500">{{ $phaseLabel }}</div>
+            <div class="w-8 h-8 rounded-xl bg-indigo-50 text-indigo-700 flex items-center justify-center text-base">⏱</div>
+        </div>
+
+        {{-- Live D/H/M/S blocks — big numerals so a glance tells the
+             admin how much time is left. Pulses subtly on update. --}}
+        <div class="mt-2" x-show="phase !== 'ended'">
+            <div class="flex items-baseline gap-2 flex-wrap tabular-nums">
+                <template x-if="days > 0">
+                    <div class="flex items-baseline gap-1">
+                        <span class="text-2xl font-black text-ink-900" x-text="days"></span>
+                        <span class="text-xs text-ink-500" x-text="labels.days"></span>
+                    </div>
+                </template>
+                <div class="flex items-baseline gap-1">
+                    <span class="text-2xl font-black text-ink-900" x-text="pad(hours)"></span>
+                    <span class="text-xs text-ink-500" x-text="labels.hours"></span>
+                </div>
+                <div class="flex items-baseline gap-1">
+                    <span class="text-2xl font-black text-ink-900" x-text="pad(minutes)"></span>
+                    <span class="text-xs text-ink-500" x-text="labels.mins"></span>
+                </div>
+                <div class="flex items-baseline gap-1">
+                    <span class="text-2xl font-black transition" :class="pulse ? 'text-brand-600 scale-110' : 'text-ink-900'"
+                          x-text="pad(seconds)"></span>
+                    <span class="text-xs text-ink-500" x-text="labels.secs"></span>
+                </div>
             </div>
         </div>
-        <div class="text-2xl font-extrabold text-ink-900 mt-1 leading-tight truncate">{{ $timeLabel }}</div>
-        <div class="text-xs text-ink-500 mt-1.5 tabular-nums">
-            {{ $campaign->start_at->format('Y-m-d') }} → {{ $campaign->end_at->format('Y-m-d') }}
+        <div x-show="phase === 'ended'" class="text-2xl font-black text-ink-900 mt-1" x-text="labels.ended"></div>
+
+        {{-- Date pair beneath, for context. --}}
+        <div class="text-xs text-ink-500 mt-2 tabular-nums">
+            {{ $campaign->start_at->format('Y-m-d H:i') }}
+            <span class="mx-1 opacity-60">→</span>
+            {{ $campaign->end_at->format('Y-m-d H:i') }}
         </div>
     </div>
 </div>
+
+{{-- Public voting link row — full width, easy to copy + share. ──── --}}
+<div class="bg-white border border-ink-200 rounded-2xl p-4 mb-6 flex items-center gap-3">
+    <div class="w-10 h-10 rounded-xl bg-brand-50 text-brand-700 flex items-center justify-center text-lg flex-shrink-0">🔗</div>
+    <div class="flex-1 min-w-0">
+        <div class="text-[11px] font-semibold uppercase tracking-wider text-ink-500">{{ __('Public voting link') }}</div>
+        <input data-public-link type="text" readonly value="{{ url('/vote/'.$campaign->public_token) }}"
+               onclick="this.select()"
+               class="w-full font-mono text-xs text-ink-800 bg-transparent border-0 p-0 mt-0.5 focus:outline-none">
+    </div>
+    <button type="button"
+            onclick="const i=this.parentElement.querySelector('[data-public-link]'); navigator.clipboard.writeText(i.value); this.innerText='✓ {{ __('Copied') }}'; setTimeout(()=>this.innerText='📋 {{ __('Copy') }}', 1500);"
+            class="inline-flex items-center gap-1.5 rounded-lg border border-ink-200 hover:bg-ink-50 text-ink-700 px-3 py-1.5 text-xs font-semibold transition flex-shrink-0">
+        📋 {{ __('Copy') }}
+    </button>
+</div>
+
+@push('scripts')
+<script>
+// Per-card Alpine factory: counts down every second. Kept inline here
+// because the stats-grid is the only component that uses it; promoting
+// to a separate JS file would be premature.
+function campaignCountdown({ phase, target, labels }) {
+    return {
+        phase, target, labels,
+        days: 0, hours: 0, minutes: 0, seconds: 0,
+        pulse: false,
+        pad(n) { return String(n).padStart(2, '0'); },
+        tick() {
+            if (this.phase === 'ended' || !this.target) {
+                this.phase = 'ended';
+                return;
+            }
+            const now  = new Date();
+            const end  = new Date(this.target);
+            let   diff = Math.max(0, end - now);
+            if (diff <= 0) {
+                this.phase = 'ended';
+                this.days = this.hours = this.minutes = this.seconds = 0;
+                return;
+            }
+            const d = Math.floor(diff / 86400000); diff -= d * 86400000;
+            const h = Math.floor(diff / 3600000);  diff -= h * 3600000;
+            const m = Math.floor(diff / 60000);    diff -= m * 60000;
+            const s = Math.floor(diff / 1000);
+            this.days = d; this.hours = h; this.minutes = m; this.seconds = s;
+            this.pulse = true;
+            setTimeout(() => this.pulse = false, 150);
+        },
+    };
+}
+</script>
+@endpush

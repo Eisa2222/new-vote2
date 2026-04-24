@@ -18,6 +18,28 @@ return Application::configure(basePath: dirname(__DIR__))
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions) {
+        // 419 "Page expired" (CSRF token mismatch / stale session).
+        // Happens when the browser holds an old session cookie — common
+        // after APP_KEY rotates, cache:clear, or leaving the login tab
+        // open past the session lifetime. A raw 419 error page is a
+        // dead-end; bounce back to login with a friendly message so
+        // Laravel issues a fresh cookie + token automatically.
+        $exceptions->render(function (\Illuminate\Session\TokenMismatchException $e, \Illuminate\Http\Request $request) {
+            if ($request->expectsJson()) {
+                return response()->json([
+                    'message' => __('Your session has expired. Please try again.'),
+                ], 419);
+            }
+
+            $redirectTo = $request->is('login') || $request->is('*/login')
+                ? route('login')
+                : (url()->previous() ?: '/');
+
+            return redirect($redirectTo)
+                ->withInput($request->except(['password', 'password_confirmation', '_token']))
+                ->with('warning', __('Your session has expired. Please try again.'));
+        });
+
         // Domain rule violations (e.g. "campaign already approved",
         // "votes exist") are *expected* failures, not bugs. Return them
         // as 422 with a clean JSON body for API clients; web requests
