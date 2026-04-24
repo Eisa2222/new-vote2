@@ -56,7 +56,22 @@
     };
 </script>
 <style>
-    body { font-family: '{{ app()->getLocale() === 'ar' ? 'Tajawal' : 'Inter' }}', system-ui, sans-serif; }
+    body {
+        font-family: '{{ app()->getLocale() === 'ar' ? 'Tajawal' : 'Inter' }}', system-ui, sans-serif;
+        /* Slightly larger base on Arabic — Tajawal reads smaller per-pixel
+           than Inter, so 16px Tajawal feels cramped next to 16px Inter.
+           Bumping to 17px only for Arabic keeps Latin UI unchanged. */
+        @if(app()->getLocale() === 'ar')
+        font-size: 17px;
+        line-height: 1.65;
+        @endif
+    }
+    @if(app()->getLocale() === 'ar')
+    /* Headings get a small uptick too so hero/title pairs don't
+       blend into body copy at the new 17px base size. */
+    h1 { letter-spacing: -0.01em; }
+    h1, h2, h3 { font-weight: 800; }
+    @endif
 
     /* --- Action buttons --------------------------------------------------
        One visual language for the whole app:
