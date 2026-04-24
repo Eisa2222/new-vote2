@@ -239,7 +239,16 @@ final class ClubVotingController extends Controller
             $foreign = Player::with('club')->find($picks['best_foreign_player_id'] ?? null);
             $lineup  = [];
             foreach (($picks['lineup'] ?? []) as $slot => $ids) {
-                $lineup[$slot] = Player::with('club')->whereIn('id', $ids)->get();
+                // Preserve the voter's submission ORDER. whereIn()->get()
+                // returns by primary-key default, so if the voter picked
+                // [10, 5, 7] the view would render [5, 7, 10] and it
+                // would look like the lineup was "shuffled". Re-order
+                // to match $ids exactly.
+                $byId = Player::with('club')->whereIn('id', $ids)->get()->keyBy('id');
+                $lineup[$slot] = collect($ids)
+                    ->map(fn ($id) => $byId->get((int) $id))
+                    ->filter()
+                    ->values();
             }
             $resolved = ['saudi' => $saudi, 'foreign' => $foreign, 'lineup' => $lineup];
         }
