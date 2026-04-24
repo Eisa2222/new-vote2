@@ -129,11 +129,11 @@
 
         <div class="flex items-end gap-3 flex-wrap">
             <div class="flex-1 min-w-[240px] max-w-sm">
-                <label class="block text-sm font-medium mb-1.5 text-ink-800">{{ __('Max voters per club (optional)') }}</label>
+                <label class="block text-sm font-medium mb-1.5 text-ink-800">{{ __('Default max voters for new clubs (optional)') }}</label>
                 <input type="number" name="max_voters" min="1"
                        placeholder="{{ __('Leave empty for unlimited') }}"
                        class="w-full rounded-xl border border-ink-200 bg-white px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-brand-500 transition">
-                <p class="mt-1 text-xs text-ink-500">{{ __('Only applied to newly-added clubs; existing rows keep their own value.') }}</p>
+                <p class="mt-1 text-xs text-ink-500">{{ __('Seeds the quota only for clubs being attached now. Each row below can be edited individually in the Max column.') }}</p>
             </div>
             <button class="inline-flex items-center gap-2 rounded-xl bg-brand-600 hover:bg-brand-700 text-white px-5 py-2.5 text-sm font-semibold shadow-sm transition">
                 <span aria-hidden="true">🔗</span>
@@ -195,7 +195,33 @@
                         </div>
                     </td>
 
-                    <td class="px-4 py-3 tabular-nums text-ink-500">{{ $row->max_voters ?? '∞' }}</td>
+                    {{-- Per-club Max voters — inline editor.
+                         Each row carries its own quota (was previously
+                         a campaign-level field). Change triggers an
+                         auto-save via the tiny ✓ button next to the
+                         input. Empty = unlimited. --}}
+                    <td class="px-4 py-3">
+                        <form method="post"
+                              action="{{ route('admin.campaigns.clubs.update', [$campaign, $row]) }}"
+                              class="flex items-center gap-1"
+                              x-data="{ dirty: false, original: @js((string)($row->max_voters ?? '')) }"
+                              @input="dirty = $event.target.value !== original">
+                            @csrf @method('PATCH')
+                            <input type="number" name="max_voters" min="1"
+                                   value="{{ $row->max_voters }}"
+                                   placeholder="∞"
+                                   class="w-20 rounded-lg border border-ink-200 bg-white px-2.5 py-1.5 text-xs tabular-nums text-center focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-brand-500 transition"
+                                   title="{{ __('Max voters (blank = unlimited)') }}">
+                            <input type="hidden" name="is_active" value="{{ $row->is_active ? 1 : 0 }}">
+                            <button type="submit"
+                                    x-show="dirty"
+                                    x-transition.opacity
+                                    class="inline-flex items-center justify-center w-7 h-7 rounded-lg bg-brand-600 hover:bg-brand-700 text-white transition"
+                                    title="{{ __('Save') }}">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M16.7 5.3a1 1 0 010 1.4l-8 8a1 1 0 01-1.4 0l-4-4a1 1 0 011.4-1.4L8 12.6l7.3-7.3a1 1 0 011.4 0z" clip-rule="evenodd"/></svg>
+                            </button>
+                        </form>
+                    </td>
 
                     {{-- Click-to-copy link chip --}}
                     <td class="px-4 py-3">
@@ -239,19 +265,9 @@
 
                     <td class="px-4 py-3">
                         <div class="flex items-center gap-2 flex-wrap">
-                            <form method="post" action="{{ route('admin.campaigns.clubs.update', [$campaign, $row]) }}"
-                                  class="flex items-center gap-1">
-                                @csrf @method('PATCH')
-                                <input type="number" name="max_voters" min="1" value="{{ $row->max_voters }}"
-                                       placeholder="∞"
-                                       class="w-20 rounded-lg border border-ink-200 px-2.5 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-brand-500"
-                                       title="{{ __('Max voters (blank = unlimited)') }}">
-                                <input type="hidden" name="is_active" value="{{ $row->is_active ? 1 : 0 }}">
-                                <button class="inline-flex items-center gap-1 rounded-lg border border-ink-200 hover:bg-ink-50 px-3 py-1.5 text-xs font-medium text-ink-700 transition"
-                                        title="{{ __('Save max voters') }}">
-                                    <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M16.7 5.3a1 1 0 010 1.4l-8 8a1 1 0 01-1.4 0l-4-4a1 1 0 011.4-1.4L8 12.6l7.3-7.3a1 1 0 011.4 0z" clip-rule="evenodd"/></svg>
-                                </button>
-                            </form>
+                            {{-- Max voters edit moved into its own
+                                 column so each row clearly owns a
+                                 quota; see the td above. --}}
 
                             <form method="post" action="{{ route('admin.campaigns.clubs.regenerate', [$campaign, $row]) }}"
                                   onsubmit="return confirm('{{ __('Generate a new token? The old link will stop working immediately.') }}')">

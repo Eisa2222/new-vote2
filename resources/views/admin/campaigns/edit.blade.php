@@ -61,12 +61,8 @@
                        value="{{ old('end_at', $campaign->end_at->format('Y-m-d\TH:i')) }}" required
                        class="w-full rounded-xl border border-ink-200 px-4 py-3">
             </div>
-            <div>
-                <label class="block text-sm font-medium mb-1.5">{{ __('Max voters') }}</label>
-                <input type="number" name="max_voters" value="{{ old('max_voters', $campaign->max_voters) }}" min="1"
-                       placeholder="{{ __('Optional') }}"
-                       class="w-full rounded-xl border border-ink-200 px-4 py-3">
-            </div>
+            {{-- Campaign-level max_voters removed — per-club quota
+                 lives on the Campaign Clubs page. --}}
         </div>
     </div>
 

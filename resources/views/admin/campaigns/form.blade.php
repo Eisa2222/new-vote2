@@ -66,12 +66,11 @@
                     {{ __('End date must be after the start date.') }}
                 </p>
             </div>
-            <div>
-                <label class="block text-sm font-medium mb-1">{{ __('Max voters') }}</label>
-                <input type="number" name="max_voters" value="{{ old('max_voters') }}" min="1"
-                       placeholder="{{ __('Optional') }}"
-                       class="w-full rounded-2xl border border-gray-300 px-4 py-3">
-            </div>
+            {{-- Campaign-level "Max voters" removed from the create
+                 flow — the quota is tracked per club on the Campaign
+                 Clubs page (each row has its own editable max_voters
+                 input), which matches how the business actually caps
+                 voting: per-club, not per-campaign. --}}
         </div>
 
         {{-- Club-scoped voting rules.

@@ -43,20 +43,19 @@
       pick up @apply in a raw <style> block, which leaves these
       buttons rendering as plain text links (user caught this in QA).
     --}}
+    {{-- Categories / candidates management removed from the admin
+         surface — the club-scoped ballot always runs the three fixed
+         awards (Best Saudi / Best Foreign / TOS) drawing from each
+         club's roster automatically, so a manual shortlist UI is no
+         longer part of the primary flow. Route still exists for
+         backwards compat. --}}
     <div class="flex items-center gap-2 mb-4 flex-wrap">
         <a href="{{ route('admin.campaigns.clubs.index', $campaign) }}"
            class="inline-flex items-center gap-2 rounded-xl bg-brand-600 hover:bg-brand-700 active:bg-brand-800 text-white px-5 py-2.5 text-sm font-semibold shadow-sm transition">
             <span aria-hidden="true">🔗</span>
             <span>{{ __('Manage club voting links') }}</span>
         </a>
-        <a href="{{ route('admin.categories.index', $campaign) }}"
-           class="inline-flex items-center gap-2 rounded-xl border border-ink-200 bg-white hover:bg-ink-50 text-ink-700 px-4 py-2.5 text-sm font-medium transition">
-            <span aria-hidden="true">+</span>
-            <span>{{ __('Manage categories & candidates') }}</span>
-        </a>
     </div>
-
-    <x-admin.campaigns.categories-list :campaign="$campaign" />
 
     <x-admin.campaigns.danger-zone :campaign="$campaign" />
 </div>
