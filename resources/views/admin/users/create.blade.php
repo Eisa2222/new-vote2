@@ -26,11 +26,11 @@
         <div>
             <label class="block text-sm font-medium text-slate-700 mb-1">
                 {{ __('Password') }}
-                <span class="text-slate-400 text-xs">({{ __('leave empty to send an invitation email') }})</span>
+                {{-- <span class="text-slate-400 text-xs">({{ __('leave empty to send an invitation email') }})</span> --}}
             </label>
             <div class="relative">
                 <input type="password" name="password" id="passwordInput" class="w-full border rounded-lg px-3 py-2 pr-10"
-                    autocomplete="new-password" placeholder="{{ __('Leave blank — we will email them a setup link') }}"
+                    autocomplete="new-password" placeholder="{{ __('Password') }}"
                     x-on:input="checkPassword($event.target.value)">
 
                 {{-- Toggle visibility button --}}
@@ -126,9 +126,7 @@
                 </div>
             </div>
 
-            <p class="mt-1.5 text-xs text-ink-500">
-                {{ __('If you leave this blank, the user gets an invitation email with a one-time link to choose their own password.') }}
-            </p>
+
         </div>
 
         <div>
