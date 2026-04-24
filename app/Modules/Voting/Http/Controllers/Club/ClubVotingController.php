@@ -57,7 +57,7 @@ final class ClubVotingController extends Controller
 
         return view('voting::club.entry', [
             'row'     => $row,
-            'campaign'=> $row->campaign,
+            'campaign' => $row->campaign,
             'club'    => $row->club,
             'players' => $resolve->execute($row),
         ]);
@@ -70,8 +70,11 @@ final class ClubVotingController extends Controller
         app(ValidateClubVotingEntryAction::class)->execute($row);
 
         $player = Player::active()->where('id', $request->integer('player_id'))->first();
-        abort_unless($player && $player->club_id === $row->club_id, 422,
-            __('The selected player does not belong to this club.'));
+        abort_unless(
+            $player && $player->club_id === $row->club_id,
+            422,
+            __('The selected player does not belong to this club.')
+        );
 
         // If this player already submitted a vote in this campaign,
         // don't even let them see the ballot again — send them to a
@@ -104,6 +107,7 @@ final class ClubVotingController extends Controller
     {
         $row   = $this->loadRow($token);
         $voter = $this->currentVoter($token, $row);
+
         if ($voter === null) {
             return redirect()->route('voting.club.show', $token);
         }
@@ -120,7 +124,8 @@ final class ClubVotingController extends Controller
             app(ValidateClubVotingEntryAction::class)->execute($row);
         } catch (VotingException $e) {
             return view('voting::club.unavailable', [
-                'campaign' => $row->campaign, 'club' => $row->club,
+                'campaign' => $row->campaign,
+                'club' => $row->club,
                 'reason'   => $e->getMessage(),
                 // Forward the voter so the unavailable screen can show
                 // their identity card — they stay "signed in".
@@ -138,7 +143,7 @@ final class ClubVotingController extends Controller
             ->whereNotNull('award_type')
             ->where('is_active', true)
             ->pluck('award_type')
-            ->map(fn ($v) => $v instanceof AwardType ? $v->value : $v)
+            ->map(fn($v) => $v instanceof AwardType ? $v->value : $v)
             ->unique()
             ->all();
 

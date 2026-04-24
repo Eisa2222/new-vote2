@@ -10,8 +10,8 @@
             {{ __(':n roles configured', ['n' => $roles->count()]) }}
         </div>
         <a href="{{ route('admin.roles.create') }}"
-            class="inline-flex items-center gap-2 rounded-xl bg-brand-600 hover:bg-brand-700 text-white px-5 py-2.5 font-semibold shadow-brand">
-            <span class="text-lg">+</span>
+            class="inline-flex items-center gap-2 rounded-xl bg-brand-600 hover:bg-brand-700 text-white px-4 py-2.5 text-sm font-semibold shadow-sm transition flex-shrink-0">
+            <span>+</span>
             <span>{{ __('New role') }}</span>
         </a>
     </div>

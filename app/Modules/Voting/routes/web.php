@@ -43,20 +43,12 @@ Route::prefix('vote')->group(function () {
 | Rate-limited per IP; stricter on the POSTs than the GETs.
 */
 Route::prefix('vote/club')->name('voting.club.')->group(function () {
-    Route::get('{token}',           [ClubVotingController::class, 'show'])
-        ->middleware('throttle:60,1')->name('show');
-    Route::post('{token}/start',    [ClubVotingController::class, 'start'])
-        ->middleware('throttle:20,1')->name('start');
-    Route::get('{token}/ballot',    [ClubVotingController::class, 'ballot'])
-        ->middleware('throttle:60,1')->name('ballot');
-    Route::get('{token}/already-voted', [ClubVotingController::class, 'alreadyVoted'])
-        ->middleware('throttle:60,1')->name('alreadyVoted');
-    Route::post('{token}/submit',   [ClubVotingController::class, 'submit'])
-        ->middleware('throttle:10,1')->name('submit');
-    Route::get('{token}/success',   [ClubVotingController::class, 'success'])
-        ->name('success');
-    Route::get('{token}/profile',   [ClubVotingController::class, 'profileForm'])
-        ->name('profile');
-    Route::post('{token}/profile',  [ClubVotingController::class, 'saveProfile'])
-        ->middleware('throttle:20,1')->name('profile.save');
+    Route::get('{token}',           [ClubVotingController::class, 'show'])->middleware('throttle:60,1')->name('show');
+    Route::post('{token}/start',    [ClubVotingController::class, 'start'])->middleware('throttle:20,1')->name('start');
+    Route::get('{token}/ballot',    [ClubVotingController::class, 'ballot'])->middleware('throttle:60,1')->name('ballot');
+    Route::get('{token}/already-voted', [ClubVotingController::class, 'alreadyVoted'])->middleware('throttle:60,1')->name('alreadyVoted');
+    Route::post('{token}/submit',   [ClubVotingController::class, 'submit'])->middleware('throttle:10,1')->name('submit');
+    Route::get('{token}/success',   [ClubVotingController::class, 'success'])->name('success');
+    Route::get('{token}/profile',   [ClubVotingController::class, 'profileForm'])->name('profile');
+    Route::post('{token}/profile',  [ClubVotingController::class, 'saveProfile'])->middleware('throttle:20,1')->name('profile.save');
 });

@@ -18,13 +18,27 @@ final class Campaign extends Model
     use SoftDeletes, HasTranslations;
 
     protected $fillable = [
-        'title_ar', 'title_en', 'description_ar', 'description_en',
-        'type', 'league_id', 'start_at', 'end_at', 'max_voters', 'public_token',
-        'status', 'results_visibility', 'created_by',
-        'committee_approved_at', 'committee_approved_by',
-        'committee_rejected_at', 'committee_rejected_by', 'committee_rejection_note',
+        'title_ar',
+        'title_en',
+        'description_ar',
+        'description_en',
+        'type',
+        'league_id',
+        'start_at',
+        'end_at',
+        'max_voters',
+        'public_token',
+        'status',
+        'results_visibility',
+        'created_by',
+        'committee_approved_at',
+        'committee_approved_by',
+        'committee_rejected_at',
+        'committee_rejected_by',
+        'committee_rejection_note',
         // New club-scoped voting flags.
-        'allow_self_vote', 'allow_teammate_vote',
+        'allow_self_vote',
+        'allow_teammate_vote',
     ];
 
     protected $casts = [

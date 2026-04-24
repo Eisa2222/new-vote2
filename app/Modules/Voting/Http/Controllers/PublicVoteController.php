@@ -44,8 +44,8 @@ final class PublicVoteController extends Controller
         // Filter out anything the availability service says isn't actually
         // voteable (e.g. end_at in past, max_voters hit). We still keep
         // "not started yet" so upcoming campaigns are visible as teasers.
-        $open     = $candidates->filter(fn ($c) => $avail->reasonFor($c) === CampaignAvailabilityService::OK)->values();
-        $upcoming = $candidates->filter(fn ($c) => $avail->reasonFor($c) === CampaignAvailabilityService::NOT_STARTED)->values();
+        $open     = $candidates->filter(fn($c) => $avail->reasonFor($c) === CampaignAvailabilityService::OK)->values();
+        $upcoming = $candidates->filter(fn($c) => $avail->reasonFor($c) === CampaignAvailabilityService::NOT_STARTED)->values();
 
         return view('voting::public_index', compact('open', 'upcoming'));
     }
@@ -218,8 +218,10 @@ final class PublicVoteController extends Controller
         // If this was a TOS vote, hydrate the submitted lineup from flashed session data
         // so the voter can see their picks on a pitch recap.
         $picks = null;
-        if ($campaign->type === CampaignType::TeamOfTheSeason
-            && ($lineup = session('submittedLineup')) !== null) {
+        if (
+            $campaign->type === CampaignType::TeamOfTheSeason
+            && ($lineup = session('submittedLineup')) !== null
+        ) {
             $picks = $this->resolveSubmittedPlayers($campaign, $lineup);
         }
 
