@@ -57,6 +57,14 @@
                 <span>{{ __('Manage club voting links') }}</span>
             </a>
 
+            {{-- Public stats dashboard — sharable URL. --}}
+            <a href="{{ route('public.campaigns.stats', $campaign->public_token) }}" target="_blank"
+                class="inline-flex items-center gap-2 rounded-xl border border-indigo-300 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 px-4 py-2.5 text-sm font-medium transition">
+                <span aria-hidden="true">📊</span>
+                <span>{{ __('Public stats page') }}</span>
+                <span class="opacity-60">↗</span>
+            </a>
+
             {{-- Results shortcut — surfaced on every campaign from "active"
              onward. Admin can land straight on the calculate/approve/
              announce dashboard without hunting through the side nav. --}}

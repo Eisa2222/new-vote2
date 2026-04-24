@@ -50,6 +50,69 @@ final class PublicVoteController extends Controller
         return view('voting::public_index', compact('open', 'upcoming'));
     }
 
+    /**
+     * Public statistics dashboard for a single campaign.
+     *
+     *   GET /campaigns/{token}/stats
+     *
+     * Shared-link-safe snapshot: campaign title, time remaining with
+     * a live countdown, total votes received, turnout against the
+     * eligible roster, club participation, and the public voting link.
+     * No PII — all aggregates. Works for both active and closed
+     * campaigns (closed campaigns show the final totals).
+     */
+    public function stats(string $token): View
+    {
+        $campaign = Campaign::where('public_token', $token)->firstOrFail();
+
+        // Aggregates. Kept inline here (no Action) because the only
+        // caller is this view.
+        $clubRows       = $campaign->campaignClubs()->with('club')->get();
+        $attachedClubs  = $clubRows->count();
+        $activeClubs    = $clubRows->where('is_active', true)->count();
+        $totalVotes     = (int) $campaign->votes()->count();
+
+        $anyUnlimited = $clubRows->contains(fn ($r) => $r->max_voters === null);
+        $totalCap     = $anyUnlimited ? null : (int) $clubRows->sum('max_voters');
+
+        $eligiblePlayers = $attachedClubs > 0
+            ? \App\Modules\Players\Models\Player::active()
+                ->whereIn('club_id', $clubRows->pluck('club_id'))
+                ->count()
+            : 0;
+
+        $turnoutPct = $eligiblePlayers > 0
+            ? min(100, (int) round(($totalVotes / $eligiblePlayers) * 100))
+            : 0;
+
+        // Per-club participation (sorted by current voter count, so the
+        // page doubles as a leaderboard). current_voters_count is the
+        // counter incremented on successful votes.
+        $perClub = $clubRows
+            ->map(fn ($r) => [
+                'club_name' => $r->club?->localized('name') ?? '—',
+                'votes'     => (int) $r->current_voters_count,
+                'max'       => $r->max_voters,
+                'is_active' => (bool) $r->is_active,
+                'logo'      => $r->club?->logo_path
+                    ? \Illuminate\Support\Facades\Storage::url($r->club->logo_path)
+                    : null,
+            ])
+            ->sortByDesc('votes')
+            ->values();
+
+        return view('voting::campaign_stats', [
+            'campaign'        => $campaign,
+            'totalVotes'      => $totalVotes,
+            'totalCap'        => $totalCap,
+            'eligiblePlayers' => $eligiblePlayers,
+            'turnoutPct'      => $turnoutPct,
+            'attachedClubs'   => $attachedClubs,
+            'activeClubs'     => $activeClubs,
+            'perClub'         => $perClub,
+        ]);
+    }
+
     public function show(string $token, CheckVoterSessionAction $check): View|RedirectResponse
     {
         $campaign = Campaign::where('public_token', $token)->firstOrFail();

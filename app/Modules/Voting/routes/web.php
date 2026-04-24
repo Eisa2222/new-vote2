@@ -8,6 +8,13 @@ use Illuminate\Support\Facades\Route;
 // Public directory of open campaigns — landing page for voters.
 Route::get('/campaigns', [PublicVoteController::class, 'index'])->middleware('throttle:120,1')->name('public.campaigns');
 
+// Public campaign stats dashboard — a shared link showing the campaign
+// title, live countdown, turnout, and per-club participation. Safe to
+// share on social media; displays aggregates only, no PII.
+Route::get('/campaigns/{token}/stats', [PublicVoteController::class, 'stats'])
+    ->middleware('throttle:120,1')
+    ->name('public.campaigns.stats');
+
 Route::prefix('vote')->group(function () {
     //
     Route::get('{token}', [PublicVoteController::class, 'show'])->middleware('throttle:60,1')->name('voting.show');
