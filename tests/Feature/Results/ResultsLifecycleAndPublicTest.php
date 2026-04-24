@@ -161,7 +161,11 @@ it('public results page shows the result once announced', function () {
 
     $this->get("/results/{$c->public_token}")
         ->assertOk()
-        ->assertSee('Winner', false);
+        // View now announces winners by name + category label
+        // instead of the generic "Winner" eyebrow + ranking table.
+        // The scenario's category title is 'X'; that's what lands
+        // above the winner card.
+        ->assertSee('Official announcement', false);
 });
 
 it('public results returns 404 for unknown token — no info leakage', function () {
