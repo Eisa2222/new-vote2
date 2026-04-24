@@ -167,20 +167,47 @@
     </div>
 </div>
 
-{{-- Public voting link row — full width, easy to copy + share. ──── --}}
-<div class="bg-white border border-ink-200 rounded-2xl p-4 mb-6 flex items-center gap-3">
-    <div class="w-10 h-10 rounded-xl bg-brand-50 text-brand-700 flex items-center justify-center text-lg flex-shrink-0">🔗</div>
-    <div class="flex-1 min-w-0">
-        <div class="text-[11px] font-semibold uppercase tracking-wider text-ink-500">{{ __('Public voting link') }}</div>
-        <input data-public-link type="text" readonly value="{{ url('/vote/'.$campaign->public_token) }}"
-               onclick="this.select()"
-               class="w-full font-mono text-xs text-ink-800 bg-transparent border-0 p-0 mt-0.5 focus:outline-none">
+{{-- Public voting link + public stats link side-by-side. Admins
+     copy the voting link for voters and the stats link for sharing
+     the live dashboard (on social, WhatsApp, etc.). --}}
+<div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+    {{-- Voting link (for voters) --}}
+    <div class="bg-white border border-ink-200 rounded-2xl p-4 flex items-center gap-3">
+        <div class="w-10 h-10 rounded-xl bg-brand-50 text-brand-700 flex items-center justify-center text-lg flex-shrink-0">🔗</div>
+        <div class="flex-1 min-w-0">
+            <div class="text-[11px] font-semibold uppercase tracking-wider text-ink-500">{{ __('Public voting link') }}</div>
+            <input data-public-link type="text" readonly value="{{ url('/vote/'.$campaign->public_token) }}"
+                   onclick="this.select()"
+                   class="w-full font-mono text-xs text-ink-800 bg-transparent border-0 p-0 mt-0.5 focus:outline-none">
+        </div>
+        <a href="{{ url('/vote/'.$campaign->public_token) }}" target="_blank"
+           title="{{ __('Open') }}"
+           class="inline-flex items-center justify-center w-8 h-8 rounded-lg border border-ink-200 hover:bg-ink-50 text-xs transition flex-shrink-0">↗</a>
+        <button type="button"
+                onclick="const i=this.parentElement.querySelector('[data-public-link]'); navigator.clipboard.writeText(i.value); this.innerText='✓ {{ __('Copied') }}'; setTimeout(()=>this.innerText='📋 {{ __('Copy') }}', 1500);"
+                class="inline-flex items-center gap-1.5 rounded-lg border border-ink-200 hover:bg-ink-50 text-ink-700 px-3 py-1.5 text-xs font-semibold transition flex-shrink-0">
+            📋 {{ __('Copy') }}
+        </button>
     </div>
-    <button type="button"
-            onclick="const i=this.parentElement.querySelector('[data-public-link]'); navigator.clipboard.writeText(i.value); this.innerText='✓ {{ __('Copied') }}'; setTimeout(()=>this.innerText='📋 {{ __('Copy') }}', 1500);"
-            class="inline-flex items-center gap-1.5 rounded-lg border border-ink-200 hover:bg-ink-50 text-ink-700 px-3 py-1.5 text-xs font-semibold transition flex-shrink-0">
-        📋 {{ __('Copy') }}
-    </button>
+
+    {{-- Stats link (sharable dashboard) --}}
+    <div class="bg-white border border-indigo-200 rounded-2xl p-4 flex items-center gap-3">
+        <div class="w-10 h-10 rounded-xl bg-indigo-50 text-indigo-700 flex items-center justify-center text-lg flex-shrink-0">📊</div>
+        <div class="flex-1 min-w-0">
+            <div class="text-[11px] font-semibold uppercase tracking-wider text-indigo-600">{{ __('Public stats page') }}</div>
+            <input data-stats-link type="text" readonly value="{{ route('public.campaigns.stats', $campaign->public_token) }}"
+                   onclick="this.select()"
+                   class="w-full font-mono text-xs text-ink-800 bg-transparent border-0 p-0 mt-0.5 focus:outline-none">
+        </div>
+        <a href="{{ route('public.campaigns.stats', $campaign->public_token) }}" target="_blank"
+           title="{{ __('Open') }}"
+           class="inline-flex items-center justify-center w-8 h-8 rounded-lg border border-indigo-200 hover:bg-indigo-50 text-indigo-700 text-xs transition flex-shrink-0">↗</a>
+        <button type="button"
+                onclick="const i=this.parentElement.querySelector('[data-stats-link]'); navigator.clipboard.writeText(i.value); this.innerText='✓ {{ __('Copied') }}'; setTimeout(()=>this.innerText='📋 {{ __('Copy') }}', 1500);"
+                class="inline-flex items-center gap-1.5 rounded-lg border border-indigo-200 hover:bg-indigo-50 text-indigo-700 px-3 py-1.5 text-xs font-semibold transition flex-shrink-0">
+            📋 {{ __('Copy') }}
+        </button>
+    </div>
 </div>
 
 @push('scripts')

@@ -61,7 +61,7 @@
             endsIn: @js(__('Ends in')),
         }
      })"
-     x-init="tick(); setInterval(tick, 1000);">
+     x-init="tick(); setInterval(() => tick(), 1000);">
 
 <div class="max-w-6xl mx-auto px-3 md:px-6 py-6 md:py-10 space-y-6">
 
