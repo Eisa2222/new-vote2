@@ -11,7 +11,6 @@ use App\Modules\Results\Domain\ResultVisibilityRule;
 use App\Modules\Results\Enums\ResultStatus;
 use App\Modules\Results\Models\CampaignResult;
 use Illuminate\Contracts\View\View;
-use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 
 final class PublicResultsController extends Controller
 {
@@ -49,9 +48,19 @@ final class PublicResultsController extends Controller
             ->with('items.candidate.player.club', 'items.candidate.club', 'items.category')
             ->first();
 
-        // Do NOT leak that the result exists but is hidden — return a plain 404.
+        // When results aren't public yet, show a friendly "coming soon"
+        // page instead of a 404. The campaign itself is already public
+        // (existence known via /campaigns/{token}/stats), so 404 would
+        // be misleading anyway. We only reveal whether voting is still
+        // running or has closed — no ranking data leaks.
         if (! $vis->isPublic($campaign, $result)) {
-            throw new NotFoundHttpException();
+            return view('results::coming_soon', [
+                'campaign' => $campaign,
+                // Two phases the visitor might be in:
+                //   • voting still open → "voting hasn't ended yet"
+                //   • voting closed but committee hasn't announced → "being reviewed"
+                'phase' => now()->lt($campaign->end_at) ? 'voting_open' : 'awaiting_announcement',
+            ]);
         }
 
         $view = $campaign->type === CampaignType::TeamOfTheSeason

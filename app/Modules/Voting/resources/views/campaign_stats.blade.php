@@ -318,29 +318,29 @@
                 </div>
             </a>
         @else
-            {{-- Info-only panel — results aren't public yet. Styled as a
-                 passive status card (no hover, no cursor-pointer) so it
-                 doesn't look like a broken clickable target. Links to the
-                 announcements archive as a useful fallback. --}}
-            <div class="rounded-3xl bg-ink-50 border border-ink-200 p-5">
+            {{-- Not-yet-announced CTA — click takes the visitor to a
+                 dedicated "coming soon" page that explains exactly why
+                 (voting still open / awaiting committee review) and
+                 shows a live countdown to voting end. --}}
+            <a href="{{ route('public.results', $campaign->public_token) }}"
+               class="block rounded-3xl bg-gradient-to-br from-ink-100 to-ink-200 hover:from-ink-200 hover:to-ink-300 border border-ink-200 p-5 transition group">
                 <div class="flex items-center gap-4">
-                    <div class="w-14 h-14 rounded-2xl bg-ink-200 text-ink-500 flex items-center justify-center text-3xl">⏳</div>
+                    <div class="w-14 h-14 rounded-2xl bg-white text-ink-700 flex items-center justify-center text-3xl shadow-sm">⏳</div>
                     <div class="flex-1 min-w-0">
                         <div class="text-[11px] font-semibold text-ink-500
                                     {{ $isAr ? '' : 'uppercase tracking-widest' }}">
                             {{ __('Results') }}
                         </div>
-                        <div class="text-sm font-semibold text-ink-800 mt-0.5 leading-5">
-                            {{ __('Results will appear here once the committee announces them.') }}
+                        <div class="text-lg font-extrabold text-ink-900 mt-0.5 leading-tight">
+                            {{ __('Voting has not ended yet') }}
                         </div>
-                        <a href="{{ route('public.results.index') }}"
-                           class="inline-flex items-center gap-1 mt-1.5 text-xs text-brand-700 hover:underline font-semibold">
-                            {{ __('Browse announced results') }}
-                            <span>{{ $isAr ? '←' : '→' }}</span>
-                        </a>
+                        <div class="text-xs text-ink-600 mt-1 leading-5">
+                            {{ __('Results will be published immediately after voting ends.') }}
+                        </div>
                     </div>
+                    <span class="opacity-60 group-hover:opacity-100 group-hover:translate-x-1 rtl:group-hover:-translate-x-1 transition text-xl text-ink-500">→</span>
                 </div>
-            </div>
+            </a>
         @endif
 
         {{-- Share this page --}}

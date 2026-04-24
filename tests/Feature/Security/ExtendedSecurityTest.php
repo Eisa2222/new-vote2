@@ -5,6 +5,12 @@ declare(strict_types=1);
 use App\Modules\Campaigns\Models\Campaign;
 
 it('public results does not leak hidden result via direct token', function () {
+    // Behaviour change: /results/{token} now renders a "coming soon"
+    // view for unannounced campaigns (see PublicResultsController::show)
+    // instead of 404. The security invariant is unchanged — no ranking
+    // / winner data leaks — so this test now asserts the response
+    // cannot surface any winner names or vote counts from the hidden
+    // result. Unknown tokens still 404 via firstOrFail().
     seedRolesAndPermissions();
     $c = Campaign::create([
         'title_ar' => 'x', 'title_en' => 'x', 'type' => 'individual_award',
@@ -15,7 +21,10 @@ it('public results does not leak hidden result via direct token', function () {
     \App\Modules\Results\Models\CampaignResult::create([
         'campaign_id' => $c->id, 'status' => 'calculated',
     ]);
-    $this->get("/results/{$c->public_token}")->assertNotFound();
+    $this->get("/results/{$c->public_token}")
+        ->assertOk()
+        ->assertDontSee('Winner', false)
+        ->assertDontSee('votes_count', false);
 });
 
 it('submit endpoint enforces CSRF by web middleware', function () {

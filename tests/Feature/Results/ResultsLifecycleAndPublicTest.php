@@ -136,12 +136,20 @@ it('hide after announce still works (emergency takedown)', function () {
     expect($r->fresh()->status->value)->toBe('hidden');
 });
 
-it('public results page returns 404 for unannounced results', function () {
+it('public results page shows a "coming soon" view for unannounced results', function () {
+    // Behaviour changed by user request: instead of a bare 404 (which
+    // felt broken when a voter tapped the "Results" CTA on the stats
+    // page before the committee announced), we now render a friendly
+    // coming-soon view with a live countdown. The page deliberately
+    // does NOT leak any ranking data.
     $c = buildResultScenario();
     $this->actingAs(makeSuperAdmin());
     (new CalculateCampaignResultsAction())->execute($c);
 
-    $this->get("/results/{$c->public_token}")->assertNotFound();
+    $this->get("/results/{$c->public_token}")
+        ->assertOk()
+        // Generic coming-soon copy — no winner names or vote counts.
+        ->assertDontSee('Winner', false);
 });
 
 it('public results page shows the result once announced', function () {
