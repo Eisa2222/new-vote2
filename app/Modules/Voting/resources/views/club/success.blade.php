@@ -163,7 +163,12 @@
                     <span aria-hidden="true">✉️</span>
                     <span>{{ __('Add my contact details') }}</span>
                 </a>
-                <a href="{{ route('public.campaigns') }}" class="btn-ghost">
+                {{-- Finish: send the voter to this campaign's live
+                     stats page so they can see turnout + per-club
+                     participation and check back for the announcement
+                     later. (Used to go to the generic /campaigns list,
+                     which is disorienting after a deep-link entry.) --}}
+                <a href="{{ route('public.campaigns.stats', $campaign->public_token) }}" class="btn-ghost">
                     <span>{{ __('Finish') }}</span>
                 </a>
             </div>
