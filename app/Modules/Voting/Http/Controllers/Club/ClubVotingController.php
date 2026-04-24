@@ -278,8 +278,7 @@ final class ClubVotingController extends Controller
         }
 
         session()->forget("club_voter_done:$token");
-        return redirect()->route('public.campaigns')
-            ->with('success', __('Thank you! Your vote has been recorded.'));
+        return redirect()->route('public.results.index')->with('success', __('Thank you! Your vote has been recorded.'));
     }
 
     // ─── GET already voted ─────────────────────────────────────
