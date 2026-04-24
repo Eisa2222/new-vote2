@@ -88,19 +88,7 @@
                         </td>
 
                         <td class="px-4 py-3">
-                            @if (($u->status ?? 'active') === 'active')
-                                <span
-                                    class="inline-flex items-center gap-1 rounded-full bg-green-50 text-green-700 px-2.5 py-0.5 text-xs font-medium">
-                                    <span class="w-1.5 h-1.5 rounded-full bg-green-500"></span>
-                                    {{ __('Active') }}
-                                </span>
-                            @else
-                                <span
-                                    class="inline-flex items-center gap-1 rounded-full bg-ink-100 text-ink-500 px-2.5 py-0.5 text-xs font-medium">
-                                    <span class="w-1.5 h-1.5 rounded-full bg-ink-400"></span>
-                                    {{ __('Inactive') }}
-                                </span>
-                            @endif
+                            <x-admin.status-chip :status="$u->status ?? 'active'" dot />
                         </td>
 
                         <td class="px-4 py-3">

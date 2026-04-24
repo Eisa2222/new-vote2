@@ -28,9 +28,12 @@
 
     {{-- ── Form card ────────────────────────────────────────── --}}
     <div class="card space-y-5">
-        @if($errors->any())
-            <div class="rounded-xl bg-rose-50 border border-rose-200 text-rose-700 p-3 text-sm">
-                {{ $errors->first() }}
+        {{-- Show any errors NOT attached to a specific field at the
+             top; per-field errors render below each input. --}}
+        @if($errors->has('*') && ! $errors->has('mobile_number') && ! $errors->has('email') && ! $errors->has('national_id'))
+            <div class="alert alert-error">
+                <span class="text-lg leading-none">⚠️</span>
+                <span>{{ $errors->first() }}</span>
             </div>
         @endif
 
@@ -45,7 +48,8 @@
                 </label>
                 <input type="tel" name="mobile_number" value="{{ old('mobile_number', $player?->mobile_number) }}"
                        inputmode="tel" autocomplete="tel" placeholder="05XXXXXXXX"
-                       class="w-full rounded-xl border-2 border-ink-200 bg-white px-4 py-3 text-base focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-brand-500 transition">
+                       class="w-full rounded-xl border-2 {{ $errors->has('mobile_number') ? 'border-rose-400' : 'border-ink-200' }} bg-white px-4 py-3 text-base focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-brand-500 transition">
+                @error('mobile_number') <p class="field-error">{{ $message }}</p> @enderror
             </div>
 
             <div>
@@ -56,7 +60,8 @@
                 </label>
                 <input type="email" name="email" value="{{ old('email', $player?->email) }}"
                        autocomplete="email" placeholder="example@domain.com"
-                       class="w-full rounded-xl border-2 border-ink-200 bg-white px-4 py-3 text-base focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-brand-500 transition">
+                       class="w-full rounded-xl border-2 {{ $errors->has('email') ? 'border-rose-400' : 'border-ink-200' }} bg-white px-4 py-3 text-base focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-brand-500 transition">
+                @error('email') <p class="field-error">{{ $message }}</p> @enderror
             </div>
 
             <div>
@@ -67,7 +72,8 @@
                 </label>
                 <input type="text" name="national_id" value="{{ old('national_id', $player?->national_id) }}"
                        inputmode="numeric" placeholder="1XXXXXXXXX"
-                       class="w-full rounded-xl border-2 border-ink-200 bg-white px-4 py-3 text-base focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-brand-500 transition">
+                       class="w-full rounded-xl border-2 {{ $errors->has('national_id') ? 'border-rose-400' : 'border-ink-200' }} bg-white px-4 py-3 text-base focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-brand-500 transition">
+                @error('national_id') <p class="field-error">{{ $message }}</p> @enderror
             </div>
 
             <div class="flex items-center justify-between gap-2 flex-wrap pt-2">

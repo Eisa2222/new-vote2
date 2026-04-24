@@ -14,12 +14,12 @@
             <div>
                 <label class="block text-sm font-medium text-slate-700 mb-1">{{ __('Name') }} (AR)</label>
                 <input name="name_ar" value="{{ old('name_ar', $player->name_ar) }}" required class="w-full border rounded-lg px-3 py-2">
-                @error('name_ar') <p class="text-red-600 text-sm mt-1">{{ $message }}</p> @enderror
+                @error('name_ar') <p class="field-error">{{ $message }}</p> @enderror
             </div>
             <div>
                 <label class="block text-sm font-medium text-slate-700 mb-1">{{ __('Name') }} (EN)</label>
                 <input name="name_en" value="{{ old('name_en', $player->name_en) }}" required class="w-full border rounded-lg px-3 py-2">
-                @error('name_en') <p class="text-red-600 text-sm mt-1">{{ $message }}</p> @enderror
+                @error('name_en') <p class="field-error">{{ $message }}</p> @enderror
             </div>
         </div>
 
@@ -34,7 +34,7 @@
                         <option value="{{ $c->id }}" @selected(old('club_id', $player->club_id ?? request('club_id')) == $c->id)>{{ $c->localized('name') }}</option>
                     @endforeach
                 </select>
-                @error('club_id') <p class="text-red-600 text-sm mt-1">{{ $message }}</p> @enderror
+                @error('club_id') <p class="field-error">{{ $message }}</p> @enderror
             </div>
             <div>
                 <label class="block text-sm font-medium text-slate-700 mb-1">{{ __('Sport') }}</label>
@@ -44,7 +44,7 @@
                         <option value="{{ $s->id }}" @selected(old('sport_id', $player->sport_id) == $s->id)>{{ $s->localized('name') }}</option>
                     @endforeach
                 </select>
-                @error('sport_id') <p class="text-red-600 text-sm mt-1">{{ $message }}</p> @enderror
+                @error('sport_id') <p class="field-error">{{ $message }}</p> @enderror
             </div>
         </div>
 
@@ -111,7 +111,7 @@
                     </span>
                 </label>
             </div>
-            @error('nationality') <p class="text-red-600 text-sm mt-1">{{ $message }}</p> @enderror
+            @error('nationality') <p class="field-error">{{ $message }}</p> @enderror
         </div>
 
         <div class="grid grid-cols-3 gap-4">
@@ -126,7 +126,7 @@
             <div>
                 <label class="block text-sm font-medium text-slate-700 mb-1">{{ __('Jersey #') }}</label>
                 <input type="number" name="jersey_number" value="{{ old('jersey_number', $player->jersey_number) }}" class="w-full border rounded-lg px-3 py-2">
-                @error('jersey_number') <p class="text-red-600 text-sm mt-1">{{ $message }}</p> @enderror
+                @error('jersey_number') <p class="field-error">{{ $message }}</p> @enderror
             </div>
             <div>
                 <label class="block text-sm font-medium text-slate-700 mb-1">{{ __('Status') }}</label>

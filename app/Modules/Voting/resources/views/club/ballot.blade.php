@@ -83,7 +83,7 @@
     </section>
 
     @if($errors->any())
-        <div class="mt-4 rounded-2xl bg-rose-50 border border-rose-200 text-rose-800 p-4 text-sm">
+        <div class="mt-4 alert alert-error">
             ⚠️ {{ $errors->first() }}
         </div>
     @endif
@@ -210,7 +210,7 @@
                         <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-16 h-16 rounded-full border-2 border-white/20"></div>
                     </div>
 
-                    @foreach(['attack','midfield','defense','goalkeeper'] as $slot)
+                    @foreach(['attack','midfield','defense','goalkeeper'] as $slot) {{-- visual: attackers at the top of the pitch, GK at the back --}}
                         @php
                             $count = App\Modules\Voting\Support\Formation::slots()[$slot];
                             $meta  = [

@@ -38,8 +38,8 @@
     </div>
 
     @if($errors->any())
-        <div class="rounded-xl bg-rose-50 border border-rose-200 text-rose-700 p-3 text-sm mb-4">
-            {{ $errors->first() }}
+        <div class="alert alert-error mb-4">
+            <span>{{ $errors->first() }}</span>
         </div>
     @endif
 
@@ -244,24 +244,12 @@
                         </div>
                     </td>
 
-                    {{-- Status chip with coloured dot (same pattern as users) --}}
                     <td class="px-4 py-3">
-                        @if($row->is_active && ! $row->isFull())
-                            <span class="inline-flex items-center gap-1 rounded-full bg-green-50 text-green-700 px-2.5 py-0.5 text-xs font-medium">
-                                <span class="w-1.5 h-1.5 rounded-full bg-green-500"></span>
-                                {{ __('Active') }}
-                            </span>
-                        @elseif($row->isFull())
-                            <span class="inline-flex items-center gap-1 rounded-full bg-amber-50 text-amber-700 px-2.5 py-0.5 text-xs font-medium">
-                                <span class="w-1.5 h-1.5 rounded-full bg-amber-500"></span>
-                                {{ __('Full') }}
-                            </span>
-                        @else
-                            <span class="inline-flex items-center gap-1 rounded-full bg-ink-100 text-ink-500 px-2.5 py-0.5 text-xs font-medium">
-                                <span class="w-1.5 h-1.5 rounded-full bg-ink-400"></span>
-                                {{ __('Disabled') }}
-                            </span>
-                        @endif
+                        @php
+                            $status = $row->isFull() ? 'full'
+                                : ($row->is_active ? 'active' : 'disabled');
+                        @endphp
+                        <x-admin.status-chip :status="$status" dot />
                     </td>
 
                     <td class="px-4 py-3">

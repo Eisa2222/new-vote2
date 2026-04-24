@@ -51,7 +51,7 @@
     {{-- ── Name picker card ───────────────────────────────────── --}}
     <div class="card space-y-5">
         @if($errors->any())
-            <div class="rounded-xl bg-rose-50 border border-rose-200 text-rose-700 p-3 text-sm flex items-start gap-2">
+            <div class="alert alert-error">
                 <span class="text-lg leading-none">⚠️</span>
                 <span>{{ $errors->first() }}</span>
             </div>

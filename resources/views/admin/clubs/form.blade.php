@@ -15,13 +15,13 @@
                 <label class="block text-sm font-medium text-slate-700 mb-1">{{ __('Name') }} (AR)</label>
                 <input name="name_ar" value="{{ old('name_ar', $club->name_ar) }}"
                        class="w-full border rounded-lg px-3 py-2" required>
-                @error('name_ar') <p class="text-red-600 text-sm mt-1">{{ $message }}</p> @enderror
+                @error('name_ar') <p class="field-error">{{ $message }}</p> @enderror
             </div>
             <div>
                 <label class="block text-sm font-medium text-slate-700 mb-1">{{ __('Name') }} (EN)</label>
                 <input name="name_en" value="{{ old('name_en', $club->name_en) }}"
                        class="w-full border rounded-lg px-3 py-2" required>
-                @error('name_en') <p class="text-red-600 text-sm mt-1">{{ $message }}</p> @enderror
+                @error('name_en') <p class="field-error">{{ $message }}</p> @enderror
             </div>
         </div>
 

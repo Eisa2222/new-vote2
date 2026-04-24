@@ -10,7 +10,7 @@
             <label class="block text-sm font-medium text-slate-700 mb-1">{{ __('Name') }}</label>
             <input name="name" value="{{ old('name', $user->name) }}" required class="w-full border rounded-lg px-3 py-2">
             @error('name')
-                <p class="text-red-600 text-sm mt-1">{{ $message }}</p>
+                <p class="field-error">{{ $message }}</p>
             @enderror
         </div>
 
@@ -19,7 +19,7 @@
             <input type="email" name="email" value="{{ old('email', $user->email) }}" required
                 class="w-full border rounded-lg px-3 py-2">
             @error('email')
-                <p class="text-red-600 text-sm mt-1">{{ $message }}</p>
+                <p class="field-error">{{ $message }}</p>
             @enderror
         </div>
 
@@ -53,7 +53,7 @@
             </div>
 
             @error('password')
-                <p class="text-red-600 text-sm mt-1">{{ $message }}</p>
+                <p class="field-error">{{ $message }}</p>
             @enderror
 
             {{-- Password criteria (shown only when typing) --}}

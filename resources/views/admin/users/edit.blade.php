@@ -13,7 +13,7 @@
             <label class="block text-sm font-medium text-slate-700 mb-1">{{ __('Name') }}</label>
             <input name="name" value="{{ old('name', $user->name) }}" required class="w-full border rounded-lg px-3 py-2">
             @error('name')
-                <p class="text-red-600 text-sm mt-1">{{ $message }}</p>
+                <p class="field-error">{{ $message }}</p>
             @enderror
         </div>
 
@@ -22,7 +22,7 @@
             <input type="email" name="email" value="{{ old('email', $user->email) }}" required
                 class="w-full border rounded-lg px-3 py-2">
             @error('email')
-                <p class="text-red-600 text-sm mt-1">{{ $message }}</p>
+                <p class="field-error">{{ $message }}</p>
             @enderror
         </div>
 
@@ -55,10 +55,15 @@
             </div>
 
             @error('password')
-                <p class="text-red-600 text-sm mt-1">{{ $message }}</p>
+                <p class="field-error">{{ $message }}</p>
             @enderror
 
-            {{-- Password criteria (shown only when typing) --}}
+            {{-- Password criteria (shown only when typing).
+                 Listens on the window with a guard (previously it
+                 re-ran for every input on the page, which is wasteful);
+                 now it checks the event's target name up front, so
+                 typing in email / name doesn't wake this checker up
+                 unnecessarily. --}}
             <div x-data="{
                 password: '',
                 get len() { return this.password.length >= 8 },
@@ -66,9 +71,8 @@
                 get lower() { return /[a-z]/.test(this.password) },
                 get num() { return /[0-9]/.test(this.password) },
                 get special() { return /[^A-Za-z0-9]/.test(this.password) },
-                checkPassword(val) { this.password = val }
             }"
-                x-on:input.window="checkPassword($event.target.name === 'password' ? $event.target.value : password)">
+                x-on:input.window="if ($event.target.name === 'password') { password = $event.target.value }">
                 <div x-show="password.length > 0" x-transition:enter="transition ease-out duration-200"
                     x-transition:enter-start="opacity-0 -translate-y-1" x-transition:enter-end="opacity-100 translate-y-0"
                     class="mt-2 p-3 bg-slate-50 border border-slate-200 rounded-lg text-xs space-y-1.5">
