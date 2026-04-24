@@ -12,10 +12,15 @@ use App\Modules\Sms\Services\SmsService;
 beforeEach(function () { seedRolesAndPermissions(); });
 
 it('renders the SMS tab on the settings page', function () {
+    // The SMS *tab button* in the nav is commented out (the feature is
+    // temporarily hidden from the admin UI), but the pane + form are
+    // still rendered and the update route is live. Assert against the
+    // pane marker + hidden input so this test stays meaningful without
+    // re-enabling UI that was intentionally deferred.
     $admin = makeSuperAdmin();
     test()->actingAs($admin)->get(route('admin.settings.index'))
         ->assertOk()
-        ->assertSee('data-tab="sms"', false)
+        ->assertSee('data-pane="sms"', false)
         ->assertSee('name="sms_driver"', false);
 });
 

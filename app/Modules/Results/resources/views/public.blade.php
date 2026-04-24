@@ -12,7 +12,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>🏆 {{ __('Winner announcement') }} — {{ $campaign->localized('title') }}</title>
+    <title>🏆 {{ __('Voting campaign results announcement') }} — {{ $campaign->localized('title') }}</title>
     @include('partials.brand-head')
     <style>
         .trophy-bg {
