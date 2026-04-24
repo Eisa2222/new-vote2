@@ -32,15 +32,13 @@
             </div>
         </div>
 
-        <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
-            <div>
-                <label class="block text-sm font-medium mb-1">{{ __('Type') }}</label>
-                <select name="type" class="w-full rounded-2xl border border-gray-300 px-4 py-3" required>
-                    @foreach($types as $t)
-                        <option value="{{ $t->value }}" @selected(old('type') === $t->value)>{{ $t->value }}</option>
-                    @endforeach
-                </select>
-            </div>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {{-- Type selector removed — the club-scoped ballot always
+                 runs the same three awards (Best Saudi / Best Foreign /
+                 Team of the Season), so asking the admin to pick a type
+                 added zero value. A hidden input preserves the request
+                 shape expected by StoreCampaignRequest. --}}
+            <input type="hidden" name="type" value="individual_award">
             @isset($leagues)
             <div>
                 <label class="block text-sm font-medium mb-1">{{ __('League') }} <span class="text-gray-400 text-xs">({{ __('optional') }})</span></label>

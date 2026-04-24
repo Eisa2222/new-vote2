@@ -45,15 +45,10 @@
             </div>
         </div>
 
-        <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
-            <div>
-                <label class="block text-sm font-medium mb-1.5">{{ __('Type') }}</label>
-                <select name="type" class="w-full rounded-xl border border-ink-200 px-4 py-3" required>
-                    @foreach($types as $t)
-                        <option value="{{ $t->value }}" @selected(old('type', $campaign->type->value) === $t->value)>{{ $t->value }}</option>
-                    @endforeach
-                </select>
-            </div>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {{-- Type selector removed — see form.blade.php for rationale.
+                 Hidden input preserves the existing value on update. --}}
+            <input type="hidden" name="type" value="{{ old('type', $campaign->type->value) }}">
             <div>
                 <label class="block text-sm font-medium mb-1.5">{{ __('Start at') }}</label>
                 <input type="datetime-local" name="start_at"
