@@ -49,7 +49,7 @@
     </div>
 </div>
 
-<div class="grid grid-cols-1 xl:grid-cols-2 gap-5 mt-5">
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-5 mt-5">
     @forelse($campaigns as $campaign)
         <x-admin.campaigns.campaign-card :campaign="$campaign" />
     @empty

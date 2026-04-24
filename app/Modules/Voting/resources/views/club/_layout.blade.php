@@ -16,7 +16,12 @@
             <div class="flex items-center gap-3">
                 <x-brand.logo size="md" />
                 <div class="leading-tight">
-                    <div class="text-xs uppercase tracking-[0.25em] text-accent-400">{{ \App\Modules\Shared\Support\Branding::name() }}</div>
+                    {{-- Latin brand name: keep uppercase tracking; for RTL brand name
+                         (Arabic), the name itself isn't uppercase-able so just show
+                         a clean semibold label — no broken glyphs. --}}
+                    <div class="text-accent-400 {{ $locale === 'ar' ? 'text-sm font-bold' : 'text-xs uppercase tracking-[0.25em]' }}">
+                        {{ \App\Modules\Shared\Support\Branding::name() }}
+                    </div>
                     <div class="text-sm text-brand-100 mt-0.5">{{ __('Official Platform') }}</div>
                 </div>
             </div>

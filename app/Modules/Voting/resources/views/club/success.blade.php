@@ -101,7 +101,7 @@
                 <span>{{ __('Add my contact details') }}</span>
             </a>
             <a href="{{ route('public.campaigns') }}" class="btn-ghost">
-                {{ __('Skip — take me out') }}
+                <span>{{ __('Finish') }}</span>
             </a>
         </div>
     </div>

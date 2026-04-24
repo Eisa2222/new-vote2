@@ -34,12 +34,16 @@
         </div>
     </div>
 
+    {{-- Voters arrive here from a deep club link; the "campaigns
+         list" fallback is unfamiliar so the primary CTA is just
+         "Done" now. --}}
     <div class="flex items-center justify-center gap-2 flex-wrap">
-        <a href="{{ route('public.campaigns') }}"
-           class="inline-flex items-center gap-2 rounded-xl bg-brand-600 hover:bg-brand-700 text-white px-5 py-2.5 font-semibold shadow-sm transition">
-            <span aria-hidden="true">🏠</span>
-            <span>{{ __('Back to campaigns') }}</span>
-        </a>
+        <button type="button"
+                onclick="window.close(); setTimeout(() => { window.location.href='/'; }, 300);"
+                class="inline-flex items-center gap-2 rounded-xl bg-brand-600 hover:bg-brand-700 text-white px-5 py-2.5 font-semibold shadow-sm transition">
+            <span aria-hidden="true">✓</span>
+            <span>{{ __('Done') }}</span>
+        </button>
     </div>
 </div>
 @endsection

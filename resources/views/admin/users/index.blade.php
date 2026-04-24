@@ -22,7 +22,11 @@
         <div class="p-4 border-b border-ink-100">
             <x-admin.datatable-head :search-placeholder="__('Search by name or email...')" />
         </div>
-        <table data-datatable class="w-full text-sm">
+        {{-- overflow-x-auto keeps the wide (avatar+name+email+roles+
+             status+actions) table from forcing horizontal scroll on
+             the whole page when the viewport is tablet-portrait. --}}
+        <div class="overflow-x-auto">
+        <table data-datatable class="w-full text-sm min-w-[820px]">
             <thead>
                 <tr class="bg-ink-50 border-b border-ink-200">
                     <th class="w-10 px-4 py-3">
@@ -137,6 +141,7 @@
                 @endforeach
             </tbody>
         </table>
+        </div>
     </div>
 
     <div class="mt-4">{{ $users->links() }}</div>

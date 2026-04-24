@@ -230,10 +230,12 @@
                                  (72px wide, 84px tall) regardless of how
                                  wide the pitch gets. Wraps on narrow
                                  screens so 4 attackers never squish. --}}
-                            <div class="flex items-center justify-center gap-4 md:gap-5 flex-wrap">
+                            <div class="flex items-center justify-center gap-2 sm:gap-4 md:gap-5 flex-wrap">
                                 @for($i = 0; $i < $count; $i++)
+                                    {{-- Compact tile on narrow phones so a 4-wide
+                                         attack row doesn't wrap to 3+1 orphan. --}}
                                     <button type="button" @click="openSlot('tos_{{ $slot }}', {{ $i }})"
-                                            class="relative rounded-2xl bg-white/10 hover:bg-white/20 backdrop-blur border-2 border-dashed border-white/30 p-2.5 text-center transition w-[92px] h-[108px] flex flex-col items-center justify-center text-white overflow-hidden group">
+                                            class="relative rounded-2xl bg-white/10 hover:bg-white/20 backdrop-blur border-2 border-dashed border-white/30 p-2 sm:p-2.5 text-center transition w-[72px] h-[96px] sm:w-[92px] sm:h-[108px] flex flex-col items-center justify-center text-white overflow-hidden group">
                                         <template x-if="picks['tos_{{ $slot }}'][{{ $i }}]">
                                             <div class="relative w-full h-full flex flex-col items-center justify-center">
                                                 <div class="absolute inset-0 bg-gradient-to-br {{ $meta['color'] }} opacity-90 -m-2.5 rounded-2xl"></div>
@@ -390,8 +392,12 @@
             </div>
         </template>
 
-        {{-- ── Sticky submit bar ─────────────────────────────── --}}
-        <div class="sticky bottom-0 inset-x-0 z-20 pt-4 pb-2 -mx-4 px-4 md:mx-0 md:px-0 bg-gradient-to-t from-white via-white/95 to-transparent">
+        {{-- ── Sticky submit bar ───────────────────────────────
+             iOS Safari: use env(safe-area-inset-bottom) so the home
+             indicator doesn't eat the button. Tall the transparent
+             gradient so the ballot above fades gracefully behind it. --}}
+        <div class="sticky bottom-0 inset-x-0 z-20 pt-4 -mx-4 px-4 md:mx-0 md:px-0 bg-gradient-to-t from-white via-white/95 to-transparent"
+             style="padding-bottom: calc(0.5rem + env(safe-area-inset-bottom));">
             <div class="rounded-2xl border-2 border-ink-200 bg-white shadow-xl p-4 flex flex-col md:flex-row md:items-center justify-between gap-3">
                 <div class="text-sm">
                     <div class="font-bold text-ink-900" x-text="isReady ? '{{ __('All set — ready to submit') }}' : '{{ __('Complete every question to submit') }}'"></div>

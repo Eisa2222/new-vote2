@@ -45,11 +45,13 @@
             {{ __('Results will be announced by the committee once the campaign is set up and ready. Check back soon or contact the organisers.') }}
         </p>
         <div class="flex items-center justify-center gap-2 flex-wrap">
-            <a href="{{ route('public.campaigns') }}" class="btn-save">
-                <span aria-hidden="true">🏠</span>
-                <span>{{ __('Back to campaigns') }}</span>
-            </a>
-            <a href="mailto:contact@sfpa.sa" class="btn-ghost">
+            <button type="button"
+                    onclick="window.close(); setTimeout(() => { window.location.href='/'; }, 300);"
+                    class="btn-save">
+                <span aria-hidden="true">✓</span>
+                <span>{{ __('Close this tab') }}</span>
+            </button>
+            <a href="mailto:{{ \App\Modules\Shared\Support\Branding::contactEmail() }}" class="btn-ghost">
                 <span aria-hidden="true">✉️</span>
                 <span>{{ __('Contact organisers') }}</span>
             </a>

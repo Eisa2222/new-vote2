@@ -157,7 +157,8 @@
         </div>
     </div>
 
-    <table data-datatable class="w-full text-sm">
+    <div class="overflow-x-auto">
+    <table data-datatable class="w-full text-sm min-w-[900px]">
         <thead>
             <tr class="bg-ink-50 border-b border-ink-200">
                 <th data-sort class="text-start px-4 py-3 text-xs font-semibold text-ink-500 uppercase tracking-wide">{{ __('Club') }}</th>
@@ -298,5 +299,6 @@
             @endforelse
         </tbody>
     </table>
+    </div>
 </div>
 @endsection

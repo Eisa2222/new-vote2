@@ -13,12 +13,14 @@
         <div class="absolute inset-0 opacity-15"
              style="background-image: radial-gradient(circle at 20% 20%, white 1px, transparent 1px); background-size: 28px 28px;"></div>
         <div class="relative p-8 md:p-10 text-white text-center">
-            <div class="inline-flex items-center gap-2 rounded-full bg-white/10 backdrop-blur border border-white/20 px-3 py-1 text-xs uppercase tracking-[0.2em] text-white/80 mb-4">
+            @php $isAr = app()->getLocale() === 'ar'; @endphp
+            <div class="inline-flex items-center gap-2 rounded-full bg-white/10 backdrop-blur border border-white/20 px-3 py-1 text-white/80 mb-4
+                        {{ $isAr ? 'text-xs font-semibold' : 'text-xs uppercase tracking-[0.2em]' }}">
                 <span>🗳</span>
                 <span>{{ __('Official voting') }}</span>
             </div>
 
-            <div class="text-xs uppercase tracking-[0.2em] text-white/70">{{ $campaign->localized('title') }}</div>
+            <div class="text-white/70 {{ $isAr ? 'text-xs font-semibold' : 'text-xs uppercase tracking-[0.2em]' }}">{{ $campaign->localized('title') }}</div>
             <h1 class="text-3xl md:text-4xl font-extrabold mt-2">{{ $club->localized('name') }}</h1>
             <p class="text-white/85 mt-4 max-w-lg mx-auto leading-7">
                 {{ __('Pick your name from the list to start voting for this season\'s awards.') }}
@@ -222,7 +224,8 @@
         </div>
         <p class="text-ink-500">
             {{ __('Questions? Contact the organisers at') }}
-            <a href="mailto:contact@sfpa.sa" class="text-brand-700 font-semibold hover:underline">contact@sfpa.sa</a>
+            @php $support = \App\Modules\Shared\Support\Branding::contactEmail(); @endphp
+            <a href="mailto:{{ $support }}" class="text-brand-700 font-semibold hover:underline">{{ $support }}</a>
         </p>
     </div>
 </div>

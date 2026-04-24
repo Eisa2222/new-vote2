@@ -27,6 +27,16 @@ final class Branding
         return (string) app(SettingsService::class)->get('app_name', 'SFPA Voting');
     }
 
+    /**
+     * Support / organisers contact email. Admin can override it in
+     * /admin/settings → General; falls back to a sensible default
+     * so public voter views never show "mailto:" with no address.
+     */
+    public static function contactEmail(): string
+    {
+        return (string) app(SettingsService::class)->get('contact_email', 'contact@sfpa.sa');
+    }
+
     public static function initials(): string
     {
         $name  = trim(self::name());
