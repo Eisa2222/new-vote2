@@ -39,12 +39,24 @@ final class ValidateVoteRestrictionsAction
 
     public function execute(Campaign $campaign, Player $voter, array $payload): void
     {
+        // Which awards does this campaign actually run? Mirrors the
+        // logic in ClubVotingController::ballot() + SubmitClubVoteRequest
+        // — if the admin tagged voting_categories with an award_type,
+        // only those awards are live on the ballot, so we should only
+        // validate the submitted picks for those awards. Validating a
+        // non-configured award here always failed because the payload
+        // doesn't carry it.
+        [$showSaudi, $showForeign, $showTos] = $this->configuredAwards($campaign);
+
         // ── 1. Individual awards. PHP enums cannot be array keys, so
         // use a plain array of tuples instead of `enum => meta`.
-        $awards = [
-            [AwardType::BestSaudi,   'best_saudi_player_id',   NationalityType::Saudi],
-            [AwardType::BestForeign, 'best_foreign_player_id', NationalityType::Foreign],
-        ];
+        $awards = [];
+        if ($showSaudi) {
+            $awards[] = [AwardType::BestSaudi,   'best_saudi_player_id',   NationalityType::Saudi];
+        }
+        if ($showForeign) {
+            $awards[] = [AwardType::BestForeign, 'best_foreign_player_id', NationalityType::Foreign];
+        }
         foreach ($awards as [$award, $key, $expectedNationality]) {
             $id = $payload[$key] ?? null;
             if (! $id) {
@@ -73,12 +85,38 @@ final class ValidateVoteRestrictionsAction
             $this->assertInEligiblePool($campaign, $voter, $pick, $award);
         }
 
-        // ── 2. Team of the Season — validated via dedicated helper
-        $lineup = $payload['lineup'] ?? null;
-        if (! is_array($lineup)) {
-            throw new VotingException(__('Team of the Season lineup is required.'));
+        // ── 2. Team of the Season — only when TOS is a configured award
+        if ($showTos) {
+            $lineup = $payload['lineup'] ?? null;
+            if (! is_array($lineup)) {
+                throw new VotingException(__('Team of the Season lineup is required.'));
+            }
+            $this->validateLineup($campaign, $voter, $lineup);
         }
-        $this->validateLineup($campaign, $voter, $lineup);
+    }
+
+    /**
+     * @return array{0:bool,1:bool,2:bool}
+     */
+    private function configuredAwards(Campaign $campaign): array
+    {
+        $configured = $campaign->categories()
+            ->whereNotNull('award_type')
+            ->where('is_active', true)
+            ->pluck('award_type')
+            ->map(fn ($v) => $v instanceof AwardType ? $v->value : $v)
+            ->unique()
+            ->all();
+
+        if (empty($configured)) {
+            return [true, true, true];
+        }
+
+        return [
+            in_array(AwardType::BestSaudi->value,       $configured, true),
+            in_array(AwardType::BestForeign->value,     $configured, true),
+            in_array(AwardType::TeamOfTheSeason->value, $configured, true),
+        ];
     }
 
     /**
