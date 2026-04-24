@@ -63,7 +63,14 @@ final class AdminCampaignClubController extends Controller
         $existing = $campaign->campaignClubs()->pluck('club_id')->all();
         $merged   = array_values(array_unique(array_merge($existing, $data['club_ids'])));
 
-        $action->execute($campaign, $merged, $data['max_voters'] ?? null);
+        // Laravel's `validate(['integer'])` rule checks the TYPE of the
+        // input but does NOT cast — the value stays a string. The action
+        // signature is `?int`, so cast explicitly here (empty → null).
+        $maxPerClub = isset($data['max_voters']) && $data['max_voters'] !== ''
+            ? (int) $data['max_voters']
+            : null;
+
+        $action->execute($campaign, $merged, $maxPerClub);
 
         return back()->with('success', __('Club links generated.'));
     }
@@ -78,7 +85,11 @@ final class AdminCampaignClubController extends Controller
             'is_active'  => ['nullable', 'boolean'],
         ]);
         $row->update([
-            'max_voters' => $data['max_voters'] ?? null,
+            // Same string-vs-int gotcha as store() — cast explicitly so
+            // the DB gets a proper NULL / int value, not '5' / ''.
+            'max_voters' => (isset($data['max_voters']) && $data['max_voters'] !== '')
+                ? (int) $data['max_voters']
+                : null,
             'is_active'  => (bool) ($data['is_active'] ?? false),
         ]);
 
