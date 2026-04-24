@@ -31,6 +31,16 @@
              style="background-image: radial-gradient(circle at 20% 30%, #C8A365 1.5px, transparent 2.5px),
                                        radial-gradient(circle at 80% 70%, #DDB97A 2px, transparent 3px);
                     background-size: 110px 110px, 140px 140px;"></div>
+
+        {{-- Language switcher — the index page was missing one, so
+             non-Arabic visitors had no way to flip the UI. --}}
+        <div class="absolute top-4 end-4 z-20">
+            <div class="inline-flex items-center rounded-xl border border-white/20 bg-white/10 backdrop-blur overflow-hidden text-xs font-semibold">
+                <a href="?locale=ar" class="px-3 py-1.5 transition {{ $locale === 'ar' ? 'bg-white text-brand-800' : 'text-white/80 hover:text-white hover:bg-white/10' }}">AR</a>
+                <a href="?locale=en" class="px-3 py-1.5 transition {{ $locale === 'en' ? 'bg-white text-brand-800' : 'text-white/80 hover:text-white hover:bg-white/10' }}">EN</a>
+            </div>
+        </div>
+
         <div class="relative z-10">
             <div class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-accent-500/20 border border-accent-400/40 backdrop-blur text-accent-400 text-xs font-bold tracking-[0.25em] uppercase">
                 🏆 {{ __('Official announcements') }}
@@ -60,107 +70,142 @@
             @foreach($results as $r)
                 @php
                     $c        = $r->campaign;
-                    $isTos    = $c->type === CampaignType::TeamOfTheSeason;
                     $winners  = $r->items->where('is_winner', true)->sortBy('rank');
-                    $lead     = $winners->first();
-                    $leadName = $lead?->candidate?->player?->localized('name')
-                             ?? $lead?->candidate?->club?->localized('name');
-                    $leadClub = $lead?->candidate?->player?->club?->localized('name');
-                    $leadImg  = $lead?->candidate?->player?->photo_path
-                        ? \Illuminate\Support\Facades\Storage::url($lead->candidate->player->photo_path)
-                        : ($lead?->candidate?->club?->logo_path
-                            ? \Illuminate\Support\Facades\Storage::url($lead->candidate->club->logo_path) : null);
-                    $formation = $isTos ? TeamOfSeasonFormation::fromCampaign($c) : null;
+
+                    // Split winners the same way the detail page does:
+                    //   • individualWinners → Best Saudi + Best Foreign
+                    //     (shown as side-by-side avatar cards on the
+                    //     index tile so the lineup screenshot doesn't
+                    //     end up headline-only with a single face)
+                    //   • tosWinners        → Team of the Season
+                    //     (summarised as a stacked-avatars formation
+                    //     preview — already existed below)
+                    $individualWinners = $winners->filter(fn ($w) =>
+                        optional($w->category?->award_type)->value !== 'team_of_the_season'
+                    )->values();
+                    $tosWinners = $winners->filter(fn ($w) =>
+                        optional($w->category?->award_type)->value === 'team_of_the_season'
+                    );
+
+                    // The card header badge still cares about the
+                    // campaign-type label; TOS stays TOS even if the
+                    // campaign also carries individual awards.
+                    $hasTos = $tosWinners->isNotEmpty();
+                    $formation = $hasTos ? TeamOfSeasonFormation::fromCampaign($c) : null;
                 @endphp
 
                 <a href="{{ route('public.results', $c->public_token) }}"
                    class="group block rounded-3xl overflow-hidden bg-white border border-ink-200 shadow-sm hover:shadow-brand hover:-translate-y-0.5 transition">
                     {{-- Card header --}}
                     <div class="relative p-5 md:p-6 trophy-bg text-white">
-                        <div class="absolute top-3 end-3 text-accent-400 text-xs font-bold tracking-[0.2em]">
-                            @if($isTos) ⚽ {{ __('Team of the Season') }}
-                            @elseif($c->type->value === 'individual_award') 👤 {{ __('Individual award') }}
-                            @else 🛡️ {{ __('Team award') }}
+                        <div class="absolute top-3 end-3 text-accent-400 text-xs font-bold
+                                    {{ $isAr ?? (app()->getLocale()==='ar') ? '' : 'tracking-[0.2em]' }}">
+                            @if($hasTos && $individualWinners->isEmpty()) ⚽ {{ __('Team of the Season') }}
+                            @elseif($hasTos) 🏆 {{ __('Awards') }}
+                            @else 👤 {{ __('Individual award') }}
                             @endif
                         </div>
-                        <div class="text-[10px] uppercase tracking-[0.25em] text-accent-400 font-bold">🏆 {{ __('Winner') }}</div>
+                        <div class="text-accent-400 font-bold text-[10px]
+                                    {{ app()->getLocale() === 'ar' ? '' : 'uppercase tracking-[0.25em]' }}">
+                            🏆 {{ __('Winner') }}
+                        </div>
                         <h2 class="text-xl md:text-2xl font-extrabold mt-1 leading-tight pr-16">
                             {{ $c->localized('title') }}
                         </h2>
                         @if($r->announced_at)
                             <div class="mt-2 text-xs text-brand-100/80">
                                 {{ __('Announced') }}: {{ $r->announced_at->translatedFormat('d M Y') }}
-                                · {{ number_format($r->total_votes) }} {{ __('votes') }}
                             </div>
                         @endif
                     </div>
 
-                    {{-- Card body: lead winner or TOS formation hint --}}
-                    @if($isTos && $formation)
-                        <div class="p-5 md:p-6 bg-gradient-to-{{ $dir === 'rtl' ? 'l' : 'r' }} from-brand-50 to-white">
+                    {{-- Card body: individual winners side-by-side, then
+                         TOS formation strip below if this campaign also
+                         ran a Team of the Season ballot. --}}
+                    @if($individualWinners->isNotEmpty())
+                        <div class="p-4 md:p-5 grid @if($individualWinners->count() === 1) grid-cols-1 @else grid-cols-2 @endif gap-3 border-b border-ink-100">
+                            @foreach($individualWinners as $w)
+                                @php
+                                    $wp     = $w->candidate?->player;
+                                    $wName  = $wp?->localized('name') ?? $w->candidate?->club?->localized('name');
+                                    $wClub  = $wp?->club?->localized('name');
+                                    $wImg   = $wp?->photo_path
+                                        ? \Illuminate\Support\Facades\Storage::url($wp->photo_path)
+                                        : ($w->candidate?->club?->logo_path
+                                            ? \Illuminate\Support\Facades\Storage::url($w->candidate->club->logo_path) : null);
+                                    $wTitle = $w->category?->localized('title');
+                                @endphp
+                                <div class="flex items-center gap-3 rounded-2xl bg-gradient-to-br from-brand-50/50 to-white border border-ink-100 p-3">
+                                    <div class="flex-shrink-0 w-14 h-14 rounded-full bg-gradient-to-br from-accent-400 to-accent-600 p-0.5 shadow">
+                                        <div class="w-full h-full rounded-full overflow-hidden bg-white flex items-center justify-center">
+                                            @if($wImg)
+                                                <img src="{{ $wImg }}" alt="{{ $wName }}" class="w-full h-full object-cover">
+                                            @else
+                                                <span class="text-lg font-black text-brand-700">{{ mb_strtoupper(mb_substr($wName ?? '?', 0, 1)) }}</span>
+                                            @endif
+                                        </div>
+                                    </div>
+                                    <div class="min-w-0 flex-1">
+                                        @if($wTitle)
+                                            <div class="text-[10px] font-bold text-accent-600 truncate
+                                                        {{ app()->getLocale() === 'ar' ? '' : 'uppercase tracking-wider' }}">
+                                                🏆 {{ $wTitle }}
+                                            </div>
+                                        @endif
+                                        <div class="font-bold text-ink-900 truncate text-sm">{{ $wName ?: '—' }}</div>
+                                        @if($wClub)
+                                            <div class="text-[11px] text-ink-500 truncate">{{ $wClub }}</div>
+                                        @endif
+                                    </div>
+                                </div>
+                            @endforeach
+                        </div>
+                    @endif
+
+                    @if($hasTos)
+                        <div class="p-4 md:p-5 bg-gradient-to-{{ $dir === 'rtl' ? 'l' : 'r' }} from-brand-50 to-white">
                             <div class="flex items-center justify-between mb-3">
                                 <div class="text-sm font-bold text-brand-800">
-                                    {{ __('Formation') }}:
-                                    <span class="text-accent-600 font-black">{{ $formation['defense'] }}-{{ $formation['midfield'] }}-{{ $formation['attack'] }}</span>
+                                    ⚽ {{ __('Team of the Season') }}
+                                    @if($formation)
+                                        <span class="text-accent-600 font-black ms-1">
+                                            {{ $formation['defense'] }}-{{ $formation['midfield'] }}-{{ $formation['attack'] }}
+                                        </span>
+                                    @endif
                                 </div>
-                                <div class="text-xs text-ink-500">{{ $winners->count() }} {{ __('Winner') }}</div>
+                                <div class="text-xs text-ink-500">{{ $tosWinners->count() }} {{ __('Winner') }}</div>
                             </div>
 
                             <div class="flex -space-x-3 rtl:space-x-reverse overflow-hidden flex-wrap">
-                                @foreach($winners->take(7) as $w)
+                                @foreach($tosWinners->take(7) as $w)
                                     @php
                                         $wp = $w->candidate?->player;
                                         $wi = $wp?->photo_path ? \Illuminate\Support\Facades\Storage::url($wp->photo_path) : null;
                                         $wn = $wp?->localized('name') ?? '?';
                                     @endphp
-                                    <div class="w-10 h-10 rounded-full bg-gradient-to-br from-accent-400 to-accent-600 p-0.5 shadow">
+                                    <div class="w-9 h-9 rounded-full bg-gradient-to-br from-accent-400 to-accent-600 p-0.5 shadow">
                                         <div class="w-full h-full rounded-full overflow-hidden bg-white flex items-center justify-center">
                                             @if($wi)
                                                 <img src="{{ $wi }}" alt="{{ $wn }}" class="w-full h-full object-cover">
                                             @else
-                                                <span class="text-xs font-black text-brand-700">{{ mb_strtoupper(mb_substr($wn, 0, 1)) }}</span>
+                                                <span class="text-[10px] font-black text-brand-700">{{ mb_strtoupper(mb_substr($wn, 0, 1)) }}</span>
                                             @endif
                                         </div>
                                     </div>
                                 @endforeach
-                                @if($winners->count() > 7)
-                                    <div class="w-10 h-10 rounded-full bg-ink-100 text-ink-600 text-xs font-bold flex items-center justify-center border-2 border-white">
-                                        +{{ $winners->count() - 7 }}
+                                @if($tosWinners->count() > 7)
+                                    <div class="w-9 h-9 rounded-full bg-ink-100 text-ink-600 text-[10px] font-bold flex items-center justify-center border-2 border-white">
+                                        +{{ $tosWinners->count() - 7 }}
                                     </div>
                                 @endif
-                            </div>
-
-                            <div class="mt-4 text-sm font-bold text-brand-700 group-hover:underline flex items-center gap-1">
-                                {{ __('View full results') }} {{ $dir === 'rtl' ? '←' : '→' }}
-                            </div>
-                        </div>
-                    @else
-                        <div class="p-5 md:p-6 flex items-center gap-4">
-                            <div class="flex-shrink-0 w-16 h-16 md:w-20 md:h-20 rounded-full bg-gradient-to-br from-accent-400 to-accent-600 p-1 shadow">
-                                <div class="w-full h-full rounded-full overflow-hidden bg-white flex items-center justify-center">
-                                    @if($leadImg)
-                                        <img src="{{ $leadImg }}" alt="{{ $leadName }}" class="w-full h-full object-cover">
-                                    @else
-                                        <span class="text-2xl font-black text-brand-700">{{ mb_strtoupper(mb_substr($leadName ?? '?', 0, 1)) }}</span>
-                                    @endif
-                                </div>
-                            </div>
-                            <div class="min-w-0 flex-1">
-                                <div class="text-[10px] uppercase tracking-wider text-accent-600 font-bold">🏆 {{ __('Winner') }}</div>
-                                <div class="font-extrabold text-ink-900 text-lg truncate">{{ $leadName ?: '—' }}</div>
-                                @if($leadClub)<div class="text-xs text-ink-500 truncate">{{ $leadClub }}</div>@endif
-                                @if($lead)
-                                    <div class="mt-2 inline-flex items-center gap-2 rounded-full bg-brand-50 border border-brand-200 px-3 py-1 text-xs font-bold text-brand-700">
-                                        {{ number_format($lead->votes_count) }} {{ __('votes') }}
-                                        · {{ $lead->vote_percentage }}%
-                                    </div>
-                                @endif
-                            </div>
-                            <div class="text-brand-600 text-2xl group-hover:translate-x-1 rtl:group-hover:-translate-x-1 transition">
-                                {{ $dir === 'rtl' ? '←' : '→' }}
                             </div>
                         </div>
                     @endif
+
+                    <div class="px-5 md:px-6 py-3 bg-white border-t border-ink-100 flex items-center justify-between text-sm font-bold text-brand-700 group-hover:bg-brand-50 transition">
+                        <span>{{ __('View full results') }}</span>
+                        <span class="group-hover:translate-x-1 rtl:group-hover:-translate-x-1 transition">{{ $dir === 'rtl' ? '←' : '→' }}</span>
+                    </div>
                 </a>
             @endforeach
         </div>
