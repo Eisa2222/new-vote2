@@ -219,7 +219,13 @@ final class CalculateCampaignResultsAction
             ->orderBy('id')
             ->chunkById(500, function ($items) use ($campaign, $ensureCategory, &$candidateId) {
                 foreach ($items as $vi) {
-                    $catId = $ensureCategory($vi->award_type, $vi->position_key);
+                    // award_type is cast to AwardType enum on VoteItem;
+                    // the category-materialiser closure works in plain
+                    // strings so it can key a map. Normalise here.
+                    $awardValue = $vi->award_type instanceof AwardType
+                        ? $vi->award_type->value
+                        : (string) $vi->award_type;
+                    $catId = $ensureCategory($awardValue, $vi->position_key);
 
                     $candKey = $catId.':'.$vi->candidate_player_id;
                     if (! isset($candidateId[$candKey])) {

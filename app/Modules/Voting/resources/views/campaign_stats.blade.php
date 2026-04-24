@@ -302,8 +302,9 @@
     {{-- ── CTA ROW: results + share ──────────────────────────── --}}
     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
         @if($resultsAnnounced)
+            {{-- Full clickable CTA — results are public, go to winners page. --}}
             <a href="{{ route('public.results', $campaign->public_token) }}"
-               class="block rounded-3xl bg-gradient-to-br from-emerald-600 to-emerald-800 text-white p-5 shadow-lg hover:shadow-xl transition group">
+               class="block rounded-3xl bg-gradient-to-br from-emerald-600 to-emerald-800 text-white p-5 shadow-lg hover:shadow-xl transition group cursor-pointer">
                 <div class="flex items-center gap-4">
                     <div class="w-14 h-14 rounded-2xl bg-white/20 flex items-center justify-center text-3xl">🏆</div>
                     <div class="flex-1 min-w-0">
@@ -317,17 +318,26 @@
                 </div>
             </a>
         @else
-            <div class="rounded-3xl bg-brand-50 border border-brand-200 p-5">
+            {{-- Info-only panel — results aren't public yet. Styled as a
+                 passive status card (no hover, no cursor-pointer) so it
+                 doesn't look like a broken clickable target. Links to the
+                 announcements archive as a useful fallback. --}}
+            <div class="rounded-3xl bg-ink-50 border border-ink-200 p-5">
                 <div class="flex items-center gap-4">
-                    <div class="w-14 h-14 rounded-2xl bg-brand-600 text-white flex items-center justify-center text-3xl">📢</div>
+                    <div class="w-14 h-14 rounded-2xl bg-ink-200 text-ink-500 flex items-center justify-center text-3xl">⏳</div>
                     <div class="flex-1 min-w-0">
-                        <div class="text-[11px] font-semibold text-brand-700
+                        <div class="text-[11px] font-semibold text-ink-500
                                     {{ $isAr ? '' : 'uppercase tracking-widest' }}">
                             {{ __('Results') }}
                         </div>
-                        <div class="text-lg font-bold text-brand-800 mt-0.5 leading-tight">
+                        <div class="text-sm font-semibold text-ink-800 mt-0.5 leading-5">
                             {{ __('Results will appear here once the committee announces them.') }}
                         </div>
+                        <a href="{{ route('public.results.index') }}"
+                           class="inline-flex items-center gap-1 mt-1.5 text-xs text-brand-700 hover:underline font-semibold">
+                            {{ __('Browse announced results') }}
+                            <span>{{ $isAr ? '←' : '→' }}</span>
+                        </a>
                     </div>
                 </div>
             </div>
