@@ -18,7 +18,10 @@ final class ExportPlayersAction
     public const COLUMNS = [
         'name_ar', 'name_en', 'club_name_en', 'sport_name_en',
         'position', 'jersey_number', 'is_captain',
-        'national_id', 'mobile_number', 'status',
+        // Nationality: 'saudi' or 'foreign' — drives Best Saudi /
+        // Best Foreign award eligibility on the voter ballot.
+        'nationality',
+        'status',
     ];
 
     public function execute(): StreamedResponse
@@ -36,7 +39,7 @@ final class ExportPlayersAction
 
             $maskPii = (bool) config('voting.export.mask_pii_by_default', true);
 
-            Player::with(['club', 'sport'])->orderBy('id')->chunk(500, function ($players) use ($out, $maskPii) {
+            Player::with(['club', 'sport'])->orderBy('id')->chunk(500, function ($players) use ($out) {
                 foreach ($players as $p) {
                     // Every cell goes through Csv::safe() to neutralise
                     // formula injection (a name starting with `=` would
@@ -49,8 +52,7 @@ final class ExportPlayersAction
                         Csv::safe($p->position?->value),
                         Csv::safe($p->jersey_number),
                         Csv::safe($p->is_captain),
-                        $maskPii ? Csv::maskNationalId($p->national_id) : Csv::safe($p->national_id),
-                        $maskPii ? Csv::maskMobile($p->mobile_number)   : Csv::safe($p->mobile_number),
+                        Csv::safe($p->nationality?->value ?? 'saudi'),
                         Csv::safe($p->status?->value ?? 'active'),
                     ]);
                 }
@@ -71,10 +73,15 @@ final class ExportPlayersAction
             fwrite($out, "\xEF\xBB\xBF");
             fwrite($out, "sep=,\r\n");
             fputcsv($out, self::COLUMNS);
-            // One sample row so users see the expected shape.
+            // Two sample rows so importers see both nationality values
+            // and the expected column shape at a glance.
             fputcsv($out, [
                 'أحمد علي', 'Ahmed Ali', 'Al-Hilal', 'Football',
-                'attack', '9', '0', '1012345678', '0501234567', 'active',
+                'attack', '9', '0', 'saudi', 'active',
+            ]);
+            fputcsv($out, [
+                'كريستيانو رونالدو', 'Cristiano Ronaldo', 'Al-Nassr', 'Football',
+                'attack', '7', '1', 'foreign', 'active',
             ]);
             fclose($out);
         }, 200, [

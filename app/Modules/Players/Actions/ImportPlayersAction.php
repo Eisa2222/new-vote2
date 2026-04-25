@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Modules\Players\Actions;
 
 use App\Modules\Clubs\Models\Club;
+use App\Modules\Players\Enums\NationalityType;
 use App\Modules\Players\Enums\PlayerPosition;
 use App\Modules\Players\Models\Player;
 use App\Modules\Shared\Enums\ActiveStatus;
@@ -73,6 +74,26 @@ final class ImportPlayersAction
                 $position = strtolower(trim((string)($data['position'] ?? '')));
                 $status   = strtolower(trim((string)($data['status'] ?? 'active')));
 
+                // Nationality column. Accepts the canonical enum values
+                // (saudi / foreign) as well as common variants seen in
+                // exported sheets:
+                //   ar: سعودي / غير سعودي / أجنبي
+                //   en: saudi / non-saudi / non saudi / foreign
+                // Defaults to 'saudi' when blank to keep existing
+                // imports compatible — the admin can fix individual
+                // rows in the UI if needed.
+                $nationalityRaw = strtolower(trim((string)($data['nationality'] ?? '')));
+                $nationality = match (true) {
+                    $nationalityRaw === '' => NationalityType::Saudi->value,
+                    in_array($nationalityRaw, ['saudi', 'سعودي'], true) => NationalityType::Saudi->value,
+                    in_array($nationalityRaw, ['foreign', 'non-saudi', 'non saudi', 'أجنبي', 'غير سعودي'], true) => NationalityType::Foreign->value,
+                    default => null, // explicit invalid value
+                };
+                if ($nationality === null) {
+                    $skipped[] = ['row' => $rowNum, 'error' => "Invalid nationality '{$nationalityRaw}' (use 'saudi' or 'foreign')"];
+                    continue;
+                }
+
                 if (! $name_en || ! $clubName) {
                     $skipped[] = ['row' => $rowNum, 'error' => 'Missing name_en or club_name_en'];
                     continue;
@@ -97,6 +118,9 @@ final class ImportPlayersAction
                     continue;
                 }
 
+                // national_id / mobile_number deliberately NOT imported
+                // any more — they're voter-facing PII captured on the
+                // optional profile page after a vote, not roster data.
                 $payload = [
                     'name_ar'       => $name_ar ?: $name_en,
                     'name_en'       => $name_en,
@@ -105,8 +129,7 @@ final class ImportPlayersAction
                     'position'      => $position ?: null,
                     'jersey_number' => $this->intOrNull($data['jersey_number'] ?? null),
                     'is_captain'    => $this->bool($data['is_captain'] ?? false),
-                    'national_id'   => $this->stringOrNull($data['national_id'] ?? null),
-                    'mobile_number' => $this->stringOrNull($data['mobile_number'] ?? null),
+                    'nationality'   => $nationality,
                     'status'        => in_array($status, ['active','inactive'], true) ? $status : ActiveStatus::Active->value,
                 ];
 
@@ -134,12 +157,6 @@ final class ImportPlayersAction
     {
         $v = trim((string) $v);
         return $v === '' ? null : (int) $v;
-    }
-
-    private function stringOrNull($v): ?string
-    {
-        $v = trim((string) $v);
-        return $v === '' ? null : $v;
     }
 
     private function bool($v): bool
