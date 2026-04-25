@@ -24,10 +24,11 @@ it('imports a CSV and creates missing players, updating existing ones', function
     $club = makeClub(['name_en' => 'Al-Hilal', 'name_ar' => 'الهلال']);
     makeFootball();
 
+    // CSV columns updated: nationality replaces national_id + mobile_number.
     $csv = "\xEF\xBB\xBFsep=,\r\n"
-        ."name_ar,name_en,club_name_en,sport_name_en,position,jersey_number,is_captain,national_id,mobile_number,status\n"
-        ."محمد,Mohamed,Al-Hilal,Football,attack,9,1,1012345678,0501234567,active\n"
-        ."علي,Ali,Al-Hilal,Football,defense,4,0,,,active\n";
+        ."name_ar,name_en,club_name_en,sport_name_en,position,jersey_number,is_captain,nationality,status\n"
+        ."محمد,Mohamed,Al-Hilal,Football,attack,9,1,saudi,active\n"
+        ."علي,Ali,Al-Hilal,Football,defense,4,0,foreign,active\n";
 
     $file = uploadCsv($csv);
     $result = app(ImportPlayersAction::class)->execute($file);
@@ -36,11 +37,13 @@ it('imports a CSV and creates missing players, updating existing ones', function
     expect($result['updated'])->toBe(0);
     expect($result['skipped'])->toBe([]);
     expect(Player::where('name_en', 'Mohamed')->first()?->jersey_number)->toBe(9);
+    expect(Player::where('name_en', 'Mohamed')->first()?->nationality?->value)->toBe('saudi');
+    expect(Player::where('name_en', 'Ali')->first()?->nationality?->value)->toBe('foreign');
 
     // Re-import same CSV with a change — should UPDATE, not create.
     $csv2 = "\xEF\xBB\xBFsep=,\r\n"
-        ."name_ar,name_en,club_name_en,sport_name_en,position,jersey_number,is_captain,national_id,mobile_number,status\n"
-        ."محمد,Mohamed,Al-Hilal,Football,attack,10,1,1012345678,0501234567,active\n";
+        ."name_ar,name_en,club_name_en,sport_name_en,position,jersey_number,is_captain,nationality,status\n"
+        ."محمد,Mohamed,Al-Hilal,Football,attack,10,1,saudi,active\n";
     $result2 = app(ImportPlayersAction::class)->execute(uploadCsv($csv2));
     expect($result2['created'])->toBe(0);
     expect($result2['updated'])->toBe(1);
