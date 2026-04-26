@@ -67,6 +67,15 @@
 
     {{-- ── HERO ─────────────────────────────────────────────── --}}
     <section class="hero-bg text-white rounded-[2rem] relative overflow-hidden shadow-brand dots">
+        {{-- Locale switcher — top-end of the hero. Same shape as the
+             /results index for consistency. --}}
+        <div class="absolute top-2 end-3 z-20">
+            <div class="inline-flex items-center rounded-xl border border-white/20 bg-white/10 backdrop-blur overflow-hidden text-xs font-semibold">
+                <a href="?locale=ar" class="px-3 py-1.5 transition {{ $locale === 'ar' ? 'bg-white text-brand-800' : 'text-white/80 hover:text-white hover:bg-white/10' }}">AR</a>
+                <a href="?locale=en" class="px-3 py-1.5 transition {{ $locale === 'en' ? 'bg-white text-brand-800' : 'text-white/80 hover:text-white hover:bg-white/10' }}">EN</a>
+            </div>
+        </div>
+
         <div class="relative p-6 md:p-10">
             <div class="flex flex-col md:flex-row md:items-start md:justify-between gap-6">
                 <div class="flex-1 min-w-0">
@@ -106,9 +115,9 @@
                         @endif
 
                         <span class="inline-flex items-center gap-2 rounded-full bg-white/10 border border-white/15 px-3 py-1.5 text-white/85 text-xs font-semibold tabular-nums">
-                            🗓 {{ $campaign->start_at->format('Y-m-d') }}
+                            🗓 {{ $campaign->start_at->translatedFormat('d M Y') }}
                             <span class="opacity-60">→</span>
-                            {{ $campaign->end_at->format('Y-m-d') }}
+                            {{ $campaign->end_at->translatedFormat('d M Y') }}
                         </span>
                     </div>
                 </div>
