@@ -106,9 +106,9 @@
                         @endif
 
                         <span class="inline-flex items-center gap-2 rounded-full bg-white/10 border border-white/15 px-3 py-1.5 text-white/85 text-xs font-semibold tabular-nums">
-                            🗓 {{ $campaign->start_at->format('Y-m-d') }}
+                            🗓 {{ $campaign->start_at->translatedFormat('d M Y') }}
                             <span class="opacity-60">→</span>
-                            {{ $campaign->end_at->format('Y-m-d') }}
+                            {{ $campaign->end_at->translatedFormat('d M Y') }}
                         </span>
                     </div>
                 </div>

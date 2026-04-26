@@ -24,7 +24,13 @@ final class Branding
 
     public static function name(): string
     {
-        return (string) app(SettingsService::class)->get('app_name', 'SFPA Voting');
+        // Locale-aware fallback so the public footer doesn't read
+        // "SFPA Voting" in English on an otherwise Arabic page when
+        // the admin hasn't set a custom platform name.
+        $default = app()->getLocale() === 'ar'
+            ? 'رابطة لاعبي كرة القدم السعوديين'
+            : 'SFPA Voting';
+        return (string) app(SettingsService::class)->get('app_name', $default);
     }
 
     /**
