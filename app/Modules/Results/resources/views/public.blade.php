@@ -69,6 +69,15 @@
                                        radial-gradient(circle at 40% 80%, #C8A365 2px, transparent 3px);
                     background-size: 120px 120px, 90px 90px, 100px 100px;"></div>
 
+        {{-- Locale switcher — top-end of the hero. Same chip style as
+             every other public surface. --}}
+        <div class="absolute top-4 end-4 z-20">
+            <div class="inline-flex items-center rounded-xl border border-white/20 bg-white/10 backdrop-blur overflow-hidden text-xs font-semibold">
+                <a href="?locale=ar" class="px-3 py-1.5 transition {{ $locale === 'ar' ? 'bg-white text-brand-800' : 'text-white/80 hover:text-white hover:bg-white/10' }}">AR</a>
+                <a href="?locale=en" class="px-3 py-1.5 transition {{ $locale === 'en' ? 'bg-white text-brand-800' : 'text-white/80 hover:text-white hover:bg-white/10' }}">EN</a>
+            </div>
+        </div>
+
         <div class="relative z-10">
             <div class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-accent-500/20 border border-accent-400/40 backdrop-blur text-accent-400 text-xs font-bold
                         {{ $isAr ? '' : 'tracking-[0.25em] uppercase' }}">
