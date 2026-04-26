@@ -41,20 +41,9 @@ return [
         'ttl_minutes' => 15,
     ],
 
-    /*
-    |--------------------------------------------------------------------------
-    | Voter OTP (planned — see VerifyVoterIdentityAction)
-    |--------------------------------------------------------------------------
-    | When `enabled` is true, identity match alone is not enough — the voter
-    | must also confirm a one-time code sent to their registered mobile.
-    | Stays disabled by default until an SMS provider is wired up.
-    */
-    'voter_otp' => [
-        'enabled'     => env('VOTER_OTP_ENABLED', false),
-        'length'      => 6,
-        'ttl_seconds' => 300,
-        'max_attempts'=> 5,
-    ],
+    // voter_otp block removed (2026-04 dead-code sweep) — never wired
+    // up, no consumer in the codebase. Re-add when an SMS OTP flow
+    // actually ships.
 
     /*
     |--------------------------------------------------------------------------

@@ -84,7 +84,7 @@ final class SubmitClubVoteRequest extends FormRequest
             return [true, true, true];
         }
 
-        $row = CampaignClub::with('campaign.categories')
+        $row = CampaignClub::with('campaign')
             ->where('voting_link_token', $token)
             ->first();
 
@@ -92,22 +92,9 @@ final class SubmitClubVoteRequest extends FormRequest
             return [true, true, true];
         }
 
-        $configured = $row->campaign->categories
-            ->whereNotNull('award_type')
-            ->where('is_active', true)
-            ->pluck('award_type')
-            ->map(fn ($v) => $v instanceof AwardType ? $v->value : $v)
-            ->unique()
-            ->all();
-
-        if (empty($configured)) {
-            return [true, true, true];
-        }
-
-        return [
-            in_array(AwardType::BestSaudi->value,       $configured, true),
-            in_array(AwardType::BestForeign->value,     $configured, true),
-            in_array(AwardType::TeamOfTheSeason->value, $configured, true),
-        ];
+        // Delegates to Campaign::configuredAwards() — the single
+        // source of truth for "which awards does this campaign run?"
+        $a = $row->campaign->configuredAwards();
+        return [$a['saudi'], $a['foreign'], $a['tos']];
     }
 }
