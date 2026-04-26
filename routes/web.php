@@ -17,7 +17,7 @@ use Illuminate\Support\Facades\Route;
 | ModulesServiceProvider from each module's routes directory.
 */
 
-Route::get('/', fn () => redirect()->route('public.campaigns'))->name('home');
+Route::get('/', fn() => redirect()->route('admin.landing'))->name('home');
 
 Route::middleware('guest')->group(function () {
     Route::get('login',  [LoginController::class, 'show'])->name('login');
@@ -43,4 +43,4 @@ Route::middleware('auth')->group(function () {
 Route::middleware('web')->get('/set-locale/{locale}', [LocaleController::class, 'switch'])
     ->name('locale.switch');
 
-require __DIR__.'/admin.php';
+require __DIR__ . '/admin.php';
