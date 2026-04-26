@@ -67,13 +67,11 @@
             'icon' =>
                 '<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M20.25 7.5l-.625 10.632a2.25 2.25 0 01-2.247 2.118H6.622a2.25 2.25 0 01-2.247-2.118L3.75 7.5M10 11.25h4M3.375 7.5h17.25c.621 0 1.125-.504 1.125-1.125v-1.5c0-.621-.504-1.125-1.125-1.125H3.375c-.621 0-1.125.504-1.125 1.125v1.5c0 .621.504 1.125 1.125 1.125z" /></svg>',
         ],
-        // [
-        //     'route' => 'admin.email-templates.index',
-        //     'label' => __('Email templates'),
-        //     'can' => (bool) $user?->can('users.manage'),
-        //     'icon' =>
-        //         '<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 01-2.25 2.25h-15a2.25 2.25 0 01-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25m19.5 0v.243a2.25 2.25 0 01-1.07 1.916l-7.5 4.615a2.25 2.25 0 01-2.36 0L3.32 8.91a2.25 2.25 0 01-1.07-1.916V6.75" /></svg>',
-        // ],
+        // Email templates sidebar entry intentionally hidden — feature
+        // is half-built (UI works, no Mail::send caller anywhere). The
+        // route and controller stay live; admins who want to experiment
+        // can hit the URL directly. Re-enable here once mail dispatch
+        // is wired into approval/announce events.
         [
             'route' => 'admin.settings.index',
             'label' => __('Settings'),
