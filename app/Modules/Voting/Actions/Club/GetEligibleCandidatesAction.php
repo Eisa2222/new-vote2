@@ -87,8 +87,18 @@ final class GetEligibleCandidatesAction
 
     /**
      * Collect players explicitly attached to the campaign's categories
-     * whose award_type matches this award. Returns a Collection of
-     * Player models (unique by id) or null if no such categories exist.
+     * whose award_type matches this award. Returns an Eloquent
+     * Collection of Player models (unique by id) or null if no such
+     * categories exist.
+     *
+     * Important: must return an Eloquent\Collection (not a plain
+     * Support\Collection) because execute() calls `->load('club')`
+     * on the result — a method that only exists on Eloquent
+     * collections. Building it via `collect()->push(...)` produced a
+     * Support\Collection and blew up at runtime with:
+     *
+     *   "Return value must be of type ?Eloquent\Collection,
+     *    Support\Collection returned"
      */
     private function shortlistFromCategories(Campaign $campaign, AwardType $award): ?Collection
     {
@@ -102,14 +112,16 @@ final class GetEligibleCandidatesAction
             return null;
         }
 
-        $players = collect();
+        $players = [];
         foreach ($categories as $cat) {
             foreach ($cat->candidates as $cand) {
-                if ($cand->player) $players->push($cand->player);
+                if ($cand->player) $players[$cand->player->id] = $cand->player;
             }
         }
 
-        return $players->unique('id')->values();
+        // Eloquent\Collection — keeps `->load(...)` and other Eloquent
+        // helpers available downstream.
+        return new Collection(array_values($players));
     }
 
     private function clubIdsInLeague(int $leagueId): array
