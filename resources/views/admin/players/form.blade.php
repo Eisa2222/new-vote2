@@ -10,23 +10,25 @@
         @csrf
         @if($player->exists) @method('PUT') @endif
 
-        <div class="grid grid-cols-2 gap-4">
+        {{-- a11y: every label paired with a matching `for`/`id` so
+             screen readers + label-click both work. --}}
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-                <label class="block text-sm font-medium text-slate-700 mb-1">{{ __('Name') }} (AR)</label>
-                <input name="name_ar" value="{{ old('name_ar', $player->name_ar) }}" required class="w-full border rounded-lg px-3 py-2">
+                <label for="player-name-ar" class="block text-sm font-medium text-slate-700 mb-1">{{ __('Name') }} (AR)</label>
+                <input id="player-name-ar" name="name_ar" value="{{ old('name_ar', $player->name_ar) }}" required class="w-full border rounded-lg px-3 py-2">
                 @error('name_ar') <p class="field-error">{{ $message }}</p> @enderror
             </div>
             <div>
-                <label class="block text-sm font-medium text-slate-700 mb-1">{{ __('Name') }} (EN)</label>
-                <input name="name_en" value="{{ old('name_en', $player->name_en) }}" required class="w-full border rounded-lg px-3 py-2">
+                <label for="player-name-en" class="block text-sm font-medium text-slate-700 mb-1">{{ __('Name') }} (EN)</label>
+                <input id="player-name-en" name="name_en" value="{{ old('name_en', $player->name_en) }}" required class="w-full border rounded-lg px-3 py-2">
                 @error('name_en') <p class="field-error">{{ $message }}</p> @enderror
             </div>
         </div>
 
-        <div class="grid grid-cols-2 gap-4">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-                <label class="block text-sm font-medium text-slate-700 mb-1">{{ __('Club') }}</label>
-                <select name="club_id" required class="w-full border rounded-lg px-3 py-2">
+                <label for="player-club" class="block text-sm font-medium text-slate-700 mb-1">{{ __('Club') }}</label>
+                <select id="player-club" name="club_id" required class="w-full border rounded-lg px-3 py-2">
                     <option value="">—</option>
                     @foreach($clubs as $c)
                         {{-- ?club_id=N from the "Add player to this club"
@@ -37,8 +39,8 @@
                 @error('club_id') <p class="field-error">{{ $message }}</p> @enderror
             </div>
             <div>
-                <label class="block text-sm font-medium text-slate-700 mb-1">{{ __('Sport') }}</label>
-                <select name="sport_id" required class="w-full border rounded-lg px-3 py-2">
+                <label for="player-sport" class="block text-sm font-medium text-slate-700 mb-1">{{ __('Sport') }}</label>
+                <select id="player-sport" name="sport_id" required class="w-full border rounded-lg px-3 py-2">
                     <option value="">—</option>
                     @foreach($sports as $s)
                         <option value="{{ $s->id }}" @selected(old('sport_id', $player->sport_id) == $s->id)>{{ $s->localized('name') }}</option>
@@ -114,23 +116,25 @@
             @error('nationality') <p class="field-error">{{ $message }}</p> @enderror
         </div>
 
-        <div class="grid grid-cols-3 gap-4">
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <div>
-                <label class="block text-sm font-medium text-slate-700 mb-1">{{ __('Position') }}</label>
-                <select name="position" required class="w-full border rounded-lg px-3 py-2">
+                <label for="player-position" class="block text-sm font-medium text-slate-700 mb-1">{{ __('Position') }}</label>
+                <select id="player-position" name="position" required class="w-full border rounded-lg px-3 py-2">
                     @foreach($positions as $p)
                         <option value="{{ $p->value }}" @selected(old('position', $player->position?->value) === $p->value)>{{ $p->label() }}</option>
                     @endforeach
                 </select>
             </div>
             <div>
-                <label class="block text-sm font-medium text-slate-700 mb-1">{{ __('Jersey #') }}</label>
-                <input type="number" name="jersey_number" value="{{ old('jersey_number', $player->jersey_number) }}" class="w-full border rounded-lg px-3 py-2">
+                <label for="player-jersey" class="block text-sm font-medium text-slate-700 mb-1">{{ __('Jersey #') }}</label>
+                <input id="player-jersey" type="number" inputmode="numeric" min="1" max="999"
+                       name="jersey_number" value="{{ old('jersey_number', $player->jersey_number) }}"
+                       class="w-full border rounded-lg px-3 py-2">
                 @error('jersey_number') <p class="field-error">{{ $message }}</p> @enderror
             </div>
             <div>
-                <label class="block text-sm font-medium text-slate-700 mb-1">{{ __('Status') }}</label>
-                <select name="status" class="w-full border rounded-lg px-3 py-2">
+                <label for="player-status" class="block text-sm font-medium text-slate-700 mb-1">{{ __('Status') }}</label>
+                <select id="player-status" name="status" class="w-full border rounded-lg px-3 py-2">
                     <option value="active"   @selected(old('status', $player->status?->value) === 'active')>{{ __('Active') }}</option>
                     <option value="inactive" @selected(old('status', $player->status?->value) === 'inactive')>{{ __('Inactive') }}</option>
                 </select>

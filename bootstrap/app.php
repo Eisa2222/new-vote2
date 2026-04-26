@@ -50,8 +50,14 @@ return Application::configure(basePath: dirname(__DIR__))
                 ? route('login')
                 : (url()->previous() ?: '/');
 
+            // Security H-N1 — do NOT flash submitted form data on a 419.
+            // The 419 typically happens because the session cookie was
+            // recycled (kiosk hand-off, idle timeout). Flashing the
+            // *previous* user's input into the new session leaks PII
+            // (national_id, mobile, email, etc.) to whoever picks up
+            // the device next. Just send a friendly message and let
+            // them retype.
             return redirect($redirectTo)
-                ->withInput($request->except(['password', 'password_confirmation', '_token']))
                 ->with('warning', __('Your session has expired. Please try again.'));
         });
 

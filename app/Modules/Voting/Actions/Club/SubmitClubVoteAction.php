@@ -125,7 +125,13 @@ final class SubmitClubVoteAction
                 VoteItem::create(array_merge($item, ['vote_id' => $vote->id]));
             }
 
-            $this->bump->execute($row);
+            // P0-7 fix — bump the LOCKED row, not the unlocked $row that
+            // was passed in. Two simultaneous submits on the same club
+            // could otherwise both pass the isFull() check above and
+            // both increment the original instance, ending up at
+            // max_voters + 1. Falling back to $row when the lock-fetch
+            // missed (e.g. row deleted mid-tx) keeps the legacy path.
+            $this->bump->execute($locked ?? $row);
 
             return $vote;
         });
