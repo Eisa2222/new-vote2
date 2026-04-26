@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace App\Modules\Users\Actions;
 
 use App\Models\User;
+use App\Modules\Users\Support\AssignableRoles;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 
@@ -26,9 +28,21 @@ final class UpdateUserAction
                 $user->password = Hash::make($data['password']);
             }
             $user->save();
-            $user->syncRoles($data['roles'] ?? []);
 
-            $this->log->execute('users.updated', $user, ['roles' => $data['roles'] ?? []]);
+            // Security C-1 — privilege-escalation guard. Without this
+            // any account with `users.manage` could grant itself or
+            // any peer the super_admin role and take over the platform.
+            // AssignableRoles enforces: actor can't grant roles they
+            // don't hold, can't edit their own roles, and only a
+            // super_admin can grant or revoke super_admin.
+            $safeRoles = AssignableRoles::filter(
+                Auth::user(),
+                $user,
+                $data['roles'] ?? [],
+            );
+            $user->syncRoles($safeRoles);
+
+            $this->log->execute('users.updated', $user, ['roles' => $safeRoles]);
             return $user->fresh();
         });
     }

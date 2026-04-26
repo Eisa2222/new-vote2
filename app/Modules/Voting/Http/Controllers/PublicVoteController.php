@@ -65,6 +65,23 @@ final class PublicVoteController extends Controller
     {
         $campaign = Campaign::where('public_token', $token)->firstOrFail();
 
+        // Security H-N2 — gate the public stats page on campaign
+        // status. Without this, *any* attached campaign (including
+        // Draft / PendingApproval / Rejected) was publicly shareable
+        // as soon as a CampaignClub row existed, leaking pre-launch
+        // roster + per-club leaderboard. Stats are public only when
+        // the campaign is, conceptually, "out in the world":
+        //   • Published — voting opens soon, OK to share
+        //   • Active    — voting is live
+        //   • Closed / Archived — historical, snapshot
+        // Anything else (Draft / PendingApproval / Rejected) → 404,
+        // matching the "we never confirmed this token exists" pattern
+        // used by the public results endpoint.
+        $publicStatuses = ['published', 'active', 'closed', 'archived'];
+        if (! in_array($campaign->status->value, $publicStatuses, true)) {
+            throw new \Symfony\Component\HttpKernel\Exception\NotFoundHttpException();
+        }
+
         // Aggregates. Kept inline here (no Action) because the only
         // caller is this view.
         $clubRows       = $campaign->campaignClubs()->with('club')->get();

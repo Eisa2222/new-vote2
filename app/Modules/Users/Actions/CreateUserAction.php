@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace App\Modules\Users\Actions;
 
 use App\Models\User;
+use App\Modules\Users\Support\AssignableRoles;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Password;
@@ -26,10 +28,18 @@ final class CreateUserAction
                 'password' => $hasPassword? Hash::make($data['password']) : Hash::make(Str::random(48)),
                 'status'   => $data['status'] ?? 'active',
             ]);
-            $user->syncRoles($data['roles'] ?? []);
+
+            // Security C-1 — same role guard as UpdateUserAction. The
+            // creator can never seed roles higher than their own.
+            $safeRoles = AssignableRoles::filter(
+                Auth::user(),
+                $user,
+                $data['roles'] ?? [],
+            );
+            $user->syncRoles($safeRoles);
 
             $this->log->execute('users.created', $user, [
-                'roles'   => $data['roles'] ?? [],
+                'roles'   => $safeRoles,
                 'invited' => ! $hasPassword,
             ]);
 

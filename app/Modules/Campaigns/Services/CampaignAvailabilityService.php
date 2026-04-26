@@ -29,8 +29,19 @@ final class CampaignAvailabilityService
         // it filled up, its status becomes Closed, but the voter deserves
         // the real reason ("Voter limit reached") rather than a generic
         // "Campaign closed" message.
-        if ($campaign->max_voters !== null && $campaign->votes()->count() >= $campaign->max_voters) {
-            return self::MAX_VOTERS_REACHED;
+        //
+        // P0-1 perf — prefer the cached `votes_count` set by
+        // `withCount('votes')` on the calling query. This service is
+        // hit on every public listing render (50× per page on
+        // /campaigns) and the bare votes()->count() forced 50 extra
+        // SQL aggregates per render. Falls back to the live query
+        // only if the count wasn't pre-loaded.
+        if ($campaign->max_voters !== null) {
+            $votesCount = $campaign->votes_count
+                ?? $campaign->votes()->count();
+            if ($votesCount >= $campaign->max_voters) {
+                return self::MAX_VOTERS_REACHED;
+            }
         }
 
         if ($status === CampaignStatus::Draft || $status === CampaignStatus::Archived) {
