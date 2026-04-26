@@ -110,4 +110,41 @@ final class Campaign extends Model
     {
         return $this->belongsTo(\App\Models\User::class, 'committee_rejected_by');
     }
+
+    /**
+     * Which awards does this campaign run on the club-scoped ballot?
+     *
+     * If the admin tagged any voting_categories with an `award_type`,
+     * those are the awards on the ballot (shortlist mode). Otherwise
+     * the campaign defaults to all three (Best Saudi / Best Foreign /
+     * Team of the Season) drawing candidates from the club rosters.
+     *
+     * Single source of truth for this rule. The same expression used
+     * to be duplicated verbatim across:
+     *   • ClubVotingController::ballot
+     *   • SubmitClubVoteRequest::configuredAwards
+     *   • ValidateVoteRestrictionsAction::configuredAwards
+     *
+     * @return array{saudi:bool, foreign:bool, tos:bool}
+     */
+    public function configuredAwards(): array
+    {
+        $configured = $this->categories()
+            ->whereNotNull('award_type')
+            ->where('is_active', true)
+            ->pluck('award_type')
+            ->map(fn ($v) => $v instanceof \App\Modules\Voting\Enums\AwardType ? $v->value : $v)
+            ->unique()
+            ->all();
+
+        if (empty($configured)) {
+            return ['saudi' => true, 'foreign' => true, 'tos' => true];
+        }
+
+        return [
+            'saudi'   => in_array(\App\Modules\Voting\Enums\AwardType::BestSaudi->value,       $configured, true),
+            'foreign' => in_array(\App\Modules\Voting\Enums\AwardType::BestForeign->value,     $configured, true),
+            'tos'     => in_array(\App\Modules\Voting\Enums\AwardType::TeamOfTheSeason->value, $configured, true),
+        ];
+    }
 }

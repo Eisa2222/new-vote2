@@ -96,27 +96,15 @@ final class ValidateVoteRestrictionsAction
     }
 
     /**
+     * Delegates to Campaign::configuredAwards() — the single source
+     * of truth for "which awards does this campaign run?"
+     *
      * @return array{0:bool,1:bool,2:bool}
      */
     private function configuredAwards(Campaign $campaign): array
     {
-        $configured = $campaign->categories()
-            ->whereNotNull('award_type')
-            ->where('is_active', true)
-            ->pluck('award_type')
-            ->map(fn ($v) => $v instanceof AwardType ? $v->value : $v)
-            ->unique()
-            ->all();
-
-        if (empty($configured)) {
-            return [true, true, true];
-        }
-
-        return [
-            in_array(AwardType::BestSaudi->value,       $configured, true),
-            in_array(AwardType::BestForeign->value,     $configured, true),
-            in_array(AwardType::TeamOfTheSeason->value, $configured, true),
-        ];
+        $a = $campaign->configuredAwards();
+        return [$a['saudi'], $a['foreign'], $a['tos']];
     }
 
     /**

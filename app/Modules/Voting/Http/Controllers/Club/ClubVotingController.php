@@ -139,26 +139,10 @@ final class ClubVotingController extends Controller
         }
 
         // Which awards does this campaign show?
-        //   • If the admin linked voting_categories to award_type →
-        //     show exactly those awards (shortlist mode).
-        //   • If nothing is linked → default to the three-award
-        //     standard ballot. Stops the voter seeing "voting not
-        //     available" just because no category was tagged.
-        $configured = $row->campaign->categories()
-            ->whereNotNull('award_type')
-            ->where('is_active', true)
-            ->pluck('award_type')
-            ->map(fn($v) => $v instanceof AwardType ? $v->value : $v)
-            ->unique()
-            ->all();
-
-        if (empty($configured)) {
-            $showSaudi = $showForeign = $showTos = true;
-        } else {
-            $showSaudi   = in_array(AwardType::BestSaudi->value,       $configured, true);
-            $showForeign = in_array(AwardType::BestForeign->value,     $configured, true);
-            $showTos     = in_array(AwardType::TeamOfTheSeason->value, $configured, true);
-        }
+        // Single source of truth on Campaign — see configuredAwards()
+        // for the shortlist-mode vs. defaults logic.
+        ['saudi' => $showSaudi, 'foreign' => $showForeign, 'tos' => $showTos]
+            = $row->campaign->configuredAwards();
 
         // Group candidates by club_id so the ballot's shared popup can
         // render "clubs → players" for every award (Best Saudi, Best
