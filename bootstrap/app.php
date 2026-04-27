@@ -18,6 +18,18 @@ return Application::configure(basePath: dirname(__DIR__))
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions) {
+        // Server-side logging is automatic — Laravel writes every
+        // unhandled exception to storage/logs/laravel.log via the
+        // configured channel (LOG_CHANNEL=daily in production). The
+        // user-facing surface is the matching resources/views/errors/
+        // template; it shows ONLY the HTTP code + a friendly localised
+        // message. Stack traces never reach the browser when
+        // APP_DEBUG=false (set this in production).
+        //
+        // To inspect today's errors on the server:
+        //   tail -n 200 storage/logs/laravel.log
+        // (or storage/logs/laravel-YYYY-MM-DD.log under the daily
+        // channel.)
         // 419 "Page expired" (CSRF token mismatch / stale session).
         // Happens when the browser holds an old session cookie — common
         // after APP_KEY rotates, cache:clear, or leaving the login tab

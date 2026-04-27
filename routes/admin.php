@@ -67,6 +67,15 @@ Route::middleware(['web', 'auth'])->prefix('admin')->name('admin.')->group(funct
         Route::get('{player}/edit',           [AdminPlayerController::class, 'edit'])->name('edit');
         Route::put('{player}',                [AdminPlayerController::class, 'update'])->name('update');
         Route::delete('{player}',             [AdminPlayerController::class, 'destroy'])->name('destroy');
+        // GET /admin/players/{id} — no dedicated show page; redirect
+        // to the edit form. Without this, typing /admin/players/12 in
+        // the address bar (or following a stale bookmark) returned a
+        // bare "GET method is not supported" 405 page. Catch-all
+        // redirect lives last so it doesn't shadow /create, /archive,
+        // /export etc.
+        Route::get('{player}', fn (\App\Modules\Players\Models\Player $player) =>
+            redirect()->route('admin.players.edit', $player)
+        )->name('show');
     });
 
     // Campaigns
