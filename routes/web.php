@@ -20,7 +20,10 @@ use Illuminate\Support\Facades\Route;
 // Root: send guests to /login, signed-in admins to the admin landing.
 // Voters arrive at the bare domain rarely (they normally come via a
 // /vote/club/{token} deep link), so the home URL is reserved for
-// admin/staff entry.
+// admin/staff entry. (Conflict-resolution 2026-04: kept this branch
+// over a one-line "always admin.landing" version from main, because
+// that one bounces guests through an auth redirect chain instead of
+// landing on /login directly.)
 Route::get('/', function () {
     return auth()->check()
         ? redirect()->route('admin.landing')
@@ -51,4 +54,4 @@ Route::middleware('auth')->group(function () {
 Route::middleware('web')->get('/set-locale/{locale}', [LocaleController::class, 'switch'])
     ->name('locale.switch');
 
-require __DIR__.'/admin.php';
+require __DIR__ . '/admin.php';
