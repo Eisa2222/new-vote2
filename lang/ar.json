@@ -102,6 +102,8 @@
     "A player with this Arabic name is already attached to the selected club.": "يوجد لاعب مسجَّل بهذا الاسم العربي في النادي المختار.",
     "A player with this English name is already attached to the selected club.": "يوجد لاعب مسجَّل بهذا الاسم الإنجليزي في النادي المختار.",
     "Jersey number :input is already taken in this club.": "الرقم :input مستخدم لاعب آخر في هذا النادي.",
+    "Delete :name? This cannot be undone.": "حذف :name؟ هذا الإجراء لا يمكن التراجع عنه.",
+    "Delete player": "حذف اللاعب",
     "Skip the contact form and finish without saving.": "تخطّي النموذج والإنهاء بدون حفظ بيانات التواصل.",
     "Your details have been saved": "تم حفظ بياناتك",
     "Thank you for voting": "شكراً لك على التصويت",
