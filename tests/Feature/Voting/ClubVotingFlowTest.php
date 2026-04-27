@@ -256,3 +256,48 @@ it('SaveOptionalVoterProfile writes back to the player row', function () {
     expect($fresh->email)->toBe('new@example.com');
     expect($fresh->mobile_number)->toBe('0501234567');
 });
+
+/**
+ * HTTP smoke test for the full club-flow submit path. Pins the
+ * regression that was reported as "POST /submit returns 302 but I
+ * never see the success page": the redirect target must be the
+ * success route, not the entry/show route (which would mean the
+ * voter session was dropped between ballot render and submit).
+ */
+it('HTTP submit redirects to success after a valid vote', function () {
+    [$club, $pool] = makeClubRoster(11, 11);
+    $voter = $pool[0];
+
+    $campaign = makeActiveCampaign();
+    app(GenerateCampaignClubLinksAction::class)
+        ->execute($campaign, [$club->id]);
+
+    $row = CampaignClub::where('campaign_id', $campaign->id)
+        ->where('club_id', $club->id)->firstOrFail();
+    $token = $row->voting_link_token;
+
+    // Step 1: hit the entry page (creates a session, sets CSRF).
+    $this->get(route('voting.club.show', $token))->assertOk();
+
+    // Step 2: start — picks the voter from the roster, elevates the
+    // session ("club_voter:{token}" key) and rotates the session id.
+    $this->post(route('voting.club.start', $token), [
+        'player_id' => $voter->id,
+    ])->assertRedirect(route('voting.club.ballot', $token));
+
+    // Step 3: ballot renders.
+    $this->get(route('voting.club.ballot', $token))->assertOk();
+
+    // Step 4: build a valid payload and submit. MUST land on success,
+    // not bounce back to /show (which would mean session was lost).
+    $saudi   = collect($pool)->first(fn ($p) => $p->nationality?->value === 'saudi');
+    $foreign = collect($pool)->first(fn ($p) => $p->nationality?->value === 'foreign');
+    $payload = buildValidPayload($saudi, $foreign, $pool);
+
+    $this->post(route('voting.club.submit', $token), $payload)
+        ->assertRedirect(route('voting.club.success', $token));
+
+    // The submit recorded a vote for this player.
+    expect(Vote::where('campaign_id', $campaign->id)
+        ->where('player_id', $voter->id)->exists())->toBeTrue();
+});
