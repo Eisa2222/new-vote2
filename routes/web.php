@@ -17,7 +17,15 @@ use Illuminate\Support\Facades\Route;
 | ModulesServiceProvider from each module's routes directory.
 */
 
-Route::get('/', fn () => redirect()->route('public.campaigns'))->name('home');
+// Root: send guests to /login, signed-in admins to the admin landing.
+// Voters arrive at the bare domain rarely (they normally come via a
+// /vote/club/{token} deep link), so the home URL is reserved for
+// admin/staff entry.
+Route::get('/', function () {
+    return auth()->check()
+        ? redirect()->route('admin.landing')
+        : redirect()->route('login');
+})->name('home');
 
 Route::middleware('guest')->group(function () {
     Route::get('login',  [LoginController::class, 'show'])->name('login');

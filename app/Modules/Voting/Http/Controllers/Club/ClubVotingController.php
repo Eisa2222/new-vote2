@@ -237,11 +237,18 @@ final class ClubVotingController extends Controller
             $resolved = ['saudi' => $saudi, 'foreign' => $foreign, 'lineup' => $lineup];
         }
 
+        // Resolve the voter so the inline contact form on the success
+        // page can pre-fill mobile/email if the admin already entered
+        // them. session("club_voter_done:$token") was set by submit().
+        $playerId = (int) session("club_voter_done:$token");
+        $player   = $playerId ? Player::find($playerId) : null;
+
         return view('voting::club.success', [
             'row'      => $row,
             'campaign' => $row->campaign,
             'club'     => $row->club,
             'picks'    => $resolved,
+            'player'   => $player,
         ]);
     }
 
