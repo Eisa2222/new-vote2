@@ -283,19 +283,32 @@ final class ClubVotingController extends Controller
         }
 
         session()->forget("club_voter_done:$token");
-        // Send the voter to the campaign's live stats page — the stats
-        // page is the "home" of a campaign for a voter who already
-        // voted; they can watch turnout climb and check back for the
-        // announcement. (Was /results — the archive index — which is
-        // disorienting after a deep-link entry.)
-        //
-        // The stats URL uses the campaign's *public_token*, NOT the
-        // CampaignClub voting_link_token we've been threading through
-        // the controller. Resolve the campaign via the row we just
-        // loaded.
+        // Land on a clean thank-you screen, NOT the stats dashboard.
+        // The voter just gave us their contact details — they want a
+        // confirmation, not to be redirected somewhere unfamiliar.
+        // The `saved` flag lets the thanks view tailor the headline
+        // ("data saved + thank you for voting") vs. the plain skip
+        // path ("thank you for voting").
+        return redirect()->route('voting.club.thanks', $token)
+            ->with('voter_thanks_saved', true);
+    }
+
+    // ─── GET thanks ────────────────────────────────────────────
+    // Clean post-flow thank-you screen. Reachable from:
+    //   • saveProfile() with `voter_thanks_saved` flash → headline
+    //     reads "your details are saved + thanks for voting"
+    //   • the Finish button on the success page → plain
+    //     "thanks for voting"
+    // No state required beyond the campaign row, so no session check.
+    public function thanks(string $token): View
+    {
         $row = $this->loadRow($token);
-        return redirect()->route('public.campaigns.stats', $row->campaign->public_token)
-            ->with('success', __('Thank you! Your vote has been recorded.'));
+        return view('voting::club.thanks', [
+            'row'      => $row,
+            'campaign' => $row->campaign,
+            'club'     => $row->club,
+            'savedDetails' => (bool) session('voter_thanks_saved', false),
+        ]);
     }
 
     // ─── GET already voted ─────────────────────────────────────

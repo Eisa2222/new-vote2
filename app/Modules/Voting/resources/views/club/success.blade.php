@@ -201,21 +201,27 @@
                     <p class="text-xs text-ink-500 flex items-center gap-1">
                         🔒 {{ __('Your contact information is used only to announce results.') }}
                     </p>
-                    <div class="flex items-center gap-2">
-                        {{-- Skip button → straight to public stats page;
-                             same destination as save-and-finish so the
-                             voter ends up in the right place either way. --}}
-                        <a href="{{ route('public.campaigns.stats', $campaign->public_token) }}"
-                           class="inline-flex items-center gap-2 rounded-xl border border-ink-200 hover:bg-ink-50 text-ink-700 px-4 py-2.5 text-sm font-medium transition">
-                            {{ __('Skip') }}
-                        </a>
-                        <button type="submit" class="btn-save">
-                            <span aria-hidden="true">✉️</span>
-                            <span>{{ __('Save & finish') }}</span>
-                        </button>
-                    </div>
+                    <button type="submit" class="btn-save">
+                        <span aria-hidden="true">💾</span>
+                        <span>{{ __('Save details') }}</span>
+                    </button>
                 </div>
             </form>
+        </div>
+
+        {{-- Standalone Finish button — leaves to the dedicated
+             thank-you screen without saving any details. Lives in
+             its own card so the form above doesn't compete with it
+             for the voter's attention. --}}
+        <div class="card text-center">
+            <a href="{{ route('voting.club.thanks', $row->voting_link_token) }}"
+               class="inline-flex items-center gap-2 rounded-xl border border-ink-200 hover:bg-ink-50 text-ink-700 px-5 py-2.5 text-sm font-semibold transition">
+                <span>{{ __('Finish') }}</span>
+                <span aria-hidden="true">{{ app()->getLocale() === 'ar' ? '←' : '→' }}</span>
+            </a>
+            <p class="text-[11px] text-ink-400 mt-2">
+                {{ __('Skip the contact form and finish without saving.') }}
+            </p>
         </div>
     </div>
 @endsection
