@@ -149,7 +149,10 @@
             @endif
         @endisset
 
-        {{-- ── CTA → optional profile capture ─────────────────────── --}}
+        {{-- ── Inline contact-details form ─────────────────────────
+             Voters used to be sent to a separate /profile page;
+             that was an extra step nobody finished. Form is embedded
+             here so they can drop in mobile + email and be done. --}}
         <div class="card text-start space-y-4">
             <div class="rounded-2xl bg-brand-50 border border-brand-200 p-5 text-sm text-brand-800">
                 <div class="font-bold mb-1">📬 {{ __('Be the first to know when results are announced') }}</div>
@@ -158,20 +161,67 @@
                 </div>
             </div>
 
-            <div class="flex items-center gap-2 flex-wrap">
-                <a href="{{ route('voting.club.profile', $row->voting_link_token) }}" class="btn-save">
-                    <span aria-hidden="true">✉️</span>
-                    <span>{{ __('Add my contact details') }}</span>
-                </a>
-                {{-- Finish: send the voter to this campaign's live
-                     stats page so they can see turnout + per-club
-                     participation and check back for the announcement
-                     later. (Used to go to the generic /campaigns list,
-                     which is disorienting after a deep-link entry.) --}}
-                <a href="{{ route('public.campaigns.stats', $campaign->public_token) }}" class="btn-ghost">
-                    <span>{{ __('Finish') }}</span>
-                </a>
-            </div>
+            @if($errors->any())
+                <div class="alert alert-error">
+                    <span class="text-lg leading-none">⚠️</span>
+                    <span>{{ $errors->first() }}</span>
+                </div>
+            @endif
+
+            <form method="post" action="{{ route('voting.club.profile.save', $row->voting_link_token) }}" class="space-y-4">
+                @csrf
+
+                <div>
+                    <label for="profile-mobile" class="flex items-center gap-2 text-sm font-bold text-ink-900 mb-1.5">
+                        <span aria-hidden="true" class="w-6 h-6 rounded-lg bg-brand-50 text-brand-700 flex items-center justify-center text-xs">📱</span>
+                        <span>{{ __('Mobile number') }}</span>
+                        <span class="text-xs font-normal text-ink-400">({{ __('optional') }})</span>
+                    </label>
+                    <input id="profile-mobile" type="tel" name="mobile_number"
+                           value="{{ old('mobile_number', $player?->mobile_number) }}"
+                           inputmode="tel" autocomplete="tel" placeholder="05XXXXXXXX"
+                           class="w-full rounded-xl border-2 {{ $errors->has('mobile_number') ? 'border-rose-400' : 'border-ink-200' }} bg-white px-4 py-3 text-base focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-brand-500 transition">
+                    @error('mobile_number') <p class="field-error">{{ $message }}</p> @enderror
+                </div>
+
+                <div>
+                    <label for="profile-email" class="flex items-center gap-2 text-sm font-bold text-ink-900 mb-1.5">
+                        <span aria-hidden="true" class="w-6 h-6 rounded-lg bg-brand-50 text-brand-700 flex items-center justify-center text-xs">✉️</span>
+                        <span>{{ __('Email') }}</span>
+                        <span class="text-xs font-normal text-ink-400">({{ __('optional') }})</span>
+                    </label>
+                    <input id="profile-email" type="email" name="email"
+                           value="{{ old('email', $player?->email) }}"
+                           autocomplete="email" placeholder="example@domain.com"
+                           class="w-full rounded-xl border-2 {{ $errors->has('email') ? 'border-rose-400' : 'border-ink-200' }} bg-white px-4 py-3 text-base focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-brand-500 transition">
+                    @error('email') <p class="field-error">{{ $message }}</p> @enderror
+                </div>
+
+                <div class="flex items-center justify-between gap-2 flex-wrap pt-2">
+                    <p class="text-xs text-ink-500 flex items-center gap-1">
+                        🔒 {{ __('Your contact information is used only to announce results.') }}
+                    </p>
+                    <button type="submit" class="btn-save">
+                        <span aria-hidden="true">💾</span>
+                        <span>{{ __('Save details') }}</span>
+                    </button>
+                </div>
+            </form>
+        </div>
+
+        {{-- Standalone Finish button — leaves to the dedicated
+             thank-you screen without saving any details. Lives in
+             its own card so the form above doesn't compete with it
+             for the voter's attention. --}}
+        <div class="card text-center">
+            <a href="{{ route('voting.club.thanks', $row->voting_link_token) }}"
+               class="inline-flex items-center gap-2 rounded-xl border border-ink-200 hover:bg-ink-50 text-ink-700 px-5 py-2.5 text-sm font-semibold transition">
+                <span>{{ __('Finish') }}</span>
+                <span aria-hidden="true">{{ app()->getLocale() === 'ar' ? '←' : '→' }}</span>
+            </a>
+            <p class="text-[11px] text-ink-400 mt-2">
+                {{ __('Skip the contact form and finish without saving.') }}
+            </p>
         </div>
     </div>
 @endsection

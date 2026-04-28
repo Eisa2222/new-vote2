@@ -155,9 +155,41 @@
              roster entry. The columns stay in the DB + request rules
              so that post-vote capture keeps working. --}}
 
-        <div>
-            <label class="block text-sm font-medium text-slate-700 mb-1">{{ __('Photo') }}</label>
-            <input type="file" name="photo" accept="image/png,image/jpeg,image/webp">
+        {{--
+          Photo upload with a client-side size guard.
+          Real-world bug seen in prod: when an admin picked a >4 MB
+          image, PHP/nginx truncated the request body BEFORE Laravel
+          could read the `_method=PUT` field. Laravel then saw a bare
+          POST/GET with no method override → matched no route → 405
+          "GET method not supported". The visible error read like a
+          Laravel bug, but the cause was the upload limit.
+
+          Fix layered:
+            • route-level: GET /admin/players/{id} now redirects to
+              /edit (commit cff6f50) so the bare URL never 405s.
+            • client-side (here): block the form submit if the chosen
+              file exceeds the 4 MB cap and tell the admin clearly
+              instead of letting the request silently fail server-side.
+        --}}
+        <div x-data="{
+                photoError: '',
+                MAX_BYTES: 4 * 1024 * 1024,
+                check(input) {
+                    this.photoError = '';
+                    const f = input.files && input.files[0];
+                    if (!f) return;
+                    if (f.size > this.MAX_BYTES) {
+                        this.photoError = '{{ __('Image too large. Pick a file under :n MB.', ['n' => 4]) }}';
+                        input.value = '';
+                    }
+                }
+            }">
+            <label for="player-photo" class="block text-sm font-medium text-slate-700 mb-1">{{ __('Photo') }}</label>
+            <input id="player-photo" type="file" name="photo"
+                   accept="image/png,image/jpeg,image/webp"
+                   @change="check($event.target)">
+            <p class="text-xs text-slate-500 mt-1">{{ __('PNG / JPG / WebP — up to :n MB.', ['n' => 4]) }}</p>
+            <p x-show="photoError" x-cloak class="field-error" x-text="photoError"></p>
         </div>
 
         <div class="sticky bottom-0 bg-white pt-4 border-t flex gap-2">

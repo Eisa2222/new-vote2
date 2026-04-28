@@ -32,7 +32,7 @@
         <div class="card space-y-5">
             {{-- Show any errors NOT attached to a specific field at the
              top; per-field errors render below each input. --}}
-            @if ($errors->has('*') && !$errors->has('mobile_number') && !$errors->has('email') && !$errors->has('national_id'))
+            @if ($errors->has('*') && !$errors->has('mobile_number') && !$errors->has('email'))
                 <div class="alert alert-error">
                     <span class="text-lg leading-none">⚠️</span>
                     <span>{{ $errors->first() }}</span>
@@ -73,20 +73,12 @@
                     @enderror
                 </div>
 
-                <div>
-                    <label class="flex items-center gap-2 text-sm font-bold text-ink-900 mb-1.5">
-                        <span
-                            class="w-6 h-6 rounded-lg bg-brand-50 text-brand-700 flex items-center justify-center text-xs">🪪</span>
-                        <span>{{ __('National ID') }}</span>
-                        <span class="text-xs font-normal text-ink-400">({{ __('optional') }})</span>
-                    </label>
-                    <input type="text" name="national_id" value="{{ old('national_id', $player?->national_id) }}"
-                        inputmode="numeric" placeholder="1XXXXXXXXX"
-                        class="w-full rounded-xl border-2 {{ $errors->has('national_id') ? 'border-rose-400' : 'border-ink-200' }} bg-white px-4 py-3 text-base focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-brand-500 transition">
-                    @error('national_id')
-                        <p class="field-error">{{ $message }}</p>
-                    @enderror
-                </div>
+                {{-- National ID field removed (2026-04) — voters
+                     should never need to type their NID into a public
+                     form. Mobile + email are sufficient for the
+                     winner-notification flow. The DB column stays so
+                     admin-entered values are preserved. --}}
+
 
                 <div class="flex items-center justify-between gap-2 flex-wrap pt-2">
                     <p class="text-xs text-ink-500 flex items-center gap-1">

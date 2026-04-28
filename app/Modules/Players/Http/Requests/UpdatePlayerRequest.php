@@ -62,6 +62,18 @@ final class UpdatePlayerRequest extends FormRequest
     public function prepareForValidation(): void
     {
         $merge = [];
+
+        // Same name normalization as StorePlayerRequest — strip
+        // zero-width chars + collapse whitespace + trim.
+        foreach (['name_ar', 'name_en'] as $field) {
+            if ($this->has($field)) {
+                $clean = (string) $this->input($field);
+                $clean = preg_replace('/[\x{200B}-\x{200D}\x{FEFF}]/u', '', $clean);
+                $clean = preg_replace('/\s+/u', ' ', $clean ?? '');
+                $merge[$field] = trim((string) $clean);
+            }
+        }
+
         if ($this->filled('national_id')) {
             $merge['national_id'] = \App\Modules\Voting\Support\IdentityNormalizer::normalizeNationalId($this->input('national_id'));
         }
@@ -69,5 +81,14 @@ final class UpdatePlayerRequest extends FormRequest
             $merge['mobile_number'] = \App\Modules\Voting\Support\IdentityNormalizer::normalizeMobile($this->input('mobile_number'));
         }
         if ($merge) $this->merge($merge);
+    }
+
+    public function messages(): array
+    {
+        return [
+            'name_ar.unique' => __('A player with this Arabic name is already attached to the selected club.'),
+            'name_en.unique' => __('A player with this English name is already attached to the selected club.'),
+            'jersey_number.unique' => __('Jersey number :input is already taken in this club.'),
+        ];
     }
 }

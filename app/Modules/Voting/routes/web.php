@@ -58,4 +58,8 @@ Route::prefix('vote/club')->name('voting.club.')->group(function () {
     Route::get('{token}/success',   [ClubVotingController::class, 'success'])->name('success');
     Route::get('{token}/profile',   [ClubVotingController::class, 'profileForm'])->name('profile');
     Route::post('{token}/profile',  [ClubVotingController::class, 'saveProfile'])->middleware('throttle:20,1')->name('profile.save');
+    // Final thank-you screen — reached from saveProfile (with the
+    // saved-confirmation headline) and from the Finish button on the
+    // success page (plain thank-you).
+    Route::get('{token}/thanks',    [ClubVotingController::class, 'thanks'])->name('thanks');
 });

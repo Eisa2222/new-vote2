@@ -91,14 +91,29 @@
                                 </div>
                             </div>
                         </div>
+                        {{-- Inline row actions: Edit primary (amber)
+                             + Delete soft (rose). Delete is a real
+                             form posting DELETE — not an <a> link —
+                             so a stale tab can't trigger it via
+                             prefetch / spider / GET-shaped click. --}}
                         <div class="mt-5 flex gap-2">
-                            {{-- Edit button uses the shared btn-edit (amber)
-                             so the action vocabulary matches the rest of
-                             the app instead of a one-off dark slate button. --}}
-                            <a href="{{ route('admin.players.edit', $player) }}" class="btn-edit flex-1 justify-center">
+                            <a href="{{ route('admin.players.edit', $player) }}"
+                               class="btn-edit flex-1 justify-center">
                                 <span aria-hidden="true">✏️</span>
                                 <span>{{ __('Edit') }}</span>
                             </a>
+                            <form method="post"
+                                  action="{{ route('admin.players.destroy', $player) }}"
+                                  onsubmit="return confirm('{{ __('Delete :name? This cannot be undone.', ['name' => $player->localized('name')]) }}')"
+                                  class="flex-shrink-0">
+                                @csrf @method('DELETE')
+                                <button type="submit"
+                                        class="btn-danger-soft h-full"
+                                        title="{{ __('Delete player') }}">
+                                    <span aria-hidden="true">🗑</span>
+                                    <span class="hidden sm:inline">{{ __('Delete') }}</span>
+                                </button>
+                            </form>
                         </div>
                     </div>
                 @endforeach
